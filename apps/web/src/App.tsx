@@ -2,8 +2,9 @@ import { DslPanel } from "./features/model-canvas/DslPanel";
 import { ModelCanvas } from "./features/model-canvas/ModelCanvas";
 import { ExplainPanel } from "./features/explain/ExplainPanel";
 import { MatrixPanel } from "./features/permission-matrix/MatrixPanel";
+import { ConditionBuilderPanel } from "./features/condition-builder/ConditionBuilderPanel";
 
-/** lazyfga-5/6/12: 모델 스튜디오 — 노드 캔버스 + 실시간 DSL + 행렬 + explain. */
+/** lazyfga-5/6/12/13: 모델 스튜디오 — 노드 캔버스 + 실시간 DSL + 행렬 + explain + 조건 빌더. */
 export function App() {
   return (
     <div className="lf-app">
@@ -15,6 +16,7 @@ export function App() {
         <ModelCanvas />
         <aside className="lf-sidebar">
           <DslPanel />
+          <ConditionBuilderPanel />
           <ExplainPanel />
         </aside>
       </div>

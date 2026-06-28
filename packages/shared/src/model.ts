@@ -138,10 +138,10 @@ export interface ValidationError {
   message: string;
 }
 
-/** OpenFGA 식별자 규칙(보수적): 영숫자/언더스코어. */
-const IDENT_RE = /^[a-zA-Z0-9_]+$/;
-/** DSL 키워드 + 예약 식별자(이름 충돌 금지). */
-const RESERVED_WORDS = new Set([
+/** OpenFGA 식별자 규칙(보수적): 영숫자/언더스코어. (lazyfga-13 condition.ts에서도 재사용) */
+export const IDENT_RE = /^[a-zA-Z0-9_]+$/;
+/** DSL 키워드 + 예약 식별자(이름 충돌 금지). (lazyfga-13 condition.ts에서도 재사용) */
+export const RESERVED_WORDS = new Set([
   "this",
   "self",
   "type",

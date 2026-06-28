@@ -358,3 +358,89 @@ body {
   stroke: #f59e0b;
   stroke-width: 3;
 }
+
+/* lazyfga-13: condition builder */
+.lf-cond-panel {
+  border-top: 1px solid var(--line);
+  padding-top: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.lf-cond-panel h2 {
+  font-size: 1rem;
+  margin: 0 0 0.5rem;
+}
+
+.lf-cond {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.lf-cond-name {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+.lf-cond-sub {
+  color: var(--muted);
+  font-size: 0.72rem;
+  margin-bottom: 0.2rem;
+}
+
+.lf-cond .lf-row {
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.lf-cond input,
+.lf-cond select {
+  padding: 0.25rem 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 0.78rem;
+}
+
+.lf-cond-rule {
+  flex-wrap: wrap;
+}
+
+.lf-cond-fixedop {
+  color: var(--muted);
+  font-family: ui-monospace, monospace;
+}
+
+.lf-cond button {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 6px;
+  padding: 0.2rem 0.4rem;
+  cursor: pointer;
+}
+
+.lf-cond-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.lf-cond-preview code {
+  background: #f1f5f9;
+  padding: 0.3rem 0.45rem;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  word-break: break-all;
+}
+
+.lf-cond-errors {
+  font-size: 0.72rem;
+  color: var(--warn);
+  padding-left: 1.1rem;
+  margin: 0;
+}

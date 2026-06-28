@@ -4,8 +4,8 @@
 |------------|----------------------------------|
 | Author     | Seonguk Moon                     |
 | Created    | 2026-06-28                       |
-| Status     | **Draft** / In Review / Approved |
-| Reviewers  |                                  |
+| Status     | **Implemented**                  |
+| Reviewers  | Claude, Codex (M4 cross-review)  |
 
 ---
 

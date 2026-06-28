@@ -1,6 +1,7 @@
 import { Background, Controls, ReactFlow, type Node } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { docFolderTeamIR } from "@lazyfga/shared/fixtures";
+import { useExplainStore } from "../../store/explainStore";
 import { useModelStore } from "../../store/modelStore";
 import type { TypeNodeData } from "./graph";
 import { nodeTypes } from "./nodes";
@@ -9,6 +10,15 @@ import { useModelGraph } from "./useModelGraph";
 export function ModelCanvas() {
   const g = useModelGraph();
   const resetTo = useModelStore((s) => s.resetTo);
+  const highlight = useExplainStore((s) => s.highlight);
+
+  // explain 경로 강조: 해당 노드/엣지에 클래스 부여(데이터는 그대로 IR 파생).
+  const nodes = g.nodes.map((n) =>
+    highlight.nodes.includes(n.id) ? { ...n, className: "lf-hl-node" } : n,
+  );
+  const edges = g.edges.map((e) =>
+    highlight.edges.includes(e.id) ? { ...e, animated: true, className: "lf-hl-edge" } : e,
+  );
 
   const promptAdd = (kind: "resource" | "group") => {
     const name = window.prompt(`New ${kind} type name`)?.trim();
@@ -36,8 +46,8 @@ export function ModelCanvas() {
         )}
       </div>
       <ReactFlow
-        nodes={g.nodes}
-        edges={g.edges}
+        nodes={nodes}
+        edges={edges}
         nodeTypes={nodeTypes}
         onNodesChange={g.onNodesChange}
         onEdgesDelete={g.onEdgesDelete}

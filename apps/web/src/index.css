@@ -140,13 +140,23 @@ body {
   font-size: 0.7rem;
 }
 
-/* dsl panel */
-.lf-dsl {
-  width: 380px;
+/* right sidebar (DSL + explain) */
+.lf-sidebar {
+  width: 400px;
   border-left: 1px solid var(--line);
-  padding: 1rem;
   overflow: auto;
   background: var(--panel);
+  display: flex;
+  flex-direction: column;
+}
+
+.lf-dsl,
+.lf-explain {
+  padding: 1rem;
+}
+
+.lf-explain {
+  border-top: 1px solid var(--line);
 }
 
 .lf-dsl h2 {
@@ -261,4 +271,90 @@ body {
 .lf-note {
   color: var(--warn);
   margin: 0.25rem 0;
+}
+
+/* explain */
+.lf-explain h2 {
+  font-size: 1rem;
+  margin: 0 0 0.5rem;
+}
+
+.lf-explain-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.lf-explain-form label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.75rem;
+  color: var(--muted);
+  gap: 0.15rem;
+}
+
+.lf-explain-form .lf-row {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.lf-explain-form input {
+  width: 100%;
+  padding: 0.3rem 0.4rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 0.8rem;
+}
+
+.lf-explain-form button {
+  margin-top: 0.3rem;
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+  border-radius: 6px;
+  padding: 0.4rem;
+  cursor: pointer;
+}
+
+.lf-explain-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.lf-decision {
+  font-weight: 700;
+  border-radius: 6px;
+  padding: 0.15rem 0.5rem;
+  color: #fff;
+}
+
+.lf-decision.allow {
+  background: #16a34a;
+}
+
+.lf-decision.deny {
+  background: #dc2626;
+}
+
+.lf-explain-text {
+  font-size: 0.82rem;
+}
+
+.lf-path,
+.lf-missing {
+  font-size: 0.8rem;
+  padding-left: 1.1rem;
+}
+
+/* explain highlight on canvas */
+.lf-hl-node .lf-node {
+  outline: 3px solid #f59e0b;
+  outline-offset: 2px;
+}
+
+.react-flow__edge.lf-hl-edge .react-flow__edge-path {
+  stroke: #f59e0b;
+  stroke-width: 3;
 }

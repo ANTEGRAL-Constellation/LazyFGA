@@ -9,10 +9,14 @@
     ".": {
       "types": "./src/index.ts",
       "default": "./src/index.ts"
+    },
+    "./fixtures": {
+      "types": "./src/fixtures.ts",
+      "default": "./src/fixtures.ts"
     }
   },
   "scripts": {
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p tsconfig.test.json",
     "build": "tsc --noEmit",
     "lint": "eslint src",
     "test": "bun test"
@@ -21,6 +25,7 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "bun-types": "^1.3.6",
     "typescript": "^5.7.2"
   }
 }

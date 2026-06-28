@@ -53,7 +53,7 @@ lazyfga-9(PDP) → policy.findByActionResource(permission, resourceType)
 | resource_type | text | 예: "document" |
 | description | text null | |
 | created_at / updated_at | timestamptz | |
-| condition_ref | text null | 예약(`lazyfga-14`) |
+| condition_ref | text null | `lazyfga-14`에서 **미사용 확정**(조건은 모델 레벨에서 OpenFGA가 강제, 정책 단위 조건 없음). 컬럼은 유지·미사용. |
 
 제약: `UNIQUE(permission, resource_type)`.
 
@@ -84,7 +84,7 @@ DELETE /policies/:id  → 204
 // packages/shared/src/policy.ts
 export interface Policy {
   id: string; permission: string; resourceType: string;
-  description?: string; conditionRef?: string; // 예약
+  description?: string; conditionRef?: string; // lazyfga-14: 미사용 확정(조건은 모델 레벨)
 }
 // 서버 내부 조회 계약
 export interface PolicyRepo {

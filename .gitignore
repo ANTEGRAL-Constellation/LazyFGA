@@ -29,7 +29,7 @@ pnpm-debug.log*
 apps/web/dist/
 
 # agent / editor / session tooling (machine-specific)
-.claude/settings.local.json
+.claude/
 .omc/
 .serena/
 .mcp.json

@@ -1,13 +1,17 @@
 import { modelIrSchema } from "@lazyfga/shared";
 import { Hono } from "hono";
+import { requireRole, type AppEnv, type Principal } from "../../middleware/auth";
 import { diffModels } from "./diff";
 import { getCurrentVersion, getVersion, listVersions } from "./model.repo";
 import { publishModel, PublishError } from "./model.service";
 
-/** auth 미들웨어(lazyfga-10)가 채울 principal. M2에선 비어 있어 createdBy="admin". */
-type Vars = { Variables: { principal?: { id: string; role: string } } };
+const createdByOf = (p: Principal): string =>
+  p.role === "admin" ? "admin" : `token:${p.tokenId ?? "?"}`;
 
-export const modelRoutes = new Hono<Vars>();
+export const modelRoutes = new Hono<AppEnv>();
+
+// control-plane: admin 전용(lazyfga-10).
+modelRoutes.use("*", requireRole("admin"));
 
 // POST /model — IR 발행(validate → compile → writeAuthModel → 버전 저장 → current 갱신).
 modelRoutes.post("/", async (c) => {
@@ -17,7 +21,7 @@ modelRoutes.post("/", async (c) => {
     return c.json({ error: "invalid IR shape", issues: parsed.error.issues }, 422);
   }
   const note = typeof body?.note === "string" ? body.note : undefined;
-  const createdBy = c.get("principal")?.id ?? "admin";
+  const createdBy = createdByOf(c.get("principal"));
 
   try {
     const version = await publishModel(parsed.data, note, createdBy);

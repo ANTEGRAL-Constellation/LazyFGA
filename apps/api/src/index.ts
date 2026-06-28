@@ -3,7 +3,11 @@ import { config } from "./config";
 import { db, pingDb } from "./db/client";
 import { runMigrations } from "./db/migrate";
 import { instanceConfig } from "./db/schema";
+import type { AppEnv } from "./middleware/auth";
+import { tokenRoutes } from "./modules/auth/auth.routes";
 import { modelRoutes } from "./modules/model/model.routes";
+import { pdpRoutes } from "./modules/pdp/pdp.routes";
+import { policyRoutes } from "./modules/policy/policy.routes";
 import { gateway } from "./openfga";
 
 /** lazyFGA control-plane API 버전. */
@@ -11,26 +15,31 @@ const VERSION = "0.0.0";
 
 let storeReady = false;
 
-const app = new Hono();
+const app = new Hono<AppEnv>();
 
 // lazyfga-1: openfga·db 헬스 + 부트스트랩된 storeId 노출. 의존성 다운 시 503.
 app.get("/healthz", async (c) => {
   const [dbUp, openfgaUp] = await Promise.all([pingDb(), gateway.ping()]);
   const ok = dbUp && openfgaUp && storeReady;
+  // 라이브니스/레디니스는 미인증 공개(오케스트레이터용). storeId 등 인프라 식별자는 노출하지 않음.
   return c.json(
     {
       status: ok ? "ok" : "degraded",
       version: VERSION,
       db: dbUp ? "up" : "down",
       openfga: openfgaUp ? "up" : "down",
-      storeId: storeReady ? gateway.getStoreId() : null,
+      storeReady,
     },
     ok ? 200 : 503,
   );
 });
 
-// lazyfga-7: 모델 발행/버전/diff. (auth 가드는 lazyfga-10/M3에서 부착)
+// lazyfga-7: 모델 발행/버전/diff (admin). lazyfga-10: 토큰(admin). lazyfga-8: 정책(admin).
+// lazyfga-9: PDP evaluate (service|admin).
 app.route("/model", modelRoutes);
+app.route("/tokens", tokenRoutes);
+app.route("/policies", policyRoutes);
+app.route("/access/v1", pdpRoutes);
 
 /** lazyFGA DB(instance_config)에서 저장된 store id 로드. */
 async function loadStoredStoreId(): Promise<string | null> {
@@ -97,6 +106,11 @@ async function withRetry<T>(fn: () => Promise<T>, label: string, attempts = 8): 
 }
 
 async function startup(): Promise<void> {
+  if (!config.adminToken) {
+    console.warn(
+      "[startup] ADMIN_TOKEN is empty — the control plane (model/policy/token) is unreachable. Set ADMIN_TOKEN.",
+    );
+  }
   await withRetry(() => runMigrations(), "db migrate");
   const { storeId } = await withRetry(
     () =>

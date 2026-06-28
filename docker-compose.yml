@@ -1,0 +1,75 @@
+# lazyFGA self-host: openfga + postgres + lazyfga-api 한 방 기동.
+# 단일 postgres 인스턴스 안에 lazyfga / openfga 두 DB를 분리(소유 분리 원칙).
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: lazyfga
+      POSTGRES_PASSWORD: lazyfga
+      POSTGRES_DB: lazyfga
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./scripts/init-openfga-db.sql:/docker-entrypoint-initdb.d/10-init-openfga-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lazyfga"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  # OpenFGA 스키마 마이그레이션(기동 전 1회).
+  openfga-migrate:
+    image: openfga/openfga:v1.18.0
+    command: migrate
+    environment:
+      OPENFGA_DATASTORE_ENGINE: postgres
+      OPENFGA_DATASTORE_URI: postgres://openfga:openfga@postgres:5432/openfga?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: on-failure
+
+  openfga:
+    image: openfga/openfga:v1.18.0
+    command: run
+    environment:
+      OPENFGA_DATASTORE_ENGINE: postgres
+      OPENFGA_DATASTORE_URI: postgres://openfga:openfga@postgres:5432/openfga?sslmode=disable
+      OPENFGA_PLAYGROUND_ENABLED: "true"
+    # 호스트 포트는 .env로 재정의 가능(기본 8080/8081/3000). 호스트에서 점유 중이면
+    # OPENFGA_HTTP_PORT 등을 바꾸고 OPENFGA_API_URL도 같은 포트로 맞춘다.
+    ports:
+      - "${OPENFGA_HTTP_PORT:-8080}:8080" # http
+      - "${OPENFGA_GRPC_PORT:-8081}:8081" # grpc
+      - "${OPENFGA_PLAYGROUND_PORT:-3000}:3000" # playground
+    depends_on:
+      openfga-migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/grpc_health_probe", "-addr=localhost:8081"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  lazyfga-api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    environment:
+      PORT: 8787
+      DATABASE_URL: postgres://lazyfga:lazyfga@postgres:5432/lazyfga
+      OPENFGA_API_URL: http://openfga:8080
+      # 컨테이너 간 통신은 서비스명:8080(호스트 포트 매핑과 무관).
+      LAZYFGA_STORE_ID: ${LAZYFGA_STORE_ID:-}
+      ADMIN_TOKEN: ${ADMIN_TOKEN:-changeme-admin-token}
+    ports:
+      - "8787:8787"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      openfga:
+        condition: service_healthy
+
+volumes:
+  pgdata:

@@ -1,20 +1,20 @@
-/** lazyfga-0: 부팅 확인용 빈 화면. 후속 명세(model-canvas 등)가 라우팅/화면을 채운다. */
+import { DslPanel } from "./features/model-canvas/DslPanel";
+import { ModelCanvas } from "./features/model-canvas/ModelCanvas";
+import { MatrixPanel } from "./features/permission-matrix/MatrixPanel";
+
+/** lazyfga-5/6: 모델 스튜디오 — 노드 캔버스 + 실시간 DSL + role×permission 행렬. */
 export function App() {
   return (
-    <main
-      style={{
-        fontFamily: "system-ui, sans-serif",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        minHeight: "100vh",
-        gap: "0.5rem",
-        color: "#1f2937",
-      }}
-    >
-      <h1 style={{ margin: 0, fontSize: "1.5rem" }}>lazyFGA</h1>
-      <p style={{ margin: 0, color: "#6b7280" }}>control plane — scaffold</p>
-    </main>
+    <div className="lf-app">
+      <header className="lf-header">
+        <strong>lazyFGA</strong>
+        <span className="lf-sub">model studio — draw the model, get OpenFGA</span>
+      </header>
+      <div className="lf-main">
+        <ModelCanvas />
+        <DslPanel />
+      </div>
+      <MatrixPanel />
+    </div>
   );
 }

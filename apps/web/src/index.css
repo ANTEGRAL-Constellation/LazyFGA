@@ -1,0 +1,264 @@
+:root {
+  --bg: #0f172a;
+  --panel: #ffffff;
+  --line: #e2e8f0;
+  --muted: #64748b;
+  --accent: #4f46e5;
+  --resource: #eef2ff;
+  --group: #ecfeff;
+  --warn: #b45309;
+  --warn-bg: #fef3c7;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  color: #0f172a;
+}
+
+.lf-app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.lf-header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg);
+  color: #fff;
+}
+
+.lf-sub {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.lf-main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.lf-canvas {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+.lf-toolbar {
+  position: absolute;
+  z-index: 5;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.lf-toolbar button,
+.lf-import button,
+.lf-matrix button {
+  border: 1px solid var(--line);
+  background: #fff;
+  border-radius: 6px;
+  padding: 0.35rem 0.6rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.lf-toolbar button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.lf-readonly-badge {
+  background: var(--warn-bg);
+  color: var(--warn);
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+/* nodes */
+.lf-node {
+  border: 2px solid var(--accent);
+  border-radius: 10px;
+  background: var(--resource);
+  padding: 0.5rem 0.75rem;
+  min-width: 130px;
+  font-size: 0.85rem;
+}
+
+.lf-node-group {
+  border-color: #0891b2;
+  background: var(--group);
+}
+
+.lf-node-advanced {
+  border-style: dashed;
+  border-color: var(--warn);
+}
+
+.lf-node-title {
+  display: flex;
+  flex-direction: column;
+}
+
+.lf-node-kind {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.lf-node-meta {
+  color: var(--muted);
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.lf-node-badge {
+  margin-top: 0.35rem;
+  display: inline-block;
+  background: var(--warn-bg);
+  color: var(--warn);
+  border-radius: 4px;
+  padding: 0 0.3rem;
+  font-size: 0.7rem;
+}
+
+/* dsl panel */
+.lf-dsl {
+  width: 380px;
+  border-left: 1px solid var(--line);
+  padding: 1rem;
+  overflow: auto;
+  background: var(--panel);
+}
+
+.lf-dsl h2 {
+  font-size: 1rem;
+  margin: 0 0 0.5rem;
+}
+
+.lf-dsl-pre {
+  background: #0f172a;
+  color: #e2e8f0;
+  padding: 0.75rem;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.lf-errors {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+}
+
+.lf-errors code {
+  color: #b91c1c;
+}
+
+.lf-path {
+  color: var(--muted);
+}
+
+.lf-coverage {
+  background: var(--warn-bg);
+  border-radius: 8px;
+  padding: 0.5rem 0.75rem;
+  margin-top: 0.75rem;
+  font-size: 0.8rem;
+}
+
+.lf-import {
+  margin-top: 1rem;
+}
+
+.lf-import textarea {
+  width: 100%;
+  font-family: ui-monospace, monospace;
+  font-size: 0.75rem;
+}
+
+/* matrix */
+.lf-matrix {
+  /* 캔버스 좌측에 고정해 우측 DSL 패널(380px)을 덮지 않게 한다. */
+  position: absolute;
+  left: 1rem;
+  bottom: 1rem;
+  top: 4rem;
+  width: 520px;
+  max-width: calc(100vw - 380px - 3rem);
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.25);
+  padding: 1rem;
+  overflow: auto;
+  z-index: 10;
+}
+
+.lf-matrix-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.lf-matrix-table {
+  border-collapse: collapse;
+  margin: 0.75rem 0;
+}
+
+.lf-matrix-table th,
+.lf-matrix-table td {
+  border: 1px solid var(--line);
+  padding: 0.35rem 0.6rem;
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.lf-mini {
+  margin-left: 0.35rem;
+  font-size: 0.7rem;
+  padding: 0 0.3rem !important;
+}
+
+.lf-role-row,
+.lf-inherit-row {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 0.3rem 0;
+  border-top: 1px solid var(--line);
+  font-size: 0.8rem;
+}
+
+.lf-matrix-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.lf-note {
+  color: var(--warn);
+  margin: 0.25rem 0;
+}

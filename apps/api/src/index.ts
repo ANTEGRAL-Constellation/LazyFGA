@@ -3,12 +3,12 @@ import { config } from "./config";
 import { db, pingDb } from "./db/client";
 import { runMigrations } from "./db/migrate";
 import { instanceConfig } from "./db/schema";
-import { createOpenFgaGateway } from "./openfga";
+import { modelRoutes } from "./modules/model/model.routes";
+import { gateway } from "./openfga";
 
 /** lazyFGA control-plane API 버전. */
 const VERSION = "0.0.0";
 
-const gateway = createOpenFgaGateway({ apiUrl: config.openfgaApiUrl });
 let storeReady = false;
 
 const app = new Hono();
@@ -28,6 +28,9 @@ app.get("/healthz", async (c) => {
     ok ? 200 : 503,
   );
 });
+
+// lazyfga-7: 모델 발행/버전/diff. (auth 가드는 lazyfga-10/M3에서 부착)
+app.route("/model", modelRoutes);
 
 /** lazyFGA DB(instance_config)에서 저장된 store id 로드. */
 async function loadStoredStoreId(): Promise<string | null> {

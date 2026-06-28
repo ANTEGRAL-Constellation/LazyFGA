@@ -4,8 +4,8 @@
 |------------|----------------------------------|
 | Author     | Seonguk Moon                     |
 | Created    | 2026-06-28                       |
-| Status     | **Draft** / In Review / Approved |
-| Reviewers  |                                  |
+| Status     | **Implemented**                  |
+| Reviewers  | Claude, Codex (M2 cross-review)  |
 
 ---
 
@@ -93,6 +93,9 @@ type DiffChange =
   | { kind: "ROLE_ADDED"|"ROLE_REMOVED"; type: string; role: string }
   | { kind: "PERMISSION_ADDED"|"PERMISSION_REMOVED"; type: string; permission: string }
   | { kind: "GRANT_CHANGED"; type: string; permission: string; added: string[]; removed: string[] }
+  // 아래 두 종류는 교차리뷰에서 추가(인가에 영향을 주는 변경을 diff에 노출):
+  | { kind: "ROLE_ASSIGNABLE_CHANGED"; type: string; role: string; added: string[]; removed: string[] }
+  | { kind: "PERMISSION_INHERIT_CHANGED"; type: string; permission: string; added: string[]; removed: string[] }
   | { kind: "PARENT_ADDED"|"PARENT_REMOVED"; type: string; relationName: string; parentType: string };
 ```
 

@@ -4,8 +4,8 @@
 |------------|----------------------------------|
 | Author     | Seonguk Moon                     |
 | Created    | 2026-06-28                       |
-| Status     | **Draft** / In Review / Approved |
-| Reviewers  |                                  |
+| Status     | **Implemented**                  |
+| Reviewers  | Claude, Codex (M2 cross-review)  |
 
 ---
 
@@ -73,6 +73,7 @@ export function useMatrix(typeName: string): {
   addRole(name: string): void; removeRole(name: string): void; renameRole(from: string, to: string): void;
   setRoleAssignableBy(role: string, refs: SubjectRef[]): void;
   addPermission(name: string): void; removePermission(name: string): void;
+  renamePermission(from: string, to: string): void; // Goal 3.1 "이름변경" 충족(교차리뷰 반영)
   toggleInherit(permission: string, parentRelation: string): void;
   errors: ValidationError[]; // 이 타입에 한정
 };

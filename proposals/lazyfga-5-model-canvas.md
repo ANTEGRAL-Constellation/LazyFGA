@@ -4,8 +4,8 @@
 |------------|----------------------------------|
 | Author     | Seonguk Moon                     |
 | Created    | 2026-06-28                       |
-| Status     | **Draft** / In Review / Approved |
-| Reviewers  |                                  |
+| Status     | **Implemented**                  |
+| Reviewers  | Claude, Codex (M2 cross-review)  |
 
 ---
 
@@ -60,6 +60,8 @@ DB 변경 없음(클라이언트 상태). 발행 시 서버 반영은 `lazyfga-7
 5. **read-only 게이트:** `coverage.fullyRepresentable===false`이면 모든 변형 핸들러를 비활성화하고 DSL 텍스트를 원본으로 표시(CONCEPT 경계 정책).
 
 상태 관리: `zustand` 스토어가 `ModelIR` 단일 보유. React Flow의 nodes/edges는 IR로부터 파생(selector). 사용자 조작 → IR 변형 액션 → 파생 재계산(단방향 데이터 흐름).
+
+> 구현 노트(교차리뷰): DSL 재계산은 **동기**로 수행한다(디바운스 대신). 컴파일러가 isomorphic·경량이라 매 변형마다 즉시 컴파일해도 비용이 작고, 미리보기/검증이 항상 IR과 정합한다(더 강한 일관성). `validateModelIR` 통과 후에도 변환이 실패하면 `compileError`로 표면화한다.
 
 ## 5. API Design
 

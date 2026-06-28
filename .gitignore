@@ -33,3 +33,6 @@ apps/web/dist/
 .omc/
 .serena/
 .mcp.json
+
+# local dev artifacts (screenshots etc.)
+.dev/

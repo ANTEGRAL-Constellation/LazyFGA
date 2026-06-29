@@ -89,6 +89,8 @@ idpRoutes.post("/webhook/:provider", async (c) => {
   }
 
   const events = adapter.parseEvents(body, c.req.raw.headers);
+  // 인식 못 한/필드 부재 payload는 빈 배열로 정규화된다 → 감사 흔적만 남기고 200 no-op.
+  if (events.length === 0) recordAudit("idp.webhook.no_events", { provider });
   const rules = await getRulesByProvider(provider);
   const deps: ApplyDeps = {
     writeTuple: async (op: "write" | "delete", tuple: RenderedTuple) => {

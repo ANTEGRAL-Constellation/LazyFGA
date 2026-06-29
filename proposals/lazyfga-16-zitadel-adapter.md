@@ -4,8 +4,8 @@
 |------------|----------------------------------|
 | Author     | Seonguk Moon                     |
 | Created    | 2026-06-29                       |
-| Status     | **Draft**                        |
-| Reviewers  |                                  |
+| Status     | **Implemented**                  |
+| Reviewers  | Claude (M6 cross-review; Codex unavailable) |
 
 ---
 
@@ -76,7 +76,7 @@
 - `user.grant.removed`, match `[]` → `op:"delete"`, 동일 template.
 - (선택) `user.human.added` → no-op(향후 user 등록 규칙 여지).
 
-> `projectId`는 ZITADEL 생성 식별자(숫자)라 `lazyfga-15` 주입 방지 제약(type 접두 리터럴, 치환값에 `:`/`#`/`*`/공백 금지)을 만족한다. Q3=B에 따라 admin이 `idp_mapping_rule` API로 자유롭게 바꾼다(예: 역할 단위 `team:{{attributes.projectRole}}` — 단 위의 역할 단위 삭제 한계 참고). 시드 스크립트는 규칙 삽입 **전에** team#member를 가진 데모 모델을 발행한다(없으면 grant write가 `type_not_found`로 결정적 실패).
+> `projectId`는 ZITADEL 생성 식별자(숫자)라 `lazyfga-15` 주입 방지 제약(type 접두 리터럴, 치환값에 `:`/`#`/`*`/공백 금지)을 만족한다. Q3=B에 따라 admin이 `idp_mapping_rule` API로 자유롭게 바꾼다(예: 역할 단위 `team:{{attributes.projectRole}}` — 단 위의 역할 단위 삭제 한계 참고). **모델 발행은 `lazyfga-19` 데모 오케스트레이터가 담당**하며(team#member 필요), 본 시드(`scripts/seed-zitadel-rules.ts`)는 연결+규칙만 넣는다. team#member 모델이 미발행이면 grant write가 `type_not_found`로 결정적 실패하므로, 시드 단독 실행 전 모델이 발행돼 있어야 한다.
 
 ### 4.4 ZITADEL 연동 절차(문서)
 
@@ -111,8 +111,7 @@ export const zitadelAdapter: IdpAdapter = {
 | `ZITADEL-Signature` 누락/형식 오류 | `lazyfga-15`에서 401 |
 | 타임스탬프 허용오차 초과(replay) | 401 |
 | HMAC 불일치 | 401 |
-| 알 수 없는 이벤트 타입 | `parseEvents`가 빈 배열 → 매핑 없음(200, applied:0) |
-| payload 파싱 실패(예상 필드 부재) | 해당 이벤트 skip + audit(`idp.tuple.error`), 200 |
+| 알 수 없는 이벤트 타입 / payload 필드 부재 | `parseEvents`가 빈 배열 반환 → 200 no-op + `idp.webhook.no_events` audit(흔적만) |
 
 ## 6. Implementation Plan
 

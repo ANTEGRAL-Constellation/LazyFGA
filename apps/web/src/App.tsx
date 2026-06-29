@@ -4,8 +4,9 @@ import { ExplainPanel } from "./features/explain/ExplainPanel";
 import { MatrixPanel } from "./features/permission-matrix/MatrixPanel";
 import { ConditionBuilderPanel } from "./features/condition-builder/ConditionBuilderPanel";
 import { AuditPanel } from "./features/audit/AuditPanel";
+import { PlaygroundPanel } from "./features/playground/PlaygroundPanel";
 
-/** lazyfga-5/6/12/13/17: 모델 스튜디오 — 캔버스 + DSL + 행렬 + explain + 조건 + audit. */
+/** lazyfga-5/6/12/13/17/18: 캔버스 + DSL + 행렬 + explain + 조건 + playground + audit. */
 export function App() {
   return (
     <div className="lf-app">
@@ -18,6 +19,7 @@ export function App() {
         <aside className="lf-sidebar">
           <DslPanel />
           <ConditionBuilderPanel />
+          <PlaygroundPanel />
           <ExplainPanel />
           <AuditPanel />
         </aside>

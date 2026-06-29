@@ -4,8 +4,8 @@
 |------------|----------------------------------|
 | Author     | Seonguk Moon                     |
 | Created    | 2026-06-29                       |
-| Status     | **Draft**                        |
-| Reviewers  |                                  |
+| Status     | **Implemented**                  |
+| Reviewers  | Claude (M7 cross-review; Codex unavailable) |
 
 ---
 
@@ -58,7 +58,7 @@ web/features/playground
 - **Run**: 케이스별 evaluate 호출. 응답 `decision`을 표시. `expected`가 있으면 `decision===expected`로 pass/fail. (정책 미존재면 evaluate가 `decision:false`/NO_POLICY → deny로 표시, `lazyfga-9`.)
 - **결정성/순서**: 케이스 순서대로 실행하고 결과를 케이스에 1:1 매핑. 실패한 단건(네트워크/HTTP) 케이스는 "error"로 표기하고 나머지는 계속.
 - **explain 재사용(단건)**: explain 토글은 `useExplain.run(caseReq)`를 그대로 호출한다(`useExplain`이 내부에서 `options.reason=true`를 강제하므로 별도 설정 불필요) → reason 카드 + 캔버스 하이라이트. **단건만 활성**(하이라이트 충돌 방지). **runAll은 `useExplain`를 거치지 않고 evaluate를 직접 호출**한다(배치 상태 clobber 방지).
-- **캔버스 하이라이트 정합성(중요)**: explain 경로는 **발행본** 모델 기준으로 계산되지만 캔버스(`modelStore.ir`)는 편집 가능한 로컬 버퍼다. 둘이 다르면 하이라이트가 어긋날 수 있으므로, `modelStore.ir`가 발행본과 다르면 캔버스 하이라이트를 **억제하고 경고**한다(reason 텍스트/카드는 항상 표시). 발행본을 캔버스에 로드한 상태에서만 경로 강조가 신뢰된다.
+- **캔버스 하이라이트 정합성(중요)**: explain 경로는 **발행본** 모델 기준으로 계산되지만 캔버스(`modelStore.ir`)는 편집 가능한 로컬 버퍼다. 둘이 다르면 하이라이트가 어긋날 수 있으므로 패널에 **정적 경고**를 상시 노출한다("explain은 현재 캔버스를 강조하며 발행본과 다를 수 있음"). 발행본 대조 기반 자동 억제는 published-model 참조(admin 전용 GET /model/current)가 필요해 후속으로 둔다 — MVP는 경고로 정직하게 표기.
 - **빈 데이터 안내**: tuple이 없으면 모두 deny가 정상임을 패널에 안내하고, 시드 스크립트/IdP 동기화로 데이터를 채우라고 링크(Q4=A).
 - **action/resource 픽커**: `GET /policies`로 (permission, resourceType) 조합을 받아 action·resource.type 후보를 채운다(발행본 정렬). 자유 입력도 허용하되, 정책 없는 조합은 NO_POLICY deny가 됨을 표시.
 

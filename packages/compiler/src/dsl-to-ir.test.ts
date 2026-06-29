@@ -115,16 +115,34 @@ type document
     expect((coverage.validationErrors ?? []).length).toBeGreaterThan(0);
   });
 
-  test("condition block → not representable", () => {
+  test("lazyfga-14: subset condition block → representable (round-trips)", () => {
     const dsl = `model
   schema 1.1
 type user
 type document
   relations
     define viewer: [user with non_expired]
-
 condition non_expired(current_time: timestamp, expiry: timestamp) {
   current_time < expiry
+}`;
+    const { ir, coverage } = parseDslToIr(dsl);
+    expect(coverage.fullyRepresentable).toBe(true);
+    expect(ir?.conditions?.[0]?.name).toBe("non_expired");
+    const viewer = ir?.resources
+      .find((r) => r.name === "document")
+      ?.roles.find((x) => x.name === "viewer");
+    expect(viewer?.assignableBy[0]).toEqual({ kind: "user", condition: "non_expired" });
+  });
+
+  test("lazyfga-14: non-subset condition (nested group) → advanced CONDITION + note", () => {
+    const dsl = `model
+  schema 1.1
+type user
+type document
+  relations
+    define viewer: [user with mixed]
+condition mixed(current_time: timestamp, expiry: timestamp, user_ip: ipaddress) {
+  (current_time < expiry) || user_ip.in_cidr("10.0.0.0/8")
 }`;
     const { coverage } = parseDslToIr(dsl);
     expect(coverage.fullyRepresentable).toBe(false);
@@ -133,5 +151,21 @@ condition non_expired(current_time: timestamp, expiry: timestamp) {
       relation: "viewer",
       reason: "CONDITION",
     });
+    expect((coverage.notes ?? []).some((n) => n.includes("mixed"))).toBe(true);
+  });
+
+  test("lazyfga-14: shape-valid but semantically-invalid condition (bad CIDR) → not representable", () => {
+    const dsl = `model
+  schema 1.1
+type user
+type document
+  relations
+    define viewer: [user with bad]
+condition bad(user_ip: ipaddress) {
+  user_ip.in_cidr("not-a-cidr")
+}`;
+    const { coverage } = parseDslToIr(dsl);
+    expect(coverage.fullyRepresentable).toBe(false);
+    expect((coverage.validationErrors ?? []).some((e) => e.code === "BAD_CIDR")).toBe(true);
   });
 });

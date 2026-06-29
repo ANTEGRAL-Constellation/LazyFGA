@@ -3,7 +3,7 @@
 // 지원 피연산자는 전부 OpenFGA 네이티브 condition 파라미터 타입에 대응한다 — lazyFGA는
 // 조건을 직접 평가하지 않고, CEL 생성·선언만 하며 평가는 OpenFGA가 Check 시 수행한다.
 import { z } from "zod";
-import { IDENT_RE, RESERVED_WORDS } from "./model";
+import { IDENT_RE, RESERVED_WORDS } from "./ident";
 
 /** 조건 파라미터 타입. OpenFGA 네이티브 condition 파라미터 타입의 부분집합(MVP). */
 export type ConditionParamType = "timestamp" | "ipaddress" | "string" | "int" | "double" | "bool";

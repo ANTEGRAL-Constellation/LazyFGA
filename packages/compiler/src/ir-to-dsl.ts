@@ -1,5 +1,6 @@
 import { validateModelIR, type ModelIR, type SubjectRef, type ValidationError } from "@lazyfga/shared";
 import { transformer } from "@openfga/syntax-transformer";
+import { conditionToCel } from "./condition-to-cel";
 
 /** OpenFGA AuthorizationModel JSON(공식 변환기 출력, id 제외). */
 export type AuthModelJSON = ReturnType<typeof transformer.transformDSLToJSONObject>;
@@ -14,9 +15,10 @@ export class CompileError extends Error {
   }
 }
 
-/** SubjectRef → DSL 토큰. user | <group>#member */
+/** SubjectRef → DSL 토큰. user | <group>#member (+ ` with <cond>` if conditioned). */
 function serializeSubject(ref: SubjectRef): string {
-  return ref.kind === "user" ? "user" : `${ref.group}#${ref.relation}`;
+  const base = ref.kind === "user" ? "user" : `${ref.group}#${ref.relation}`;
+  return ref.condition !== undefined ? `${base} with ${ref.condition}` : base;
 }
 
 /** type restriction 직렬화: [a, b, ...] (IR 배열 순서 유지). */
@@ -56,6 +58,12 @@ function emitDsl(ir: ModelIR): string {
     if (relLines.length > 0) {
       lines.push("  relations", ...relLines);
     }
+  }
+
+  // 최상위 condition 블록(타입 뒤). 입력순 유지(결정적).
+  for (const cond of ir.conditions ?? []) {
+    const { decl, cel } = conditionToCel(cond);
+    lines.push(`${decl} {`, `  ${cel}`, "}");
   }
 
   return lines.join("\n");

@@ -1,5 +1,8 @@
 import {
   validateModelIR,
+  type ConditionDef,
+  type ConditionParam,
+  type ConditionParamType,
   type GroupType,
   type ModelIR,
   type ParentRef,
@@ -10,6 +13,7 @@ import {
   type ValidationError,
 } from "@lazyfga/shared";
 import { transformer } from "@openfga/syntax-transformer";
+import { tryParseCondition } from "./condition-to-cel";
 import type { Coverage, CoverageReason } from "./coverage";
 
 // ── 순회용 OpenFGA JSON 형태(정확한 필드명, 부분) ───────────────────────────────
@@ -40,27 +44,79 @@ interface TypeDefJSON {
   relations?: Record<string, UsersetJSON>;
   metadata?: { relations?: Record<string, { directly_related_user_types?: RelationRefJSON[] }> };
 }
+interface ConditionJSON {
+  name?: string;
+  expression?: string;
+  parameters?: Record<string, { type_name?: string }>;
+}
 interface AuthModelLike {
   schema_version?: string;
   type_definitions?: TypeDefJSON[];
-  conditions?: Record<string, unknown>;
+  conditions?: Record<string, ConditionJSON>;
 }
 
 // ── ref 분류 헬퍼 ──────────────────────────────────────────────────────────────
-const isPlainRef = (r: RelationRefJSON): boolean =>
-  r.wildcard === undefined && r.condition === undefined;
+/** OpenFGA condition 파라미터 type_name → ConditionParamType. */
+const PARAM_FROM_TYPE_NAME: Record<string, ConditionParamType | undefined> = {
+  TYPE_NAME_TIMESTAMP: "timestamp",
+  TYPE_NAME_IPADDRESS: "ipaddress",
+  TYPE_NAME_STRING: "string",
+  TYPE_NAME_INT: "int",
+  TYPE_NAME_DOUBLE: "double",
+  TYPE_NAME_BOOL: "bool",
+};
 
-/** user 또는 <group>#member 형태의 주체 참조인가. */
+/** user 또는 <group>#member 형태의 주체 참조인가(조건 유무 무관, wildcard 제외). */
 const isSubjectRef = (r: RelationRefJSON): boolean =>
-  isPlainRef(r) &&
+  r.wildcard === undefined &&
   ((r.relation === undefined && r.type === "user") || r.relation === "member");
 
-/** 다른 resource 타입을 가리키는 bare 참조(상속 부모 후보)인가. */
+/** 다른 resource 타입을 가리키는 bare 참조(상속 부모 후보)인가(조건/와일드카드 없음). */
 const isResourceTypeRef = (r: RelationRefJSON): boolean =>
-  isPlainRef(r) && r.relation === undefined && r.type !== "user";
+  r.wildcard === undefined &&
+  r.condition === undefined &&
+  r.relation === undefined &&
+  r.type !== "user";
 
-const toSubjectRef = (r: RelationRefJSON): SubjectRef =>
-  r.relation === "member" ? { kind: "group", group: r.type, relation: "member" } : { kind: "user" };
+const toSubjectRef = (r: RelationRefJSON): SubjectRef => {
+  const base: SubjectRef =
+    r.relation === "member"
+      ? { kind: "group", group: r.type, relation: "member" }
+      : { kind: "user" };
+  return r.condition !== undefined ? { ...base, condition: r.condition } : base;
+};
+
+/** OpenFGA conditions JSON → ConditionDef[]. 생성 subset만 복원, 나머지는 unrepresentable. */
+function parseConditions(model: AuthModelLike): {
+  conditions: ConditionDef[];
+  representable: Set<string>;
+  unrepresentable: string[];
+} {
+  const conditions: ConditionDef[] = [];
+  const representable = new Set<string>();
+  const unrepresentable: string[] = [];
+  for (const [name, cond] of Object.entries(model.conditions ?? {})) {
+    const params: ConditionParam[] = [];
+    let ok = true;
+    for (const [pn, pinfo] of Object.entries(cond.parameters ?? {})) {
+      const t = PARAM_FROM_TYPE_NAME[pinfo.type_name ?? ""];
+      if (!t) {
+        ok = false;
+        break;
+      }
+      params.push({ name: pn, type: t });
+    }
+    const parsed =
+      ok && cond.expression !== undefined ? tryParseCondition(name, params, cond.expression) : null;
+    if (parsed) {
+      conditions.push(parsed);
+      representable.add(name);
+    } else {
+      unrepresentable.push(name);
+    }
+  }
+  return { conditions, representable, unrepresentable };
+}
 
 const isDirectOnly = (u: UsersetJSON): boolean =>
   u.this !== undefined &&
@@ -76,8 +132,14 @@ type DirectClass =
   | { kind: "advanced"; reason: CoverageReason };
 
 /** direct-only relation을 role | parent | advanced로 분류. */
-function classifyDirect(relName: string, refs: RelationRefJSON[]): DirectClass {
-  if (refs.some((r) => r.condition !== undefined)) return { kind: "advanced", reason: "CONDITION" };
+function classifyDirect(
+  relName: string,
+  refs: RelationRefJSON[],
+  representableConds: Set<string>,
+): DirectClass {
+  // 생성 subset 밖 CEL 조건이 붙은 ref → advanced.
+  if (refs.some((r) => r.condition !== undefined && !representableConds.has(r.condition)))
+    return { kind: "advanced", reason: "CONDITION" };
   if (refs.length > 0 && refs.every(isSubjectRef)) {
     return { kind: "role", role: { name: relName, assignableBy: refs.map(toSubjectRef) } };
   }
@@ -151,6 +213,12 @@ export function parseDslToIr(dsl: string): { ir: ModelIR | null; coverage: Cover
     };
   }
 
+  const {
+    conditions: parsedConditions,
+    representable: representableConds,
+    unrepresentable: unrepConds,
+  } = parseConditions(model);
+
   const advanced: Coverage["advanced"] = [];
   const groups: GroupType[] = [];
   const resources: ResourceType[] = [];
@@ -173,13 +241,16 @@ export function parseDslToIr(dsl: string): { ir: ModelIR | null; coverage: Cover
     if (relNames.length === 1 && relNames[0] === "member") {
       const u = relations["member"]!;
       const refs = refsOf("member");
-      if (isDirectOnly(u) && refs.length > 0 && refs.every(isSubjectRef)) {
+      const unrepCond = refs.some(
+        (r) => r.condition !== undefined && !representableConds.has(r.condition),
+      );
+      if (isDirectOnly(u) && refs.length > 0 && refs.every(isSubjectRef) && !unrepCond) {
         groups.push({ name: td.type, memberTypes: refs.map(toSubjectRef) });
       } else {
         advanced.push({
           type: td.type,
           relation: "member",
-          reason: refs.some((r) => r.condition !== undefined) ? "CONDITION" : "UNCLASSIFIABLE",
+          reason: unrepCond ? "CONDITION" : "UNCLASSIFIABLE",
         });
       }
       continue;
@@ -194,7 +265,7 @@ export function parseDslToIr(dsl: string): { ir: ModelIR | null; coverage: Cover
     for (const rel of relNames) {
       const u = relations[rel]!;
       if (isDirectOnly(u)) {
-        const c = classifyDirect(rel, refsOf(rel));
+        const c = classifyDirect(rel, refsOf(rel), representableConds);
         if (c.kind === "role") roles.push(c.role);
         else if (c.kind === "parent") parents.push(c.parent);
         else advanced.push({ type: td.type, relation: rel, reason: c.reason });
@@ -215,15 +286,16 @@ export function parseDslToIr(dsl: string): { ir: ModelIR | null; coverage: Cover
   }
 
   const ir: ModelIR = { schemaVersion: "1.1", groups, resources };
+  if (parsedConditions.length > 0) ir.conditions = parsedConditions;
   const notes: string[] = [];
 
-  // 모델 레벨: schema 버전(IR은 1.1 고정) + condition 블록(lazyfga-14 전까지 미표현).
+  // 모델 레벨: schema 버전(IR은 1.1 고정) + 생성 subset 밖 condition.
   const schemaVersion = model.schema_version ?? "1.1";
   if (schemaVersion !== "1.1") {
     notes.push(`schema version "${schemaVersion}" is not representable (IR is fixed to 1.1)`);
   }
-  if (model.conditions && Object.keys(model.conditions).length > 0) {
-    notes.push(`model uses condition(s): ${Object.keys(model.conditions).join(", ")} (not yet representable)`);
+  if (unrepConds.length > 0) {
+    notes.push(`condition(s) not representable: ${unrepConds.join(", ")} (kept as advanced)`);
   }
 
   // backstop: 분류는 성공해도 조립된 IR이 의미적으로 무효일 수 있다(예: 다중 관계 그룹을
@@ -235,7 +307,10 @@ export function parseDslToIr(dsl: string): { ir: ModelIR | null; coverage: Cover
     }
   }
 
-  const fullyRepresentable = advanced.length === 0 && notes.length === 0;
+  // validationErrors까지 포함: tryParseCondition은 shape만 보므로(예: 잘못된 CIDR도 복원),
+  // 의미 검증 실패가 있으면 완전 표현 불가로 본다(round-trip 불변식 유지).
+  const fullyRepresentable =
+    advanced.length === 0 && notes.length === 0 && validationErrors.length === 0;
   const coverage: Coverage = { fullyRepresentable, advanced };
   if (validationErrors.length > 0) coverage.validationErrors = validationErrors;
   if (notes.length > 0) coverage.notes = notes;

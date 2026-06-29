@@ -1,19 +1,25 @@
 import {
+  addCondition as opAddCondition,
   addGroup as opAddGroup,
   addPermission as opAddPermission,
   addResource as opAddResource,
   addRole as opAddRole,
   connectParent as opConnectParent,
   disconnectParent as opDisconnectParent,
+  removeCondition as opRemoveCondition,
   removePermission as opRemovePermission,
   removeRole as opRemoveRole,
   removeType as opRemoveType,
+  renameCondition as opRenameCondition,
   renamePermission as opRenamePermission,
   renameRole as opRenameRole,
+  setAssignmentCondition as opSetAssignmentCondition,
   setRoleAssignableBy as opSetRoleAssignableBy,
   toggleCell as opToggleCell,
   toggleInherit as opToggleInherit,
+  updateCondition as opUpdateCondition,
   validateModelIR,
+  type ConditionDef,
   type ModelIR,
   type SubjectRef,
   type ValidationError,
@@ -61,6 +67,17 @@ export interface ModelStore extends DerivedState {
   removePermission(type: string, name: string): void;
   renamePermission(type: string, from: string, to: string): void;
   toggleInherit(type: string, permission: string, parentRelation: string): void;
+
+  addCondition(def: ConditionDef): void;
+  updateCondition(name: string, def: ConditionDef): void;
+  renameCondition(from: string, to: string): void;
+  removeCondition(name: string): void;
+  setAssignmentCondition(
+    type: string,
+    role: string,
+    subjectIndex: number,
+    condition: string | null,
+  ): void;
 
   loadFromDsl(dsl: string): void;
   resetTo(ir: ModelIR): void;
@@ -146,6 +163,13 @@ export const useModelStore = create<ModelStore>((set, get) => {
     renamePermission: (type, from, to) => apply((ir) => opRenamePermission(ir, type, from, to)),
     toggleInherit: (type, permission, parentRelation) =>
       apply((ir) => opToggleInherit(ir, type, permission, parentRelation)),
+
+    addCondition: (def) => apply((ir) => opAddCondition(ir, def)),
+    updateCondition: (name, def) => apply((ir) => opUpdateCondition(ir, name, def)),
+    renameCondition: (from, to) => apply((ir) => opRenameCondition(ir, from, to)),
+    removeCondition: (name) => apply((ir) => opRemoveCondition(ir, name)),
+    setAssignmentCondition: (type, role, subjectIndex, condition) =>
+      apply((ir) => opSetAssignmentCondition(ir, type, role, subjectIndex, condition)),
 
     resetTo: (ir) => {
       const { dsl, errors, compileError } = recompute(ir, "");

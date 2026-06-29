@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import fixtureJson from "./__fixtures__/doc-folder-team.ir.json";
 import { modelIrSchema, validateModelIR, type ModelIR } from "./model";
+import type { ConditionDef } from "./condition";
 
 const fixture = fixtureJson as unknown as ModelIR;
 const clone = (): ModelIR => structuredClone(fixture);
@@ -105,10 +106,37 @@ describe("validateModelIR", () => {
     expect(codes(ir)).toContain("EMPTY_SUBJECTS");
   });
 
-  test("reserved condition on permission → CONDITION_RESERVED", () => {
+  test("lazyfga-14: SubjectRef.condition referencing undefined condition → CONDITION_UNKNOWN", () => {
     const ir = clone();
-    ir.resources[0]!.permissions[0]!.condition = { name: "non_expired" };
-    expect(codes(ir)).toContain("CONDITION_RESERVED");
+    ir.resources[0]!.roles[0]!.assignableBy[0]!.condition = "ghost";
+    expect(codes(ir)).toContain("CONDITION_UNKNOWN");
+  });
+
+  test("lazyfga-14: duplicate condition name → DUP_CONDITION", () => {
+    const ir = clone();
+    const cond: ConditionDef = {
+      name: "non_expired",
+      params: [{ name: "t", type: "timestamp" }],
+      tree: { kind: "time", param: "t", op: "lt", rhs: { kind: "literal", rfc3339: "2026-01-01T00:00:00Z" } },
+    };
+    ir.conditions = [cond, { ...cond }];
+    expect(codes(ir)).toContain("DUP_CONDITION");
+  });
+
+  test("lazyfga-14: valid condition attached to a role assignment passes", () => {
+    const ir = clone();
+    ir.conditions = [
+      {
+        name: "non_expired",
+        params: [
+          { name: "current_time", type: "timestamp" },
+          { name: "expiry", type: "timestamp" },
+        ],
+        tree: { kind: "time", param: "current_time", op: "lt", rhs: { kind: "param", param: "expiry" } },
+      },
+    ];
+    ir.resources[0]!.roles[0]!.assignableBy[0]!.condition = "non_expired";
+    expect(validateModelIR(ir)).toEqual([]);
   });
 
   test("duplicate parent relation does not also raise DUP_RELATION", () => {

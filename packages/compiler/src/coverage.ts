@@ -7,7 +7,7 @@ import type { ValidationError } from "@lazyfga/shared";
 export interface Coverage {
   /**
    * true면 완전 왕복 가능. 다음을 모두 만족할 때만 true:
-   * advanced 없음 + 조립된 IR이 validateModelIR 통과 + schema 1.1 + 조건 없음.
+   * advanced 없음 + 조립된 IR이 validateModelIR 통과 + schema 1.1 + 생성 subset 밖 조건 없음.
    */
   fullyRepresentable: boolean;
   /** subset 밖이라 IR로 표현 못 한 relation 목록. */

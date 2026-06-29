@@ -444,3 +444,64 @@ body {
   padding-left: 1.1rem;
   margin: 0;
 }
+
+/* lazyfga-14: model-connected conditions */
+.lf-cond-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-bottom: 0.5rem;
+}
+
+.lf-cond-chip {
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 999px;
+  padding: 0.15rem 0.6rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.lf-cond-chip.sel {
+  border-color: var(--accent);
+  background: var(--resource);
+  color: var(--accent);
+}
+
+.lf-cond-removebtn {
+  margin-top: 0.4rem;
+  border: 1px solid var(--line);
+  background: var(--panel);
+  border-radius: 6px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.lf-cond-attach {
+  margin-top: 0.6rem;
+  border-top: 1px dashed var(--line);
+  padding-top: 0.5rem;
+}
+
+.lf-cond-attach select {
+  padding: 0.25rem 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 0.76rem;
+}
+
+.lf-cond-attach button {
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+  border-radius: 6px;
+  padding: 0.25rem 0.6rem;
+  font-size: 0.76rem;
+  cursor: pointer;
+}
+
+.lf-cond-attach button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

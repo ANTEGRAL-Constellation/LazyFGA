@@ -1,3 +1,4 @@
+import type { ConditionDef } from "./condition";
 import type { ModelIR, ResourceType, SubjectRef } from "./model";
 
 // IR은 순수 JSON 직렬화 가능 → 안전한 deep clone(브라우저·Bun 공통, lib 비의존).
@@ -222,5 +223,71 @@ export function toggleInherit(
   perm.inheritFromParents = perm.inheritFromParents.includes(parentRelation)
     ? perm.inheritFromParents.filter((rel) => rel !== parentRelation)
     : [...perm.inheritFromParents, parentRelation];
+  return next;
+}
+
+// ── 조건(condition) 편집 (lazyfga-14) ──────────────────────────────────────────
+
+/** 최상위 조건 정의 추가(이름 중복이면 no-op). */
+export function addCondition(ir: ModelIR, def: ConditionDef): ModelIR {
+  if ((ir.conditions ?? []).some((c) => c.name === def.name)) return ir;
+  const next = clone(ir);
+  next.conditions = [...(next.conditions ?? []), clone(def)];
+  return next;
+}
+
+/** 이름으로 조건 정의 교체(이름 변경은 renameCondition 사용; 없으면 no-op). */
+export function updateCondition(ir: ModelIR, name: string, def: ConditionDef): ModelIR {
+  if (!(ir.conditions ?? []).some((c) => c.name === name)) return ir;
+  const next = clone(ir);
+  next.conditions = (next.conditions ?? []).map((c) => (c.name === name ? clone(def) : c));
+  return next;
+}
+
+/** 조건 이름변경 + 이를 참조하던 SubjectRef.condition 갱신. 충돌/자기자신이면 no-op. */
+export function renameCondition(ir: ModelIR, from: string, to: string): ModelIR {
+  const conds = ir.conditions ?? [];
+  if (from === to || !conds.some((c) => c.name === from)) return ir;
+  if (conds.some((c) => c.name === to)) return ir; // 충돌 → no-op(중복 이름 방지)
+  const next = clone(ir);
+  for (const c of next.conditions ?? []) if (c.name === from) c.name = to;
+  const fix = (refs: SubjectRef[]): void => {
+    for (const r of refs) if (r.condition === from) r.condition = to;
+  };
+  for (const g of next.groups) fix(g.memberTypes);
+  for (const r of next.resources) for (const role of r.roles) fix(role.assignableBy);
+  return next;
+}
+
+/** 조건 삭제 + 이를 참조하던 SubjectRef.condition 해제(고아 참조 금지). */
+export function removeCondition(ir: ModelIR, name: string): ModelIR {
+  if (!(ir.conditions ?? []).some((c) => c.name === name)) return ir;
+  const next = clone(ir);
+  next.conditions = (next.conditions ?? []).filter((c) => c.name !== name);
+  if (next.conditions.length === 0) delete next.conditions;
+  const fix = (refs: SubjectRef[]): void => {
+    for (const r of refs) if (r.condition === name) delete r.condition;
+  };
+  for (const g of next.groups) fix(g.memberTypes);
+  for (const r of next.resources) for (const role of r.roles) fix(role.assignableBy);
+  return next;
+}
+
+/** 역할 부여(assignableBy[subjectIndex])에 조건 부착/해제. 대상/범위 밖이면 no-op. */
+export function setAssignmentCondition(
+  ir: ModelIR,
+  typeName: string,
+  role: string,
+  subjectIndex: number,
+  condition: string | null,
+): ModelIR {
+  const target = findResource(ir, typeName)?.roles.find((rl) => rl.name === role);
+  if (!target || subjectIndex < 0 || subjectIndex >= target.assignableBy.length) return ir;
+  const next = clone(ir);
+  const ref = findResource(next, typeName)!.roles.find((rl) => rl.name === role)!.assignableBy[
+    subjectIndex
+  ]!;
+  if (condition === null) delete ref.condition;
+  else ref.condition = condition;
   return next;
 }

@@ -1,18 +1,23 @@
 import { z } from "zod";
+import { IDENT_RE, RESERVED_WORDS } from "./ident";
+import {
+  conditionDefSchema,
+  validateConditionDef,
+  type ConditionDef,
+  type ConditionErrorCode,
+} from "./condition";
 
 // ── 5-primitive ModelIR ──────────────────────────────────────────────────────
 // CONCEPT.md의 5 primitive(Resource·Role·Permission·Hierarchy·Group)를 그대로
 // 데이터 구조로 옮긴 단일 계약. 각 필드는 OpenFGA 구문과 1:1로 대응한다.
 
-/** 주체 참조: 직접 user이거나, 그룹 멤버 userset. DSL: `user` | `<group>#member`. */
+/**
+ * 주체 참조: 직접 user이거나, 그룹 멤버 userset. DSL: `user` | `<group>#member`.
+ * condition이 있으면 type restriction에 `with <condition>`이 붙는다(lazyfga-14).
+ */
 export type SubjectRef =
-  | { kind: "user" }
-  | { kind: "group"; group: string; relation: "member" };
-
-/** 예약(= lazyfga-14, 배치 재검토). MVP에선 항상 undefined. */
-export interface ConditionRef {
-  name: string;
-}
+  | { kind: "user"; condition?: string }
+  | { kind: "group"; group: string; relation: "member"; condition?: string };
 
 /**
  * 주체 그룹. DSL: `type <name> { relations { define member: [<memberTypes>] } }`
@@ -50,8 +55,6 @@ export interface Permission {
   grantedByRoles: string[];
   /** 상속받을 ParentRef.relationName 목록(없으면 빈 배열). */
   inheritFromParents: string[];
-  /** 예약(lazyfga-14). MVP에선 항상 undefined. */
-  condition?: ConditionRef;
 }
 
 export interface ResourceType {
@@ -66,6 +69,8 @@ export interface ModelIR {
   schemaVersion: "1.1";
   groups: GroupType[];
   resources: ResourceType[];
+  /** 최상위 조건 정의(OpenFGA `condition` 블록과 1:1). 없으면 생략(lazyfga-14). */
+  conditions?: ConditionDef[];
 }
 
 // ── 런타임 스키마(zod) ────────────────────────────────────────────────────────
@@ -73,11 +78,14 @@ export interface ModelIR {
 // 의미 검증(참조 무결성 등)은 validateModelIR가 담당한다.
 
 const subjectRefSchema: z.ZodType<SubjectRef> = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("user") }),
-  z.object({ kind: z.literal("group"), group: z.string(), relation: z.literal("member") }),
+  z.object({ kind: z.literal("user"), condition: z.string().optional() }),
+  z.object({
+    kind: z.literal("group"),
+    group: z.string(),
+    relation: z.literal("member"),
+    condition: z.string().optional(),
+  }),
 ]);
-
-const conditionRefSchema: z.ZodType<ConditionRef> = z.object({ name: z.string() });
 
 export const modelIrSchema: z.ZodType<ModelIR> = z.object({
   schemaVersion: z.literal("1.1"),
@@ -107,11 +115,11 @@ export const modelIrSchema: z.ZodType<ModelIR> = z.object({
           name: z.string(),
           grantedByRoles: z.array(z.string()),
           inheritFromParents: z.array(z.string()),
-          condition: conditionRefSchema.optional(),
         }),
       ),
     }),
   ),
+  conditions: z.array(conditionDefSchema).optional(),
 });
 
 // ── 의미 검증(validateModelIR) ────────────────────────────────────────────────
@@ -127,39 +135,19 @@ export type ValidationErrorCode =
   | "RESERVED_USER"
   | "PARENT_MISSING_PERMISSION"
   | "DUP_PARENT_RELATION"
-  // 아래 두 코드는 M1 교차리뷰에서 추가(빈 subject 목록 → 무효 DSL / 예약 condition 누수 방지).
+  // M1 교차리뷰 추가(빈 subject 목록 → 무효 DSL).
   | "EMPTY_SUBJECTS"
-  | "CONDITION_RESERVED";
+  // lazyfga-14: 조건 정의/참조.
+  | "CONDITION_UNKNOWN"
+  | "DUP_CONDITION";
 
 export interface ValidationError {
-  code: ValidationErrorCode;
+  /** 모델 코드 + 승격된 조건 코드(ConditionErrorCode, lazyfga-14). */
+  code: ValidationErrorCode | ConditionErrorCode;
   /** 예: "resources[1].permissions[0].grantedByRoles[2]" */
   path: string;
   message: string;
 }
-
-/** OpenFGA 식별자 규칙(보수적): 영숫자/언더스코어. (lazyfga-13 condition.ts에서도 재사용) */
-export const IDENT_RE = /^[a-zA-Z0-9_]+$/;
-/** DSL 키워드 + 예약 식별자(이름 충돌 금지). (lazyfga-13 condition.ts에서도 재사용) */
-export const RESERVED_WORDS = new Set([
-  "this",
-  "self",
-  "type",
-  "relation",
-  "relations",
-  "define",
-  "model",
-  "schema",
-  "from",
-  "or",
-  "and",
-  "but",
-  "not",
-  "with",
-  "module",
-  "extend",
-  "condition",
-]);
 
 const subjectGroup = (ref: SubjectRef): string | null =>
   ref.kind === "group" ? ref.group : null;
@@ -170,7 +158,7 @@ const subjectGroup = (ref: SubjectRef): string | null =>
  */
 export function validateModelIR(ir: ModelIR): ValidationError[] {
   const errors: ValidationError[] = [];
-  const add = (code: ValidationErrorCode, path: string, message: string) =>
+  const add = (code: ValidationErrorCode | ConditionErrorCode, path: string, message: string) =>
     errors.push({ code, path, message });
 
   // rule 1: 이름 식별자 규칙 + 예약어 충돌.
@@ -291,11 +279,6 @@ export function validateModelIR(ir: ModelIR): ValidationError[] {
       checkName(perm.name, `${ppath}.name`);
       claimRelation(`can_${perm.name}`, `${ppath}.name`);
 
-      // condition은 예약(lazyfga-14). MVP에선 정의되면 안 됨(컴파일러가 조용히 버림 방지).
-      if (perm.condition !== undefined) {
-        add("CONDITION_RESERVED", `${ppath}.condition`, `permission conditions are not supported yet`);
-      }
-
       // rule 5: grantedByRoles 비어있지 않고 각 값이 같은 type의 role.
       if (perm.grantedByRoles.length === 0) {
         add("EMPTY_GRANT", `${ppath}.grantedByRoles`, `permission must be granted by >= 1 role`);
@@ -332,6 +315,35 @@ export function validateModelIR(ir: ModelIR): ValidationError[] {
       });
     });
   });
+
+  // lazyfga-14: 조건 정의 + SubjectRef.condition 참조 검증.
+  const conditions = ir.conditions ?? [];
+  const conditionNames = new Set<string>();
+  conditions.forEach((c, ci) => {
+    if (conditionNames.has(c.name)) {
+      add("DUP_CONDITION", `conditions[${ci}].name`, `duplicate condition: "${c.name}"`);
+    }
+    conditionNames.add(c.name);
+    for (const ce of validateConditionDef(c)) {
+      add(ce.code, `conditions[${ci}].${ce.path}`, ce.message);
+    }
+  });
+
+  const checkRefCondition = (ref: SubjectRef, path: string): void => {
+    if (ref.condition !== undefined && !conditionNames.has(ref.condition)) {
+      add("CONDITION_UNKNOWN", `${path}.condition`, `unknown condition: "${ref.condition}"`);
+    }
+  };
+  ir.groups.forEach((g, gi) =>
+    g.memberTypes.forEach((ref, mi) => checkRefCondition(ref, `groups[${gi}].memberTypes[${mi}]`)),
+  );
+  ir.resources.forEach((r, ri) =>
+    r.roles.forEach((role, roi) =>
+      role.assignableBy.forEach((ref, ai) =>
+        checkRefCondition(ref, `resources[${ri}].roles[${roi}].assignableBy[${ai}]`),
+      ),
+    ),
+  );
 
   return errors;
 }

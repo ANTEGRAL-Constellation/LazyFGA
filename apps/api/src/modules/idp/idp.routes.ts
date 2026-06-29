@@ -1,5 +1,6 @@
-import { FgaApiInternalError, FgaApiRateLimitExceededError } from "@openfga/sdk";
+import { FgaApiError, FgaApiInternalError, FgaApiRateLimitExceededError } from "@openfga/sdk";
 import { Hono } from "hono";
+import { bodyLimit } from "hono/body-limit";
 import { requireRole, type AppEnv } from "../../middleware/auth";
 import { principalActor, recordAudit } from "../audit/audit";
 import { gateway } from "../../openfga";
@@ -25,25 +26,43 @@ export const idpRoutes = new Hono<AppEnv>();
 idpRoutes.use("/connections", requireRole("admin"));
 idpRoutes.use("/connections/*", requireRole("admin"));
 idpRoutes.use("/rules/*", requireRole("admin"));
+// 웹훅은 서명 검증 전 raw body를 전부 버퍼링하므로 크기를 제한한다(미인증 메모리 DoS 방지).
+idpRoutes.use(
+  "/webhook/*",
+  bodyLimit({ maxSize: 256 * 1024, onError: (c) => c.json({ error: "payload too large" }, 413) }),
+);
 
 const TRANSIENT_CODES = new Set(["ECONNREFUSED", "ENOTFOUND", "ECONNRESET", "ETIMEDOUT", "EAI_AGAIN"]);
 
-/** OpenFGA write 오류 분류: 멱등 no-op / 일시적(→502) / 결정적(카운트). */
-function classifyWriteError(e: unknown, op: "write" | "delete"): { idempotent: boolean; transient: boolean } {
+/**
+ * OpenFGA write 오류 분류(lazyfga-15 hardening). **HTTP status 기준**으로 판정한다:
+ * - 5xx/429, 또는 HTTP 응답이 없음(statusCode undefined = 네트워크 단절) → transient(→502, IdP 재전송).
+ *   ECONNRESET/소켓 끊김 등은 SDK가 .code를 보존하지 않으므로 statusCode 부재로 잡는다(FgaApiError 포함).
+ * - 4xx(결정적): **메시지 free-text로는 절대 transient/retry 판정하지 않는다**(이벤트 값이 'timeout' 등을
+ *   품어 무한재시도 유발하는 것 방지). invalid-input 코드 + op 패턴이 맞을 때만 멱등(skipped).
+ */
+export function classifyWriteError(
+  e: unknown,
+  op: "write" | "delete",
+): { idempotent: boolean; transient: boolean } {
   if (e instanceof FgaApiInternalError || e instanceof FgaApiRateLimitExceededError)
     return { idempotent: false, transient: true };
-  const code = (e as { code?: string } | null)?.code;
-  if (code && TRANSIENT_CODES.has(code)) return { idempotent: false, transient: true };
-  const msg = String((e as { message?: string } | null)?.message ?? e).toLowerCase();
-  if (
-    msg.includes("fetch failed") ||
-    msg.includes("network") ||
-    msg.includes("timeout") ||
-    msg.includes("econnrefused")
-  )
+  const statusCode = (e as { statusCode?: number } | null)?.statusCode;
+  if (typeof statusCode === "number" && (statusCode >= 500 || statusCode === 429))
     return { idempotent: false, transient: true };
-  // 멱등 흡수는 invalid-input 신호(코드/메시지) + op별 패턴이 함께 맞을 때만(과잉 흡수 방지).
+  if (statusCode === undefined) {
+    // HTTP 응답 없음 = 네트워크 단계 오류 → 재시도 가능.
+    if (e instanceof FgaApiError) return { idempotent: false, transient: true };
+    const code = (e as { code?: string } | null)?.code;
+    if (code && TRANSIENT_CODES.has(code)) return { idempotent: false, transient: true };
+    const m = String((e as { message?: string } | null)?.message ?? e).toLowerCase();
+    if (m.includes("fetch failed") || m.includes("network") || m.includes("timeout") || m.includes("econnrefused"))
+      return { idempotent: false, transient: true };
+    // 정체불명 + status 없음 → 무한재시도 방지 위해 결정적으로 취급(아래로 폴스루).
+  }
+  // 결정적(4xx 등): 멱등 흡수는 invalid-input 코드/신호 + op별 패턴이 함께 맞을 때만.
   const apiCode = (e as { responseData?: { code?: string } } | null)?.responseData?.code;
+  const msg = String((e as { message?: string } | null)?.message ?? e).toLowerCase();
   const isInvalidInput =
     apiCode === "write_failed_due_to_invalid_input" ||
     msg.includes("write_failed_due_to_invalid_input");

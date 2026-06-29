@@ -183,4 +183,33 @@ describe("validateConditionDef", () => {
     const errs = validateConditionDef({ name: "c", params: [], tree: { op: "and", children: [] } });
     expect(errs.some((e) => e.code === "EMPTY_GROUP")).toBe(true);
   });
+
+  test("rejects CEL-reserved names (true/false/null + type tokens) — would emit constant/broken CEL", () => {
+    const bad = (name: string, type: ConditionDef["params"][number]["type"]): boolean =>
+      validateConditionDef({
+        name: "c",
+        params: [{ name, type }],
+        tree: { kind: "value", param: name, op: "eq", value: type === "bool" ? true : "x" },
+      }).some((e) => e.code === "BAD_NAME");
+    expect(bad("true", "bool")).toBe(true); // would emit `true == true`
+    expect(bad("int", "int")).toBe(true); // type token breaks declaration grammar
+    expect(bad("string", "string")).toBe(true);
+    // condition NAME equal to a type token is rejected too
+    expect(
+      validateConditionDef({
+        name: "timestamp",
+        params: [{ name: "t", type: "timestamp" }],
+        tree: { kind: "time", param: "t", op: "lt", rhs: { kind: "literal", rfc3339: "2026-01-01T00:00:00Z" } },
+      }).some((e) => e.code === "BAD_NAME"),
+    ).toBe(true);
+  });
+
+  test("rejects out-of-safe-range int literal (round-trip safety)", () => {
+    const errs = validateConditionDef({
+      name: "c",
+      params: [{ name: "n", type: "int" }],
+      tree: { kind: "value", param: "n", op: "eq", value: 1e21 },
+    });
+    expect(errs.some((e) => e.code === "TYPE_MISMATCH")).toBe(true);
+  });
 });

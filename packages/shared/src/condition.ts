@@ -3,7 +3,7 @@
 // 지원 피연산자는 전부 OpenFGA 네이티브 condition 파라미터 타입에 대응한다 — lazyFGA는
 // 조건을 직접 평가하지 않고, CEL 생성·선언만 하며 평가는 OpenFGA가 Check 시 수행한다.
 import { z } from "zod";
-import { IDENT_RE, RESERVED_WORDS } from "./ident";
+import { CEL_RESERVED, IDENT_RE, RESERVED_WORDS } from "./ident";
 
 /** 조건 파라미터 타입. OpenFGA 네이티브 condition 파라미터 타입의 부분집합(MVP). */
 export type ConditionParamType = "timestamp" | "ipaddress" | "string" | "int" | "double" | "bool";
@@ -191,7 +191,9 @@ export function validateConditionDef(def: ConditionDef): ConditionError[] {
   const add = (code: ConditionErrorCode, path: string, message: string): void => {
     errors.push({ code, path, message });
   };
-  const badIdent = (name: string): boolean => !IDENT_RE.test(name) || RESERVED_WORDS.has(name);
+  // condition/param 이름은 CEL 식으로 흘러가므로 CEL 예약어도 금지(상수식/문법파손 방지, lazyfga-14 hardening).
+  const badIdent = (name: string): boolean =>
+    !IDENT_RE.test(name) || RESERVED_WORDS.has(name) || CEL_RESERVED.has(name);
 
   // rule 1: 조건 이름.
   if (badIdent(def.name)) add("BAD_NAME", "name", `invalid condition name: "${def.name}"`);
@@ -239,7 +241,7 @@ export function validateConditionDef(def: ConditionDef): ConditionError[] {
         const v = leaf.value;
         const ok =
           (t === "string" && typeof v === "string") ||
-          (t === "int" && typeof v === "number" && Number.isInteger(v)) ||
+          (t === "int" && typeof v === "number" && Number.isSafeInteger(v)) ||
           (t === "double" && typeof v === "number" && Number.isFinite(v)) ||
           (t === "bool" && typeof v === "boolean");
         if (!ok) {

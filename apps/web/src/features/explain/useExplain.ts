@@ -1,5 +1,5 @@
 import type { EvaluationRequest, ReasonResult } from "@lazyfga/shared";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useExplainStore, type Highlight } from "../../store/explainStore";
 
 // vite dev proxy(/api → api 서버)를 거친다(같은 출처 호출 → CORS 회피).
@@ -37,8 +37,13 @@ export function useExplain(): {
   const [result, setResult] = useState<ReasonResult | undefined>();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | undefined>();
+  const runIdRef = useRef(0);
 
   async function run(req: EvaluationRequest): Promise<void> {
+    // 최신 요청만 result/highlight에 반영(연속 클릭 시 응답 도착 순서가 뒤바뀌어 다른 케이스의
+    // 경로가 표시되는 것 방지).
+    const myRun = ++runIdRef.current;
+    const stale = (): boolean => runIdRef.current !== myRun;
     setLoading(true);
     setError(undefined);
     try {
@@ -50,6 +55,7 @@ export function useExplain(): {
         },
         body: JSON.stringify({ ...req, options: { reason: true } }),
       });
+      if (stale()) return;
       if (!res.ok) {
         setError(`evaluation failed: HTTP ${res.status}`);
         setResult(undefined);
@@ -57,16 +63,18 @@ export function useExplain(): {
         return;
       }
       const data = (await res.json()) as { decision: boolean; context?: { reason?: ReasonResult } };
+      if (stale()) return;
       const reason: ReasonResult =
         data.context?.reason ?? { decision: data.decision, text: data.decision ? "allowed" : "denied" };
       setResult(reason);
       setHighlight(computeHighlight(req, reason));
     } catch (e) {
+      if (stale()) return;
       setError(String(e));
       setResult(undefined);
       setHighlight({ nodes: [], edges: [] });
     } finally {
-      setLoading(false);
+      if (!stale()) setLoading(false);
     }
   }
 

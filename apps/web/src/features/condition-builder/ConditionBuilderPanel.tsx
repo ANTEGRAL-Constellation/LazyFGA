@@ -1,4 +1,4 @@
-import { type ConditionDef, type SubjectRef } from "@lazyfga/shared";
+import { isValidConditionName, type ConditionDef, type SubjectRef } from "@lazyfga/shared";
 import { useState } from "react";
 import { useModelStore } from "../../store/modelStore";
 import { ConditionBuilder } from "./ConditionBuilder";
@@ -49,13 +49,15 @@ export function ConditionBuilderPanel(): JSX.Element {
   const onChange = (next: ConditionDef): void => {
     if (selected === null) return;
     const renaming = next.name !== selected;
-    const collision = renaming && conditions.some((c) => c.name === next.name);
-    if (renaming && !collision) {
+    // 충돌하거나 유효하지 않은 이름(빈 문자열/예약어/CEL 예약어)으로의 리네임은 거부.
+    const reject =
+      renaming && (conditions.some((c) => c.name === next.name) || !isValidConditionName(next.name));
+    if (renaming && !reject) {
       renameCondition(selected, next.name);
       setSelected(next.name);
       updateCondition(next.name, next);
     } else {
-      // 이름 미변경이거나 충돌(거부): 원래 이름 유지하고 본문/params만 갱신.
+      // 이름 미변경이거나 거부: 원래 이름 유지하고 본문/params만 갱신.
       updateCondition(selected, { ...next, name: selected });
     }
   };

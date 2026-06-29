@@ -177,6 +177,11 @@ function isCidr(s: string): boolean {
   return prefix >= 0 && prefix <= 32;
 }
 
+/** condition/param 이름으로 유효한가(식별자 규칙 + DSL/CEL 예약어 아님). UI 리네임 가드용. */
+export function isValidConditionName(name: string): boolean {
+  return IDENT_RE.test(name) && !RESERVED_WORDS.has(name) && !CEL_RESERVED.has(name);
+}
+
 const VALUE_TYPES: ReadonlySet<ConditionParamType> = new Set([
   "string",
   "int",

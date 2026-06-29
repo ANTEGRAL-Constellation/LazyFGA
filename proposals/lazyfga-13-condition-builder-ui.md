@@ -5,7 +5,7 @@
 | Author     | Seonguk Moon                     |
 | Created    | 2026-06-29                       |
 | Status     | **Implemented**                  |
-| Reviewers  | Claude (M5 cross-review; Codex unavailable) |
+| Reviewers  | Claude (M5 cross-review + adversarial re-review; Codex unavailable) |
 
 ---
 

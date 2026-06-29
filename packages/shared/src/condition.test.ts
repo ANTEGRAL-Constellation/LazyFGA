@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
   conditionDefSchema,
   describeCondition,
+  isValidConditionName,
   validateConditionDef,
   type ConditionDef,
   type ConditionNode,
@@ -202,6 +203,14 @@ describe("validateConditionDef", () => {
         tree: { kind: "time", param: "t", op: "lt", rhs: { kind: "literal", rfc3339: "2026-01-01T00:00:00Z" } },
       }).some((e) => e.code === "BAD_NAME"),
     ).toBe(true);
+  });
+
+  test("isValidConditionName (rename guard)", () => {
+    expect(isValidConditionName("non_expired")).toBe(true);
+    expect(isValidConditionName("true")).toBe(false);
+    expect(isValidConditionName("int")).toBe(false);
+    expect(isValidConditionName("")).toBe(false);
+    expect(isValidConditionName("bad-name")).toBe(false);
   });
 
   test("rejects out-of-safe-range int literal (round-trip safety)", () => {

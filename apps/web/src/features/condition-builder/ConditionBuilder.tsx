@@ -8,7 +8,7 @@ import {
   type ConditionParam,
   type ConditionParamType,
 } from "@lazyfga/shared";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 // lazyfga-13: WAF식 And/Or 조건 빌더. ConditionDef 1개를 value/onChange로 편집한다.
 // CEL 컴파일·모델 부착은 lazyfga-14. 여기서는 저작 + 사람이 읽는 미리보기 + 인라인 검증만.
@@ -43,9 +43,14 @@ function defaultLeaf(kind: ConditionLeaf["kind"], params: ConditionParam[]): Con
     };
   if (kind === "ip")
     return { kind: "ip", param: ofType("ipaddress"), op: "in_cidr", cidr: "10.0.0.0/8" };
-  const valueParam =
-    params.find((p) => ["string", "int", "double", "bool"].includes(p.type))?.name ?? "";
-  return { kind: "value", param: valueParam, op: "eq", value: "" };
+  const valueParamDef = params.find((p) => ["string", "int", "double", "bool"].includes(p.type));
+  const seed: string | number | boolean =
+    valueParamDef?.type === "bool"
+      ? false
+      : valueParamDef?.type === "int" || valueParamDef?.type === "double"
+        ? 0
+        : "";
+  return { kind: "value", param: valueParamDef?.name ?? "", op: "eq", value: seed };
 }
 
 export function ConditionBuilder({
@@ -307,7 +312,7 @@ function LeafRow({
             ))}
           </select>
           <ValueInput
-            key={leaf.param}
+            key={`${leaf.param}:${paramType(leaf.param) ?? ""}`}
             index={index}
             value={leaf.value}
             type={paramType(leaf.param)}
@@ -366,6 +371,13 @@ function TextValueInput({
   onChange(v: string | number | boolean): void;
 }): JSX.Element {
   const [text, setText] = useState(String(value));
+  // 외부에서 value가 바뀌면(행 시프트/리셋 등) 로컬 텍스트를 재동기화. 우리가 emit한 echo는
+  // last에 기록해 두어 부분 입력("3.","-","1e")이 사라지지 않게 한다.
+  const last = useRef<string | number | boolean>(value);
+  if (value !== last.current) {
+    last.current = value;
+    setText(String(value));
+  }
   return (
     <input
       value={text}
@@ -375,7 +387,9 @@ function TextValueInput({
         setText(raw);
         const numeric =
           (type === "int" || type === "double") && raw.trim() !== "" && !Number.isNaN(Number(raw));
-        onChange(numeric ? Number(raw) : raw);
+        const next = numeric ? Number(raw) : raw;
+        last.current = next;
+        onChange(next);
       }}
       data-testid={`cond-rule-value-${index}`}
     />

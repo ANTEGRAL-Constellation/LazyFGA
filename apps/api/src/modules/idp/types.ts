@@ -1,22 +1,19 @@
-// lazyfga-15: IdP webhook 코어 계약. provider-agnostic.
+// lazyfga-15/21: IdP webhook 코어 계약. provider-agnostic.
+// lazyfga-21: per-provider adapter 코드를 제거하고, 서명/추출을 선언적 spec(WebhookSignatureSpec /
+// ProviderPreset, signature.ts·extraction.ts)으로 구성한다. 이 파일엔 매핑 엔진이 쓰는 정규 타입만 남는다.
 
-/** 정규 IdP 이벤트(provider 독립). adapter가 raw payload를 이 형태로 정규화한다. */
+/** 정규 IdP 이벤트(provider 독립). extraction 엔진이 raw payload를 이 형태로 정규화한다. */
 export interface IdpEvent {
   type: string; // 정규 이벤트 타입. 예: "user.grant.added"
-  subject: { id: string }; // 영향받는 user 식별자(OpenFGA user id로 쓰임)
-  attributes: Record<string, string>; // 정규화된 평탄 필드. 예: { projectId: "123" }
-}
-
-/** provider별 adapter: 서명 검증 + payload 정규화. */
-export interface IdpAdapter {
-  provider: string;
-  verifySignature(rawBody: Uint8Array, headers: Headers, secret: string): boolean;
-  parseEvents(body: unknown, headers: Headers): IdpEvent[];
+  /** 영향받는 주체. id는 OpenFGA user id로 쓰임. type은 추출 규칙이 정한 주체 타입(예: "user"). */
+  subject: { type: string; id: string };
+  /** 정규화된 평탄 필드. 스칼라(string) 또는 배열(string[], fan-out 소스). 예: { project: "123", roleKeys: ["a","b"] } */
+  attributes: Record<string, string | string[]>;
 }
 
 /** 동등 비교 술어: 이벤트의 field 경로 값이 equals와 같아야 매칭. */
 export interface MatchPredicate {
-  field: string; // "type" | "subject.id" | "attributes.<k>"
+  field: string; // "type" | "subject" | "attributes.<k>"
   equals: string;
 }
 
@@ -34,15 +31,9 @@ export interface MappingRule {
   tupleTemplate: TupleTemplate;
   op: "write" | "delete";
   priority: number;
-}
-
-// ── adapter 레지스트리 ─────────────────────────────────────────────────────────
-// lazyfga-16(zitadel)·테스트(fake)가 registerAdapter로 등록한다.
-const registry = new Map<string, IdpAdapter>();
-
-export function registerAdapter(adapter: IdpAdapter): void {
-  registry.set(adapter.provider, adapter);
-}
-export function getAdapter(provider: string): IdpAdapter | undefined {
-  return registry.get(provider);
+  /**
+   * lazyfga-21 배열 fan-out: 지정 시 그 이름의 배열 attribute를 원소별 1 tuple로 펼친다
+   * (원소는 템플릿의 `{{item}}`에 바인딩). 미지정이면 단일 tuple(기존 동작).
+   */
+  fanOut?: string;
 }

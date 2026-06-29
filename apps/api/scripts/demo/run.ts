@@ -16,7 +16,7 @@ import { docFolderTeamIR } from "@lazyfga/shared/fixtures";
 import { OpenFgaClient } from "@openfga/sdk";
 import { db, sql } from "../../src/db/client";
 import { instanceConfig } from "../../src/db/schema";
-import { signatureHeader } from "../../src/modules/idp/adapters/zitadel";
+import { zitadelSignatureHeader } from "../lib/zitadel-sign";
 
 const API = process.env.API_BASE ?? "http://localhost:8787";
 const ADMIN = process.env.ADMIN_TOKEN ?? "devtoken";
@@ -65,7 +65,7 @@ async function main(): Promise<void> {
   const created = await fetch(`${API}/idp/connections`, {
     method: "POST",
     headers: adminHeaders,
-    body: JSON.stringify({ provider: "zitadel", signingSecret: SIGNING }),
+    body: JSON.stringify({ provider: "zitadel", preset: "zitadel", signingSecret: SIGNING }),
   });
   if (created.status === 201) {
     connectionId = ((await created.json()) as { connection: { id: string } }).connection.id;
@@ -91,15 +91,16 @@ async function main(): Promise<void> {
     body: JSON.stringify({
       eventType: "user.grant.added",
       op: "write",
-      tupleTemplate: { user: "user:{{subject.id}}", relation: "member", object: "team:{{attributes.projectId}}" },
+      tupleTemplate: { user: "user:{{subject}}", relation: "member", object: "team:{{attributes.project}}" },
     }),
   });
 
   // 4) 서명된 ZITADEL grant 이벤트 replay → user:alice member team:eng (webhook 경로, audited).
+  //    실제 ZITADEL shape: usergrant-aggregate → 주체는 event_payload.userId, 타임스탬프는 초.
   log("replay a signed ZITADEL user.grant.added webhook (alice granted project 'eng')");
-  const payload = { eventType: "user.grant.added", aggregateID: "alice", payload: { projectID: "eng" } };
+  const payload = { event_type: "user.grant.added", event_payload: { userId: "alice", projectId: "eng" } };
   const raw = new TextEncoder().encode(JSON.stringify(payload));
-  const sig = signatureHeader(raw, SIGNING, Date.now());
+  const sig = zitadelSignatureHeader(raw, SIGNING, Math.floor(Date.now() / 1000));
   const wh = await fetch(`${API}/idp/webhook/zitadel`, {
     method: "POST",
     headers: { "ZITADEL-Signature": sig, "content-type": "application/json" },

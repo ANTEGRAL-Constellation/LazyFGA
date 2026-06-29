@@ -6,7 +6,6 @@ import { instanceConfig } from "./db/schema";
 import type { AppEnv } from "./middleware/auth";
 import { auditRoutes } from "./modules/audit/audit.routes";
 import { tokenRoutes } from "./modules/auth/auth.routes";
-import "./modules/idp/adapters"; // lazyfga-16: 빌트인 adapter(zitadel) 레지스트리 등록(side-effect)
 import { idpRoutes } from "./modules/idp/idp.routes";
 import { modelRoutes } from "./modules/model/model.routes";
 import { pdpRoutes } from "./modules/pdp/pdp.routes";

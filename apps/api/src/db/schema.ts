@@ -76,6 +76,11 @@ export const policy = pgTable(
 export const idpConnection = pgTable("idp_connection", {
   id: uuid("id").primaryKey().defaultRandom(),
   provider: text("provider").notNull().unique(),
+  /**
+   * lazyfga-21: in-repo preset 키(PRESETS). null이면 webhook 핸들러가 provider 이름으로 폴백
+   * (기존 zitadel 연결 하위호환). 서명/추출 spec은 코드(presets.ts)에 있고 여기엔 키만 둔다.
+   */
+  preset: text("preset"),
   signingSecret: text("signing_secret").notNull(),
   enabled: boolean("enabled").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -92,6 +97,8 @@ export const idpMappingRule = pgTable("idp_mapping_rule", {
   match: jsonb("match").$type<MatchPredicate[]>().notNull().default([]),
   tupleTemplate: jsonb("tuple_template").$type<TupleTemplate>().notNull(),
   op: text("op").notNull(), // "write" | "delete"
+  /** lazyfga-21: 지정 시 그 이름의 배열 attribute를 {{item}}으로 펼친다(원소별 1 tuple). */
+  fanOut: text("fan_out"),
   priority: integer("priority").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

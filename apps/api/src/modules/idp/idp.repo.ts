@@ -12,11 +12,13 @@ import type { MappingRule, MatchPredicate, TupleTemplate } from "./types";
 export interface PublicConnection {
   id: string;
   provider: string;
+  preset: string | null;
   enabled: boolean;
 }
 const toPublic = (r: IdpConnectionRow): PublicConnection => ({
   id: r.id,
   provider: r.provider,
+  preset: r.preset,
   enabled: r.enabled,
 });
 
@@ -32,6 +34,7 @@ const toRule = (r: IdpMappingRuleRow): StoredRule => ({
   tupleTemplate: r.tupleTemplate,
   op: r.op === "delete" ? "delete" : "write",
   priority: r.priority,
+  ...(r.fanOut !== null ? { fanOut: r.fanOut } : {}),
 });
 
 // ── connections ──
@@ -54,20 +57,27 @@ export async function getConnectionByProvider(provider: string): Promise<IdpConn
 }
 export async function createConnection(input: {
   provider: string;
+  preset?: string;
   signingSecret: string;
   enabled?: boolean;
 }): Promise<PublicConnection> {
   const rows = await db
     .insert(idpConnection)
-    .values({ provider: input.provider, signingSecret: input.signingSecret, enabled: input.enabled ?? true })
+    .values({
+      provider: input.provider,
+      preset: input.preset ?? null,
+      signingSecret: input.signingSecret,
+      enabled: input.enabled ?? true,
+    })
     .returning();
   return toPublic(rows[0]!);
 }
 export async function updateConnection(
   id: string,
-  patch: { signingSecret?: string; enabled?: boolean },
+  patch: { preset?: string; signingSecret?: string; enabled?: boolean },
 ): Promise<PublicConnection | null> {
   const set: Partial<typeof idpConnection.$inferInsert> = { updatedAt: new Date() };
+  if (patch.preset !== undefined) set.preset = patch.preset;
   if (patch.signingSecret !== undefined) set.signingSecret = patch.signingSecret;
   if (patch.enabled !== undefined) set.enabled = patch.enabled;
   const rows = await db.update(idpConnection).set(set).where(eq(idpConnection.id, id)).returning();
@@ -90,6 +100,10 @@ export async function listRulesByConnection(connectionId: string): Promise<Store
     .orderBy(asc(idpMappingRule.priority));
   return rows.map(toRule);
 }
+export async function getRuleById(ruleId: string): Promise<StoredRule | null> {
+  const rows = await db.select().from(idpMappingRule).where(eq(idpMappingRule.id, ruleId)).limit(1);
+  return rows[0] ? toRule(rows[0]) : null;
+}
 /** 웹훅 처리용: provider의 모든 규칙(우선순위 순). */
 export async function getRulesByProvider(provider: string): Promise<MappingRule[]> {
   const rows = await db
@@ -107,6 +121,7 @@ export async function createRule(
     match: MatchPredicate[];
     tupleTemplate: TupleTemplate;
     op: "write" | "delete";
+    fanOut?: string;
     priority?: number;
   },
 ): Promise<StoredRule> {
@@ -118,6 +133,7 @@ export async function createRule(
       match: input.match,
       tupleTemplate: input.tupleTemplate,
       op: input.op,
+      fanOut: input.fanOut ?? null,
       priority: input.priority ?? 0,
     })
     .returning();
@@ -130,6 +146,7 @@ export async function updateRule(
     match?: MatchPredicate[];
     tupleTemplate?: TupleTemplate;
     op?: "write" | "delete";
+    fanOut?: string | null;
     priority?: number;
   },
 ): Promise<StoredRule | null> {
@@ -138,6 +155,7 @@ export async function updateRule(
   if (patch.match !== undefined) set.match = patch.match;
   if (patch.tupleTemplate !== undefined) set.tupleTemplate = patch.tupleTemplate;
   if (patch.op !== undefined) set.op = patch.op;
+  if (patch.fanOut !== undefined) set.fanOut = patch.fanOut;
   if (patch.priority !== undefined) set.priority = patch.priority;
   const rows = await db
     .update(idpMappingRule)

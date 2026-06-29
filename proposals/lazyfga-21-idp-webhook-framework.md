@@ -4,8 +4,8 @@
 |------------|----------------------------------|
 | Author     | Seonguk Moon                     |
 | Created    | 2026-06-30                       |
-| Status     | **Approved**                     |
-| Reviewers  | Claude + Codex (cross-review verified vs real ZITADEL source; all findings applied) |
+| Status     | **Implemented**                  |
+| Reviewers  | Claude + Codex (spec cross-review + post-implementation adversarial review vs real ZITADEL source; all findings applied) |
 
 ---
 
@@ -60,7 +60,7 @@ The receiver, both engines, the mapping engine, and the gateway are **provider-a
 ### 4.2 Data Model Changes
 
 - `idp_connection` (`lazyfga-15`) gains a way to reference its specs: either store the resolved `signature_spec` / `extraction_spec` (JSONB), or store a `preset` key resolved against an **in-repo preset registry** (config map). Recommended: a `preset` key + optional JSONB overrides, so connections stay compact and presets are versioned in-repo.
-- `idp_mapping_rule` (`lazyfga-15`) gains an explicit **`fanOut?: string`** field naming the array attribute to expand; when set, the engine emits one tuple per element (bound via `{{item}}`), otherwise one tuple as today. Validated at rule-create time (the named attribute must be produced as an array by the matched extraction rule).
+- `idp_mapping_rule` (`lazyfga-15`) gains an explicit **`fanOut?: string`** field naming the array attribute to expand; when set, the engine emits one tuple per element (bound via `{{item}}`), otherwise one tuple as today. Validated at rule create/update time (on both paths, against the **merged** rule): the tuple template must reference `{{item}}`, and `fanOut` must name an attribute the connection preset's matched extraction rule **produces** (`attributePaths` key — catches typos / non-produced names). Array-ness itself is enforced at runtime — a scalar or absent attribute simply fails `matchRule` (the fan-out source must be a non-empty array), so the rule never fires rather than mis-writing. Conversely a template referencing `{{item}}` with no `fanOut` is rejected (it would always fail to render).
 - Migration: next sequential Drizzle migration number (generated, not hardcoded).
 
 ### 4.3 Core Logic
@@ -164,9 +164,9 @@ const PRESETS: Record<string, ProviderPreset>;
 | 401 | Signature invalid / missing / timestamp out of tolerance. |
 | 404 | Unknown `provider` — no enabled connection for it (unchanged from `lazyfga-15`). |
 | 403 | Connection disabled (unchanged from `lazyfga-15`). |
-| 400 | Required extraction path absent for a matched event; malformed body. |
+| 400 | Malformed body (not JSON / not an object). |
 | 500 | Connection references an unknown/misconfigured preset (server config error, not client input). |
-| 200 (applied/skipped/failed counts) | Per-event mapping result (idempotent skip, deterministic fail counted) — unchanged from `lazyfga-15`. A non-matching event type → skipped (0 applied). |
+| 200 (applied/skipped/failed counts) | Per-event mapping result (idempotent skip, deterministic fail counted) — unchanged from `lazyfga-15`. A non-matching event type **or a matched event whose required subject is absent/empty** → logged no-op (0 applied); the audit entry carries the event type so a malformed signed event is distinguishable from a benignly-ignored one. This aligns with §4.3 (`extractEvent → null` is always a skip): a permanently-malformed event must not return 4xx, which would trigger upstream retry storms. |
 | 413 | Webhook body exceeds limit (unchanged from `lazyfga-15` hardening). |
 | 502 | OpenFGA transient/5xx during tuple write (unchanged). |
 

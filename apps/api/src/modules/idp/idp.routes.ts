@@ -11,14 +11,19 @@ import {
   deleteRule,
   getConnectionById,
   getConnectionByProvider,
+  getRuleById,
   getRulesByProvider,
   listConnections,
   listRulesByConnection,
   updateConnection,
   updateRule,
+  type PublicConnection,
 } from "./idp.repo";
 import { applyEvents, WriteError, type ApplyDeps, type RenderedTuple } from "./mapping";
-import { getAdapter, type MatchPredicate, type TupleTemplate } from "./types";
+import { attributeNamesForEvent, extractEvent, readEventType } from "./extraction";
+import { PRESETS } from "./presets";
+import { verifyWebhookSignature } from "./signature";
+import type { MatchPredicate, TupleTemplate } from "./types";
 
 export const idpRoutes = new Hono<AppEnv>();
 
@@ -47,17 +52,54 @@ const isValidMatch = (m: unknown): m is MatchPredicate[] =>
 const isValidPriority = (p: unknown): boolean =>
   p === undefined || (typeof p === "number" && Number.isInteger(p));
 
+const usesItem = (tt: TupleTemplate): boolean =>
+  [tt.user, tt.relation, tt.object].some((s) => s.includes("{{item}}"));
+
+/**
+ * fan-out 검증(lazyfga-21, review 반영). 지정 시:
+ *  - 비어있지 않은 문자열이어야 하고,
+ *  - 템플릿이 `{{item}}`을 참조해야 의미가 있으며(안 그러면 같은 tuple을 원소 수만큼 반복),
+ *  - 연결 preset의 그 eventType 매칭 추출 규칙이 **생성하는 attribute**여야 한다(오타/스칼라 지정 방지).
+ * fanOut이 없으면, 템플릿이 `{{item}}`을 참조하면 안 된다(고아 placeholder → 항상 렌더 실패).
+ * preset을 알 수 없으면 attribute 교차검증은 생략(webhook 시 500으로 잡힘).
+ */
+const fanOutError = (
+  conn: PublicConnection,
+  eventType: string,
+  fanOut: string | null | undefined,
+  tt: TupleTemplate,
+): string | null => {
+  if (fanOut === undefined || fanOut === null || fanOut === "") {
+    return usesItem(tt) ? "tuple template references {{item}} but no fanOut is set" : null;
+  }
+  if (typeof fanOut !== "string") return "fanOut must be a non-empty string";
+  if (!usesItem(tt)) return "fanOut requires the tuple template to reference {{item}}";
+  const preset = PRESETS[conn.preset ?? conn.provider];
+  if (preset) {
+    const known = attributeNamesForEvent(preset, eventType);
+    if (!known.has(fanOut))
+      return `fanOut "${fanOut}" is not an attribute produced by preset for event "${eventType}" (known: ${[...known].join(", ") || "none"})`;
+  }
+  return null;
+};
+
 // ── 웹훅(서명 인증, 토큰 불요) ─────────────────────────────────────────────────
 idpRoutes.post("/webhook/:provider", async (c) => {
   const provider = c.req.param("provider");
   const conn = await getConnectionByProvider(provider);
   if (!conn) return c.json({ error: "unknown provider" }, 404);
   if (!conn.enabled) return c.json({ error: "connection disabled" }, 403);
-  const adapter = getAdapter(provider);
-  if (!adapter) return c.json({ error: "no adapter registered for provider" }, 501);
+  // preset 키 = 연결에 저장된 키, 없으면 provider 이름으로 폴백(기존 zitadel 연결 하위호환).
+  const presetKey = conn.preset ?? provider;
+  const preset = PRESETS[presetKey];
+  if (!preset) {
+    // 서버 설정 오류(클라이언트 입력 아님) → 500. 미인증 단계 이전이라 DB audit엔 쓰지 않는다.
+    console.error(`[idp] connection ${conn.id} references unknown preset "${presetKey}"`);
+    return c.json({ error: "connection misconfigured (unknown preset)" }, 500);
+  }
 
   const raw = new Uint8Array(await c.req.arrayBuffer());
-  if (!adapter.verifySignature(raw, c.req.raw.headers, conn.signingSecret)) {
+  if (!verifyWebhookSignature(preset.signature, raw, c.req.raw.headers, conn.signingSecret)) {
     // 미인증 요청은 DB audit에 쓰지 않는다(공격자가 audit_log를 무한 적재하는 amplification 방지).
     // 보안 신호는 앱 로그로만 남긴다(로그는 자체 로테이션이 있고 DB/디스크 증식 벡터가 아님).
     console.warn(`[idp] unauthorized webhook for provider="${provider}" (signature verification failed)`);
@@ -71,9 +113,13 @@ idpRoutes.post("/webhook/:provider", async (c) => {
     return c.json({ error: "invalid json body" }, 400);
   }
 
-  const events = adapter.parseEvents(body, c.req.raw.headers);
-  // 인식 못 한/필드 부재 payload는 빈 배열로 정규화된다 → 감사 흔적만 남기고 200 no-op.
-  if (events.length === 0) recordAudit("idp.webhook.no_events", { provider }, `idp:${provider}`);
+  // 매핑 대상 아닌 이벤트(타입 미스 또는 주체 부재) → null → 감사 흔적만 남기고 200 no-op.
+  // 관측성: 이벤트 타입을 함께 남겨 "무시된 타입"과 "매칭됐으나 주체 부재(잘못된 payload)"를 구분 가능하게 한다.
+  const ev = extractEvent(preset, body);
+  if (!ev) {
+    recordAudit("idp.webhook.no_events", { provider, eventType: readEventType(preset, body) }, `idp:${provider}`);
+    return c.json({ applied: 0, skipped: 0, failed: 0 }, 200);
+  }
   const rules = await getRulesByProvider(provider);
   const deps: ApplyDeps = {
     writeTuple: async (op: "write" | "delete", tuple: RenderedTuple) => {
@@ -90,7 +136,7 @@ idpRoutes.post("/webhook/:provider", async (c) => {
   };
 
   try {
-    const result = await applyEvents(events, rules, deps);
+    const result = await applyEvents([ev], rules, deps);
     return c.json(result, 200);
   } catch (e) {
     if (e instanceof WriteError && e.transient) return c.json({ error: "upstream unavailable" }, 502);
@@ -110,9 +156,14 @@ idpRoutes.post("/connections", async (c) => {
   ) {
     return c.json({ error: "non-empty provider and signingSecret are required" }, 422);
   }
+  // preset이 주어지면 알려진 키여야 한다(미지정이면 webhook 시 provider 이름으로 폴백).
+  if (b.preset !== undefined && (typeof b.preset !== "string" || !PRESETS[b.preset])) {
+    return c.json({ error: `unknown preset; known: ${Object.keys(PRESETS).join(", ")}` }, 422);
+  }
   try {
     const connection = await createConnection({
       provider: b.provider,
+      preset: typeof b.preset === "string" ? b.preset : undefined,
       signingSecret: b.signingSecret,
       enabled: typeof b.enabled === "boolean" ? b.enabled : undefined,
     });
@@ -135,7 +186,10 @@ idpRoutes.put("/connections/:id", async (c) => {
     return c.json({ error: "signingSecret must be a non-empty string" }, 422);
   if (b?.enabled !== undefined && typeof b.enabled !== "boolean")
     return c.json({ error: "enabled must be a boolean" }, 422);
+  if (b?.preset !== undefined && (typeof b.preset !== "string" || !PRESETS[b.preset]))
+    return c.json({ error: `unknown preset; known: ${Object.keys(PRESETS).join(", ")}` }, 422);
   const connection = await updateConnection(id, {
+    preset: typeof b?.preset === "string" ? b.preset : undefined,
     signingSecret: typeof b?.signingSecret === "string" ? b.signingSecret : undefined,
     enabled: typeof b?.enabled === "boolean" ? b.enabled : undefined,
   });
@@ -158,7 +212,8 @@ idpRoutes.get("/connections/:id/rules", async (c) => {
 
 idpRoutes.post("/connections/:id/rules", async (c) => {
   const id = c.req.param("id");
-  if (!(await getConnectionById(id))) return c.json({ error: "connection not found" }, 404);
+  const conn = await getConnectionById(id);
+  if (!conn) return c.json({ error: "connection not found" }, 404);
   const b = await c.req.json().catch(() => null);
   const tt = b?.tupleTemplate as TupleTemplate | undefined;
   if (
@@ -177,11 +232,15 @@ idpRoutes.post("/connections/:id/rules", async (c) => {
       422,
     );
   }
+  const tmpl = { user: tt.user, relation: tt.relation, object: tt.object };
+  const ferr = fanOutError(conn, b.eventType, b.fanOut, tmpl);
+  if (ferr) return c.json({ error: ferr }, 422);
   const rule = await createRule(id, {
     eventType: b.eventType,
     match: (b.match as MatchPredicate[] | undefined) ?? [],
     tupleTemplate: { user: tt.user, relation: tt.relation, object: tt.object },
     op: b.op,
+    fanOut: typeof b.fanOut === "string" ? b.fanOut : undefined,
     priority: typeof b.priority === "number" ? b.priority : undefined,
   });
   recordAudit("idp.rule.create", { id: rule.id, connectionId: id }, principalActor(c.get("principal")));
@@ -190,6 +249,10 @@ idpRoutes.post("/connections/:id/rules", async (c) => {
 
 idpRoutes.put("/rules/:ruleId", async (c) => {
   const ruleId = c.req.param("ruleId");
+  // 기존 규칙을 먼저 로드해 병합본(eventType/template/fanOut)을 검증한다(부분 수정의 고아 {{item}} 방지).
+  const existing = await getRuleById(ruleId);
+  if (!existing) return c.json({ error: "rule not found" }, 404);
+  const conn = await getConnectionById(existing.connectionId);
   const b = await c.req.json().catch(() => ({}));
   if (b?.op !== undefined && b.op !== "write" && b.op !== "delete")
     return c.json({ error: "op must be write|delete" }, 422);
@@ -202,11 +265,22 @@ idpRoutes.put("/rules/:ruleId", async (c) => {
   ) {
     return c.json({ error: "invalid tupleTemplate" }, 422);
   }
+  if (b?.fanOut !== undefined && b.fanOut !== null && (typeof b.fanOut !== "string" || b.fanOut.trim() === ""))
+    return c.json({ error: "fanOut must be a non-empty string or null" }, 422);
+  // 병합본으로 fanOut↔template↔preset 정합성을 검증(template만 바꿔도, fanOut만 비워도 잡힌다).
+  const mergedTemplate = tt !== undefined ? { user: tt.user, relation: tt.relation, object: tt.object } : existing.tupleTemplate;
+  const mergedEventType = typeof b?.eventType === "string" ? b.eventType : existing.eventType;
+  const mergedFanOut = b?.fanOut === null ? undefined : typeof b?.fanOut === "string" ? b.fanOut : existing.fanOut;
+  if (conn) {
+    const ferr = fanOutError(conn, mergedEventType, mergedFanOut, mergedTemplate);
+    if (ferr) return c.json({ error: ferr }, 422);
+  }
   const rule = await updateRule(ruleId, {
     eventType: typeof b?.eventType === "string" ? b.eventType : undefined,
     match: b?.match !== undefined ? (b.match as MatchPredicate[]) : undefined,
     tupleTemplate: tt !== undefined ? { user: tt.user, relation: tt.relation, object: tt.object } : undefined,
     op: b?.op === "write" || b?.op === "delete" ? b.op : undefined,
+    fanOut: b?.fanOut === null ? null : typeof b?.fanOut === "string" ? b.fanOut : undefined,
     priority: typeof b?.priority === "number" ? b.priority : undefined,
   });
   if (rule) recordAudit("idp.rule.update", { ruleId }, principalActor(c.get("principal")));

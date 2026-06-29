@@ -1,7 +1,7 @@
 import { FgaApiInternalError, FgaApiRateLimitExceededError } from "@openfga/sdk";
 import { Hono } from "hono";
 import { requireRole, type AppEnv } from "../../middleware/auth";
-import { recordAudit } from "../audit/audit";
+import { principalActor, recordAudit } from "../audit/audit";
 import { gateway } from "../../openfga";
 import {
   createConnection,
@@ -77,7 +77,7 @@ idpRoutes.post("/webhook/:provider", async (c) => {
 
   const raw = new Uint8Array(await c.req.arrayBuffer());
   if (!adapter.verifySignature(raw, c.req.raw.headers, conn.signingSecret)) {
-    recordAudit("idp.webhook.unauthorized", { provider });
+    recordAudit("idp.webhook.unauthorized", { provider }, `idp:${provider}`);
     return c.json({ error: "invalid signature" }, 401);
   }
 
@@ -90,7 +90,7 @@ idpRoutes.post("/webhook/:provider", async (c) => {
 
   const events = adapter.parseEvents(body, c.req.raw.headers);
   // 인식 못 한/필드 부재 payload는 빈 배열로 정규화된다 → 감사 흔적만 남기고 200 no-op.
-  if (events.length === 0) recordAudit("idp.webhook.no_events", { provider });
+  if (events.length === 0) recordAudit("idp.webhook.no_events", { provider }, `idp:${provider}`);
   const rules = await getRulesByProvider(provider);
   const deps: ApplyDeps = {
     writeTuple: async (op: "write" | "delete", tuple: RenderedTuple) => {
@@ -103,7 +103,7 @@ idpRoutes.post("/webhook/:provider", async (c) => {
         throw new WriteError(transient, String(e));
       }
     },
-    audit: (action, data) => recordAudit(action, { provider, ...data }),
+    audit: (action, data) => recordAudit(action, data, `idp:${provider}`),
   };
 
   try {
@@ -133,6 +133,7 @@ idpRoutes.post("/connections", async (c) => {
       signingSecret: b.signingSecret,
       enabled: typeof b.enabled === "boolean" ? b.enabled : undefined,
     });
+    recordAudit("idp.connection.create", { id: connection.id, provider: connection.provider }, principalActor(c.get("principal")));
     return c.json({ connection }, 201);
   } catch (e) {
     if (String(e).includes("duplicate") || String(e).includes("unique"))
@@ -155,11 +156,14 @@ idpRoutes.put("/connections/:id", async (c) => {
     signingSecret: typeof b?.signingSecret === "string" ? b.signingSecret : undefined,
     enabled: typeof b?.enabled === "boolean" ? b.enabled : undefined,
   });
+  if (connection) recordAudit("idp.connection.update", { id }, principalActor(c.get("principal")));
   return connection ? c.json({ connection }) : c.json({ error: "connection not found" }, 404);
 });
 
 idpRoutes.delete("/connections/:id", async (c) => {
-  const ok = await deleteConnection(c.req.param("id"));
+  const id = c.req.param("id");
+  const ok = await deleteConnection(id);
+  if (ok) recordAudit("idp.connection.delete", { id }, principalActor(c.get("principal")));
   return ok ? c.body(null, 204) : c.json({ error: "connection not found" }, 404);
 });
 
@@ -197,6 +201,7 @@ idpRoutes.post("/connections/:id/rules", async (c) => {
     op: b.op,
     priority: typeof b.priority === "number" ? b.priority : undefined,
   });
+  recordAudit("idp.rule.create", { id: rule.id, connectionId: id }, principalActor(c.get("principal")));
   return c.json({ rule }, 201);
 });
 
@@ -221,10 +226,13 @@ idpRoutes.put("/rules/:ruleId", async (c) => {
     op: b?.op === "write" || b?.op === "delete" ? b.op : undefined,
     priority: typeof b?.priority === "number" ? b.priority : undefined,
   });
+  if (rule) recordAudit("idp.rule.update", { ruleId }, principalActor(c.get("principal")));
   return rule ? c.json({ rule }) : c.json({ error: "rule not found" }, 404);
 });
 
 idpRoutes.delete("/rules/:ruleId", async (c) => {
-  const ok = await deleteRule(c.req.param("ruleId"));
+  const ruleId = c.req.param("ruleId");
+  const ok = await deleteRule(ruleId);
+  if (ok) recordAudit("idp.rule.delete", { ruleId }, principalActor(c.get("principal")));
   return ok ? c.body(null, 204) : c.json({ error: "rule not found" }, 404);
 });

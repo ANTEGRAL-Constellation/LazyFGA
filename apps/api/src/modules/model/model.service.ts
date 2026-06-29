@@ -77,11 +77,11 @@ export async function publishModel(
         .where(eq(instanceConfig.id, "singleton"));
       return row;
     });
-    recordAudit("model.publish", { versionId: version.id, authorizationModelId, createdBy });
+    recordAudit("model.publish", { versionId: version.id, authorizationModelId }, createdBy);
     return version;
   } catch (e) {
     // OpenFGA write는 성공했으나 DB 기록 실패 → 고아 모델 가능(운영 문서: ReadAuthorizationModels로 복구).
-    recordAudit("model.publish.db_failure", { authorizationModelId, error: String(e) });
+    recordAudit("model.publish.db_failure", { authorizationModelId, error: String(e) }, createdBy);
     throw new PublishError(500, { db: String(e), orphanModelId: authorizationModelId });
   }
 }

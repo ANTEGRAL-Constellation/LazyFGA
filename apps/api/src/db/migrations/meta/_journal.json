@@ -29,6 +29,20 @@
       "when": 1782697146139,
       "tag": "0003_skinny_miracleman",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1782698839908,
+      "tag": "0004_rainy_proteus",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1782699454130,
+      "tag": "0005_colorful_mystique",
+      "breakpoints": true
     }
   ]
 }

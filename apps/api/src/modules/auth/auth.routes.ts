@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { generateToken, requireRole, type AppEnv } from "../../middleware/auth";
+import { principalActor, recordAudit } from "../audit/audit";
 import { createToken, listTokens, revokeToken } from "./token.repo";
 
 export const tokenRoutes = new Hono<AppEnv>();
@@ -14,6 +15,7 @@ tokenRoutes.post("/", async (c) => {
   if (!name) return c.json({ error: "name is required" }, 400);
   const { plain, hash } = generateToken();
   const row = await createToken(name, hash);
+  recordAudit("token.create", { id: row.id, name: row.name }, principalActor(c.get("principal")));
   return c.json({ id: row.id, name: row.name, token: plain }, 201);
 });
 
@@ -33,7 +35,9 @@ tokenRoutes.get("/", async (c) => {
 
 // DELETE /tokens/:id — 폐기.
 tokenRoutes.delete("/:id", async (c) => {
-  const ok = await revokeToken(c.req.param("id"));
+  const id = c.req.param("id");
+  const ok = await revokeToken(id);
   if (!ok) return c.json({ error: "token not found" }, 404);
+  recordAudit("token.revoke", { id }, principalActor(c.get("principal")));
   return c.body(null, 204);
 });

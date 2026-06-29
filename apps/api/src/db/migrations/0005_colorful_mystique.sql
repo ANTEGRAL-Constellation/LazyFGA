@@ -1,0 +1,1 @@
+ALTER TABLE "audit_log" ALTER COLUMN "occurred_at" SET DATA TYPE timestamp (3) with time zone;

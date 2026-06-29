@@ -4,6 +4,7 @@ import { db, pingDb } from "./db/client";
 import { runMigrations } from "./db/migrate";
 import { instanceConfig } from "./db/schema";
 import type { AppEnv } from "./middleware/auth";
+import { auditRoutes } from "./modules/audit/audit.routes";
 import { tokenRoutes } from "./modules/auth/auth.routes";
 import "./modules/idp/adapters"; // lazyfga-16: 빌트인 adapter(zitadel) 레지스트리 등록(side-effect)
 import { idpRoutes } from "./modules/idp/idp.routes";
@@ -44,6 +45,8 @@ app.route("/policies", policyRoutes);
 app.route("/access/v1", pdpRoutes);
 // lazyfga-15: IdP webhook(서명 인증) + 설정 CRUD(admin). 어댑터는 lazyfga-16(zitadel)이 등록.
 app.route("/idp", idpRoutes);
+// lazyfga-17: 변경 감사 조회(admin).
+app.route("/audit", auditRoutes);
 
 /** lazyFGA DB(instance_config)에서 저장된 store id 로드. */
 async function loadStoredStoreId(): Promise<string | null> {

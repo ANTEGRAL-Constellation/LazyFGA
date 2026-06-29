@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { requireRole, type AppEnv } from "../../middleware/auth";
+import { principalActor, recordAudit } from "../audit/audit";
 import { deletePolicy, findById, listPolicies } from "./policy.repo";
 import { createPolicy, editPolicy, PolicyError } from "./policy.service";
 
@@ -25,6 +26,7 @@ policyRoutes.post("/", async (c) => {
       resourceType: b.resourceType,
       description: typeof b.description === "string" ? b.description : undefined,
     });
+    recordAudit("policy.create", { id: policy.id }, principalActor(c.get("principal")));
     return c.json({ policy }, 201);
   } catch (e) {
     if (e instanceof PolicyError) return c.json({ error: e.detail }, e.status);
@@ -49,6 +51,7 @@ policyRoutes.put("/:id", async (c) => {
       resourceType: typeof b?.resourceType === "string" ? b.resourceType : undefined,
       description: typeof b?.description === "string" ? b.description : undefined,
     });
+    recordAudit("policy.update", { id }, principalActor(c.get("principal")));
     return c.json({ policy });
   } catch (e) {
     if (e instanceof PolicyError) return c.json({ error: e.detail }, e.status);
@@ -57,6 +60,8 @@ policyRoutes.put("/:id", async (c) => {
 });
 
 policyRoutes.delete("/:id", async (c) => {
-  const ok = await deletePolicy(c.req.param("id"));
+  const id = c.req.param("id");
+  const ok = await deletePolicy(id);
+  if (ok) recordAudit("policy.delete", { id }, principalActor(c.get("principal")));
   return ok ? c.body(null, 204) : c.json({ error: "policy not found" }, 404);
 });

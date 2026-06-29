@@ -1,5 +1,15 @@
 import type { ModelIR } from "@lazyfga/shared";
-import { boolean, integer, jsonb, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
+import {
+  boolean,
+  index,
+  integer,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  unique,
+  uuid,
+} from "drizzle-orm/pg-core";
 import type { MatchPredicate, TupleTemplate } from "../modules/idp/types";
 
 /**
@@ -87,9 +97,31 @@ export const idpMappingRule = pgTable("idp_mapping_rule", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
 
+/**
+ * 변경 감사 로그(lazyfga-17). 컨트롤 플레인 변경 + 주요 오류 이벤트를 영속 기록한다.
+ * occurred_at은 삽입 시각(이벤트 시각 근사). 원본(model/tuple)은 OpenFGA/model_version에 있고
+ * 여기엔 "변경 사실"만 둔다(데이터 소유 원칙).
+ */
+export const auditLog = pgTable(
+  "audit_log",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    // precision 3(ms): JS Date/커서가 ms 정밀도이므로 DB도 ms로 저장해야 keyset 경계가
+    // 정확히 round-trip된다(microsecond 저장 시 같은 ms 행이 페이지 경계에서 skip/중복될 수 있음).
+    occurredAt: timestamp("occurred_at", { withTimezone: true, precision: 3 }).notNull().defaultNow(),
+    actor: text("actor").notNull().default("system"),
+    action: text("action").notNull(),
+    data: jsonb("data").$type<Record<string, unknown>>().notNull().default({}),
+  },
+  (t) => ({
+    occurredIdx: index("audit_occurred_at_idx").on(t.occurredAt, t.id),
+  }),
+);
+
 export type InstanceConfig = typeof instanceConfig.$inferSelect;
 export type ModelVersionRow = typeof modelVersion.$inferSelect;
 export type ServiceTokenRow = typeof serviceToken.$inferSelect;
 export type PolicyRow = typeof policy.$inferSelect;
 export type IdpConnectionRow = typeof idpConnection.$inferSelect;
 export type IdpMappingRuleRow = typeof idpMappingRule.$inferSelect;
+export type AuditLogRow = typeof auditLog.$inferSelect;

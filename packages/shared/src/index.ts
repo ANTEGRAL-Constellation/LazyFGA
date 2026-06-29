@@ -6,3 +6,4 @@ export * from "./authzen"; // lazyfga-9: OpenID AuthZEN 1.0 요청/응답 타입
 export * from "./policy"; // lazyfga-8: named policy 계약
 export * from "./reason"; // lazyfga-11: ReasonResult / ReasonStep / MissingLink
 export * from "./condition"; // lazyfga-13/14: 조건(ABAC/CEL) 계약
+export * from "./audit"; // lazyfga-17: audit 엔트리 계약

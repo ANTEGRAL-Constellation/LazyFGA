@@ -505,3 +505,72 @@ body {
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* lazyfga-17: audit view */
+.lf-audit {
+  border-top: 1px solid var(--line);
+  padding-top: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.lf-audit h2 {
+  font-size: 1rem;
+  margin: 0 0 0.5rem;
+}
+
+.lf-audit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.lf-audit-form label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.75rem;
+  color: var(--muted);
+  gap: 0.15rem;
+}
+
+.lf-audit-form .lf-row {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.lf-audit-form input {
+  width: 100%;
+  padding: 0.3rem 0.4rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 0.8rem;
+}
+
+.lf-audit-form button,
+.lf-audit > button {
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #fff;
+  border-radius: 6px;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.lf-audit-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.72rem;
+  margin-top: 0.5rem;
+}
+
+.lf-audit-table th,
+.lf-audit-table td {
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  padding: 0.2rem 0.3rem;
+  vertical-align: top;
+}
+
+.lf-audit-table code {
+  word-break: break-all;
+}

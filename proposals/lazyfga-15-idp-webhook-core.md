@@ -4,8 +4,8 @@
 |------------|----------------------------------|
 | Author     | Seonguk Moon                     |
 | Created    | 2026-06-29                       |
-| Status     | **Draft**                        |
-| Reviewers  |                                  |
+| Status     | **Implemented**                  |
+| Reviewers  | Claude (M6 cross-review; Codex unavailable) |
 
 ---
 
@@ -122,10 +122,11 @@ provider별 adapter를 레지스트리(`Record<string, IdpAdapter>`)에 등록. 
 **개별·멱등 적용.** 각 tuple은 `gateway.write`로 **하나씩** 적용한다(배치는 SDK 기본 transaction 모드에서 원자적이라 한 tuple 실패가 전체를 롤백 → per-tuple 멱등/카운트 불가). 멱등 처리: `op:"write"`가 "이미 존재", `op:"delete"`가 "없음" 오류를 내면 no-op 성공으로 간주(웹훅 재전송 안전). 단 OpenFGA는 두 경우 모두 `write_failed_due_to_invalid_input` 코드로 표면화하므로, **정확히 (해당 코드 + 현재 op + 메시지 패턴) 일치할 때만** 멱등 흡수하고 그 밖의 invalid-input은 결정적 실패로 센다.
 
 **실패 격리 / IdP 재시도.**
-- **결정적 오류**(매칭 규칙 없음, 미해결 placeholder, 무효 tuple 형식, **OpenFGA 4xx validation** — `type_not_found`·`relation_not_found`·`invalid_tuple` 등): 해당 이벤트/규칙만 skip하고 audit(`idp.tuple.error`), 나머지는 계속. 웹훅은 **200** + `{applied, skipped, failed}`(재시도해도 안 고쳐지는 오류로 무한 재시도 금지).
+- **매칭 규칙 없음**: 의도된 무시 → `skipped`로 카운트, audit `idp.tuple.skip`(오류 아님).
+- **결정적 오류**(미해결 placeholder, 무효 tuple 형식, **OpenFGA 4xx validation** — `type_not_found`·`relation_not_found`·`invalid_tuple` 등): 해당 규칙만 `failed`로 세고 audit(`idp.tuple.error`), 나머지는 계속. 웹훅은 **200** + `{applied, skipped, failed}`(재시도해도 안 고쳐지는 오류로 무한 재시도 금지).
 - **일시적 오류만**(OpenFGA 5xx/타임아웃/네트워크 = `FgaApiInternalError` 등): **502**로 응답해 IdP가 재전송하게 한다. OpenFGA 4xx를 502로 보내면 무한 재시도가 되므로 명확히 구분한다.
 
-**audit.** 적용/실패한 각 tuple op를 `recordAudit("idp.tuple.write"|"idp.tuple.delete"|"idp.tuple.error", {...})`로 기록(현재 구조화 로그 stub, `lazyfga-17`에서 DB). 서명 실패도 `idp.webhook.unauthorized`로 audit.
+**audit.** 각 tuple op를 `recordAudit("idp.tuple.write"|"idp.tuple.delete"|"idp.tuple.error"|"idp.tuple.skip", {...})`로 기록(현재 구조화 로그 stub, `lazyfga-17`에서 DB). 서명 실패도 `idp.webhook.unauthorized`로 audit.
 
 ### 4.4 Security
 

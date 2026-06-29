@@ -5,6 +5,7 @@ import { runMigrations } from "./db/migrate";
 import { instanceConfig } from "./db/schema";
 import type { AppEnv } from "./middleware/auth";
 import { tokenRoutes } from "./modules/auth/auth.routes";
+import { idpRoutes } from "./modules/idp/idp.routes";
 import { modelRoutes } from "./modules/model/model.routes";
 import { pdpRoutes } from "./modules/pdp/pdp.routes";
 import { policyRoutes } from "./modules/policy/policy.routes";
@@ -40,6 +41,8 @@ app.route("/model", modelRoutes);
 app.route("/tokens", tokenRoutes);
 app.route("/policies", policyRoutes);
 app.route("/access/v1", pdpRoutes);
+// lazyfga-15: IdP webhook(서명 인증) + 설정 CRUD(admin). 어댑터는 lazyfga-16(zitadel)이 등록.
+app.route("/idp", idpRoutes);
 
 /** lazyFGA DB(instance_config)에서 저장된 store id 로드. */
 async function loadStoredStoreId(): Promise<string | null> {

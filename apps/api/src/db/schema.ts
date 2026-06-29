@@ -1,5 +1,6 @@
 import type { ModelIR } from "@lazyfga/shared";
-import { jsonb, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
+import { boolean, integer, jsonb, pgTable, text, timestamp, unique, uuid } from "drizzle-orm/pg-core";
+import type { MatchPredicate, TupleTemplate } from "../modules/idp/types";
 
 /**
  * 발행된 모델 버전 메타(lazyfga-7). OpenFGA는 immutable/versioned이므로
@@ -58,7 +59,37 @@ export const policy = pgTable(
   }),
 );
 
+/**
+ * IdP 연결(lazyfga-15/16): provider별 webhook 서명 시크릿 + 활성화.
+ * signing_secret은 HMAC 검증용 raw 시크릿이며 GET 응답에 노출하지 않는다(write-only).
+ */
+export const idpConnection = pgTable("idp_connection", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  provider: text("provider").notNull().unique(),
+  signingSecret: text("signing_secret").notNull(),
+  enabled: boolean("enabled").notNull().default(true),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** IdP 이벤트→tuple 매핑 규칙(설정형, Q3=B). 연결 삭제 시 cascade. */
+export const idpMappingRule = pgTable("idp_mapping_rule", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  connectionId: uuid("connection_id")
+    .notNull()
+    .references(() => idpConnection.id, { onDelete: "cascade" }),
+  eventType: text("event_type").notNull(),
+  match: jsonb("match").$type<MatchPredicate[]>().notNull().default([]),
+  tupleTemplate: jsonb("tuple_template").$type<TupleTemplate>().notNull(),
+  op: text("op").notNull(), // "write" | "delete"
+  priority: integer("priority").notNull().default(0),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
 export type InstanceConfig = typeof instanceConfig.$inferSelect;
 export type ModelVersionRow = typeof modelVersion.$inferSelect;
 export type ServiceTokenRow = typeof serviceToken.$inferSelect;
 export type PolicyRow = typeof policy.$inferSelect;
+export type IdpConnectionRow = typeof idpConnection.$inferSelect;
+export type IdpMappingRuleRow = typeof idpMappingRule.$inferSelect;

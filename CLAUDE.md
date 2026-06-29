@@ -7,7 +7,7 @@
 * For an overview of the project and its concept, please refer to [CONCEPT.md](CONCEPT.md).
 
 # File Structure
-> Updated through M7 (LFGA-0~19). Extend this tree as later work lands.
+> Updated through M8 (LFGA-0~21). Extend this tree as later work lands.
 
 ```
 lazyfga/
@@ -25,18 +25,19 @@ lazyfga/
 │  │     ├─ main.tsx · App.tsx · index.css
 │  │     ├─ store/            # modelStore · explainStore (zustand)
 │  │     └─ features/         # model-canvas · permission-matrix · explain
-│  │                          #   · condition-builder · playground · audit
+│  │                          #   · condition-builder · playground · grants(LFGA-20) · audit
 │  └─ api/                    # Hono on Bun (모듈러 모놀리스)
 │     ├─ Dockerfile · drizzle.config.ts
-│     ├─ scripts/             # seed-zitadel-rules.ts · demo/{run,reset}.ts (LFGA-16/19)
+│     ├─ scripts/             # lib/zitadel-sign · seed-zitadel-rules.ts · demo/{run,reset}.ts
 │     └─ src/
 │        ├─ index.ts          # 부트스트랩 · 라우트 마운트 · /healthz
 │        ├─ config.ts · middleware/auth.ts
-│        ├─ db/               # Drizzle client · schema · migrations(0000~0005) · migrate
-│        ├─ openfga/          # OpenFgaGateway (SDK 래퍼 + store 부트스트랩)
-│        └─ modules/          # model · policy · pdp · auth · idp(+adapters/zitadel) · audit
+│        ├─ db/               # Drizzle client · schema · migrations(0000~0006) · migrate
+│        ├─ openfga/          # OpenFgaGateway(SDK 래퍼) · write-error(분류, idp+permission 공유)
+│        └─ modules/          # model · policy · pdp · permission(LFGA-20) · auth · audit
+│                             #   · idp = signature · extraction · presets · mapping(설정형, LFGA-21)
 └─ packages/
-   ├─ shared/                 # 계약: model · ident · condition · authzen · policy · reason · audit · edit · fixtures
+   ├─ shared/                 # 계약: model · ident · condition · authzen · policy · reason · audit · edit · grant(LFGA-20) · fixtures
    └─ compiler/               # ★ 심장: ir-to-dsl · dsl-to-ir · coverage · condition-to-cel (isomorphic)
 ```
 

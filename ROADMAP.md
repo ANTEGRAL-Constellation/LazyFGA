@@ -41,7 +41,13 @@
 | | playground (inline 테스트) | `lazyfga-18-playground` | 9 |
 | | 데모 시나리오 + 문서 마감 | `lazyfga-19-demo-and-docs` | 전부 |
 
-## 출품 우선순위
+## 구현 현황 (2026-06-29)
+
+**M0~M7 전부 구현 완료** — lazyfga-0~19 모든 proposal Status=Implemented. 각 단위는 사전검수 →
+TDD → 교차리뷰(Claude) → 수정 → E2E → conventional commit 절차로 랜딩. 데모는
+`apps/api/scripts/demo/run.ts`로 한 번에 시연(서명 webhook → membership → 상속 → ALLOW+reason).
+
+## 출품 우선순위 (원안)
 
 1. **반드시 (MVP·차별 핵심):** M0, M1, M2, M3, M4 — 비주얼 저작 + 발행 + 결정 + explainability.
 2. **강력 권장 (IdP-agnostic 증명):** M6 (ZITADEL flagship).

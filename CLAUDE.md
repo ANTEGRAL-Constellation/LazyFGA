@@ -7,32 +7,37 @@
 * For an overview of the project and its concept, please refer to [CONCEPT.md](CONCEPT.md).
 
 # File Structure
-> Updated through M0 (LFGA-0/1). Extend this tree as later milestones land.
+> Updated through M7 (LFGA-0~19). Extend this tree as later work lands.
 
 ```
 lazyfga/
-├─ CONCEPT.md · ARCHITECTURE.md · ROADMAP.md      # 컨셉 / 구조 / 로드맵
+├─ CONCEPT.md · ARCHITECTURE.md · ROADMAP.md · README.md   # 컨셉 / 구조 / 로드맵 / 진입
 ├─ package.json · pnpm-workspace.yaml · turbo.json
 ├─ tsconfig.base.json · eslint.config.js · .prettierrc.json
 ├─ docker-compose.yml · .env.example · .dockerignore
 ├─ proposals/                 # LFGA-N 구현 명세
+├─ docs/                      # getting-started.md · api.md (LFGA-19)
 ├─ scripts/
 │  └─ init-openfga-db.sql     # 단일 postgres 내 openfga DB 분리 생성
 ├─ apps/
-│  ├─ web/                    # Vite + React (+ React Flow, 후속)
-│  │  └─ src/                 # main.tsx · App.tsx (+ features/*, 후속)
+│  ├─ web/                    # Vite + React + @xyflow/react + zustand
+│  │  └─ src/
+│  │     ├─ main.tsx · App.tsx · index.css
+│  │     ├─ store/            # modelStore · explainStore (zustand)
+│  │     └─ features/         # model-canvas · permission-matrix · explain
+│  │                          #   · condition-builder · playground · audit
 │  └─ api/                    # Hono on Bun (모듈러 모놀리스)
-│     ├─ Dockerfile
-│     ├─ drizzle.config.ts
+│     ├─ Dockerfile · drizzle.config.ts
+│     ├─ scripts/             # seed-zitadel-rules.ts · demo/{run,reset}.ts (LFGA-16/19)
 │     └─ src/
-│        ├─ index.ts          # 부트스트랩 · 라우트 · /healthz
-│        ├─ config.ts         # 환경변수 단일 소스
-│        ├─ db/               # Drizzle client · schema · migrations · migrate
-│        └─ openfga/          # OpenFgaGateway (SDK 래퍼 + store 부트스트랩)
-│                             # (+ modules/* : pdp·model·policy·auth … 후속)
+│        ├─ index.ts          # 부트스트랩 · 라우트 마운트 · /healthz
+│        ├─ config.ts · middleware/auth.ts
+│        ├─ db/               # Drizzle client · schema · migrations(0000~0005) · migrate
+│        ├─ openfga/          # OpenFgaGateway (SDK 래퍼 + store 부트스트랩)
+│        └─ modules/          # model · policy · pdp · auth · idp(+adapters/zitadel) · audit
 └─ packages/
-   ├─ shared/                 # end-to-end 타입 계약 (model·authzen·policy·reason·condition)
-   └─ compiler/               # ★ 심장: IR ↔ OpenFGA DSL (isomorphic, apps 비의존)
+   ├─ shared/                 # 계약: model · ident · condition · authzen · policy · reason · audit · edit · fixtures
+   └─ compiler/               # ★ 심장: ir-to-dsl · dsl-to-ir · coverage · condition-to-cel (isomorphic)
 ```
 
 # Proposal Generation

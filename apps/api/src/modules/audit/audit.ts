@@ -12,10 +12,15 @@ export function recordAudit(
   data?: Record<string, unknown>,
   actor?: string,
 ): void {
-  void db
-    .insert(auditLog)
-    .values({ action, data: data ?? {}, actor: actor ?? "system" })
-    .catch((e: unknown) => console.error(`[audit] insert failed: ${action}`, e));
+  try {
+    void db
+      .insert(auditLog)
+      .values({ action, data: data ?? {}, actor: actor ?? "system" })
+      .catch((e: unknown) => console.error(`[audit] insert failed: ${action}`, e));
+  } catch (e) {
+    // 쿼리 빌드 단계의 동기 throw까지 흡수(감사가 절대 호출자를 깨지 않는다는 보장 유지).
+    console.error(`[audit] insert threw synchronously: ${action}`, e);
+  }
 }
 
 /** principal → audit actor 문자열. */

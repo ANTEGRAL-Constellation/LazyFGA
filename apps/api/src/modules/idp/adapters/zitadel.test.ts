@@ -35,6 +35,12 @@ describe("zitadelAdapter.verifySignature", () => {
     expect(zitadelAdapter.verifySignature(body, hdr(signatureHeader(body, SECRET, future)), SECRET)).toBe(false);
   });
 
+  test("rejects a non-integer (float) timestamp", () => {
+    const t = Date.now();
+    const sig = signatureHeader(body, SECRET, t).replace(`t=${t}`, `t=${t}.5`);
+    expect(zitadelAdapter.verifySignature(body, hdr(sig), SECRET)).toBe(false);
+  });
+
   test("rejects a missing/malformed header and empty/non-hex v1", () => {
     const t = Date.now();
     expect(zitadelAdapter.verifySignature(body, new Headers(), SECRET)).toBe(false);
@@ -76,6 +82,31 @@ describe("zitadelAdapter.parseEvents", () => {
       new Headers(),
     );
     expect(events[0]).toEqual({ type: "user.human.added", subject: { id: "bob" }, attributes: { username: "bob@x" } });
+  });
+
+  test("non-string aggregateID falls through to userID (no silent event drop)", () => {
+    const events = zitadelAdapter.parseEvents(
+      { eventType: "user.grant.added", aggregateID: 123, userID: "alice", payload: { projectID: "eng" } },
+      new Headers(),
+    );
+    expect(events[0]?.subject.id).toBe("alice");
+  });
+
+  test("non-string attribute values are skipped (not coerced to 'a,b'/'[object Object]')", () => {
+    const events = zitadelAdapter.parseEvents(
+      { eventType: "user.grant.added", aggregateID: "alice", payload: { projectID: ["a", "b"], grantID: "g1" } },
+      new Headers(),
+    );
+    expect(events[0]?.attributes.projectId).toBeUndefined();
+    expect(events[0]?.attributes.grantId).toBe("g1");
+  });
+
+  test("numeric attribute is coerced to string (legit numeric ids)", () => {
+    const events = zitadelAdapter.parseEvents(
+      { eventType: "user.grant.added", aggregateID: "alice", payload: { projectID: 42 } },
+      new Headers(),
+    );
+    expect(events[0]?.attributes.projectId).toBe("42");
   });
 
   test("malformed payload → [] (no crash)", () => {

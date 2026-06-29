@@ -33,7 +33,8 @@ function parseSignatureHeader(value: string | null): { t: number; v1: string } |
     parts[seg.slice(0, i).trim()] = seg.slice(i + 1).trim();
   }
   const t = Number(parts.t);
-  if (!Number.isFinite(t) || typeof parts.v1 !== "string" || parts.v1 === "") return null;
+  // 정수 ms만 허용(float t로 인한 서명 페이로드 경계 모호성 제거; 방어적).
+  if (!Number.isInteger(t) || typeof parts.v1 !== "string" || parts.v1 === "") return null;
   return { t, v1: parts.v1 };
 }
 
@@ -51,14 +52,20 @@ function extractEvent(body: unknown): IdpEvent | null {
   if (body === null || typeof body !== "object") return null;
   const b = body as Record<string, unknown>;
   const aggregate = (b.aggregate ?? {}) as Record<string, unknown>;
-  const type = (b.eventType ?? b.type) as unknown;
-  const userId = (b.aggregateID ?? b.userID ?? aggregate.id) as unknown;
-  if (typeof type !== "string" || typeof userId !== "string" || userId === "") return null;
+  // 첫 string·non-empty 후보 선택. `??`는 숫자/빈문자 후보에서 폴백을 끊어 유효한 후속 후보가
+  // 있어도 이벤트를 통째로 누락시킨다(누락된 revocation → stale 권한). pick으로 그 버그를 막는다.
+  const pick = (...vals: unknown[]): string | undefined =>
+    vals.find((v): v is string => typeof v === "string" && v !== "");
+  const type = pick(b.eventType, b.type);
+  const userId = pick(b.aggregateID, b.userID, aggregate.id);
+  if (type === undefined || userId === undefined) return null;
 
   const payload = (b.payload ?? {}) as Record<string, unknown>;
   const attributes: Record<string, string> = {};
+  // string/number/boolean만 수용. array/object는 건너뛴다(`[a,b]`→"a,b" 같은 구조화 값이 tuple id로 새지 않게).
   const put = (key: string, v: unknown): void => {
-    if (v !== undefined && v !== null) attributes[key] = String(v);
+    if (typeof v === "string") attributes[key] = v;
+    else if (typeof v === "number" || typeof v === "boolean") attributes[key] = String(v);
   };
   // 데모 seed는 projectId 기반(추가/삭제 대칭). roleKeys는 선택 확장에서만 사용.
   put("projectId", payload.projectID ?? payload.projectId);

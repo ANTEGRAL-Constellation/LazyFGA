@@ -5,7 +5,7 @@
 | Author     | Seonguk Moon                     |
 | Created    | 2026-06-29                       |
 | Status     | **Implemented**                  |
-| Reviewers  | Claude (M7 cross-review; Codex unavailable) |
+| Reviewers  | Claude (M7 cross-review + adversarial re-review; Codex unavailable) |
 
 ---
 
@@ -81,7 +81,7 @@ export function recordAudit(action: string, data?: Record<string, unknown>, acto
 - model: `model.publish`, `model.publish.db_failure`(기존).
 - policy: `policy.create`, `policy.update`, `policy.delete`(`lazyfga-8` 라우트에 호출 추가).
 - auth: `token.create`, `token.revoke`(`lazyfga-10` 라우트에 호출 추가).
-- idp: `idp.connection.create/update/delete`, `idp.rule.*`, `idp.tuple.write/delete/error`, `idp.webhook.unauthorized`(`lazyfga-15/16`).
+- idp: `idp.connection.create/update/delete`, `idp.rule.*`, `idp.tuple.write/delete/error/skip`, `idp.webhook.no_events`(`lazyfga-15/16`). (서명 실패=미인증은 DB가 아닌 앱 로그로 — amplification 방지.)
 - pdp(오류만): `pdp.evaluate.openfga_error`, `pdp.reason.error`(기존). 정상 결정은 기록하지 않음.
 
 **`GET /audit` 조회.** 최신순(`occurred_at desc, id desc`) keyset 페이지네이션. 필터: `action`(정확/접두), `actor`, `from`/`to`(시각). admin 전용.

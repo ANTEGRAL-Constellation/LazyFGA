@@ -9,7 +9,8 @@ auditRoutes.use("*", requireRole("admin"));
 
 auditRoutes.get("/", async (c) => {
   const q = c.req.query();
-  const limit = Math.min(Math.max(Number(q.limit) || 50, 1), 200);
+  // trunc 먼저: 소수 limit(예: 1.5)이 .limit()로 흘러가 Postgres bigint 오류(500) 나는 것 방지.
+  const limit = Math.min(Math.max(Math.trunc(Number(q.limit)) || 50, 1), 200);
 
   let cursor: AuditCursor | undefined;
   if (q.cursor) {

@@ -96,7 +96,9 @@ idpRoutes.post("/webhook/:provider", async (c) => {
 
   const raw = new Uint8Array(await c.req.arrayBuffer());
   if (!adapter.verifySignature(raw, c.req.raw.headers, conn.signingSecret)) {
-    recordAudit("idp.webhook.unauthorized", { provider }, `idp:${provider}`);
+    // 미인증 요청은 DB audit에 쓰지 않는다(공격자가 audit_log를 무한 적재하는 amplification 방지).
+    // 보안 신호는 앱 로그로만 남긴다(로그는 자체 로테이션이 있고 DB/디스크 증식 벡터가 아님).
+    console.warn(`[idp] unauthorized webhook for provider="${provider}" (signature verification failed)`);
     return c.json({ error: "invalid signature" }, 401);
   }
 

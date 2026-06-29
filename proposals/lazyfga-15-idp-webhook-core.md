@@ -126,7 +126,7 @@ provider별 adapter를 레지스트리(`Record<string, IdpAdapter>`)에 등록. 
 - **결정적 오류**(미해결 placeholder, 무효 tuple 형식, **OpenFGA 4xx validation** — `type_not_found`·`relation_not_found`·`invalid_tuple` 등): 해당 규칙만 `failed`로 세고 audit(`idp.tuple.error`), 나머지는 계속. 웹훅은 **200** + `{applied, skipped, failed}`(재시도해도 안 고쳐지는 오류로 무한 재시도 금지).
 - **일시적 오류만**(OpenFGA 5xx/타임아웃/네트워크 = `FgaApiInternalError` 등): **502**로 응답해 IdP가 재전송하게 한다. OpenFGA 4xx를 502로 보내면 무한 재시도가 되므로 명확히 구분한다.
 
-**audit.** 각 tuple op를 `recordAudit("idp.tuple.write"|"idp.tuple.delete"|"idp.tuple.error"|"idp.tuple.skip", {...})`로 기록(현재 구조화 로그 stub, `lazyfga-17`에서 DB). 서명 실패도 `idp.webhook.unauthorized`로 audit.
+**audit.** 각 tuple op를 `recordAudit("idp.tuple.write"|"idp.tuple.delete"|"idp.tuple.error"|"idp.tuple.skip", {...})`로 기록(`lazyfga-17`에서 DB). **서명 실패(미인증)는 DB audit이 아닌 앱 로그(`console.warn`)로만** 남긴다 — 미인증 요청이 audit_log를 무한 적재하는 amplification을 막기 위함(adversarial 리뷰 반영).
 
 ### 4.4 Security
 

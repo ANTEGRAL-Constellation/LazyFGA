@@ -10,6 +10,7 @@ import "./modules/idp/adapters"; // lazyfga-16: 빌트인 adapter(zitadel) 레�
 import { idpRoutes } from "./modules/idp/idp.routes";
 import { modelRoutes } from "./modules/model/model.routes";
 import { pdpRoutes } from "./modules/pdp/pdp.routes";
+import { permissionRoutes } from "./modules/permission/permission.routes";
 import { policyRoutes } from "./modules/policy/policy.routes";
 import { gateway } from "./openfga";
 
@@ -43,6 +44,8 @@ app.route("/model", modelRoutes);
 app.route("/tokens", tokenRoutes);
 app.route("/policies", policyRoutes);
 app.route("/access/v1", pdpRoutes);
+// lazyfga-20: 구조적 권한 grant/revoke/list (admin).
+app.route("/grants", permissionRoutes);
 // lazyfga-15: IdP webhook(서명 인증) + 설정 CRUD(admin). 어댑터는 lazyfga-16(zitadel)이 등록.
 app.route("/idp", idpRoutes);
 // lazyfga-17: 변경 감사 조회(admin).

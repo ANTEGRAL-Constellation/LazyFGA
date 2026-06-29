@@ -22,6 +22,8 @@ export interface ReadTuple {
   user: string;
   relation: string;
   object: string;
+  /** tuple에 부착된 조건(있을 때만, lazyfga-14/20). */
+  condition?: { name: string; context?: Record<string, unknown> };
 }
 
 export interface WriteInput {
@@ -50,7 +52,7 @@ export interface OpenFgaGateway {
   ping(): Promise<boolean>;
   check(input: CheckInput, opts?: { authorizationModelId?: string }): Promise<{ allowed: boolean }>;
   read(input: ReadInput): Promise<{ tuples: ReadTuple[] }>;
-  write(input: WriteInput): Promise<void>;
+  write(input: WriteInput, opts?: { authorizationModelId?: string }): Promise<void>;
   writeAuthorizationModel(
     model: WriteAuthorizationModelRequest,
   ): Promise<{ authorizationModelId: string }>;
@@ -123,19 +125,40 @@ class OpenFgaGatewayImpl implements OpenFgaGateway {
   }
 
   async read(input: ReadInput): Promise<{ tuples: ReadTuple[] }> {
-    const res = await this.requireClient().read({
-      user: input.user,
-      relation: input.relation,
-      object: input.object,
-    });
-    const tuples = (res.tuples ?? []).flatMap((t) =>
-      t.key ? [{ user: t.key.user, relation: t.key.relation, object: t.key.object }] : [],
-    );
+    // OpenFGA Read는 페이지네이션된다(기본 페이지 ~50). continuation_token이 빌 때까지 전 페이지를
+    // 모아야 한다 — 안 그러면 권한 목록이 첫 페이지로 조용히 잘려 감사/회수가 불완전해진다(LFGA-20 review).
+    const client = this.requireClient();
+    const tuples: ReadTuple[] = [];
+    let continuationToken: string | undefined;
+    do {
+      const res = await client.read(
+        { user: input.user, relation: input.relation, object: input.object },
+        continuationToken ? { continuationToken } : undefined,
+      );
+      for (const t of res.tuples ?? []) {
+        if (!t.key) continue;
+        const tuple: ReadTuple = { user: t.key.user, relation: t.key.relation, object: t.key.object };
+        if (t.key.condition) {
+          tuple.condition = {
+            name: t.key.condition.name,
+            context: t.key.condition.context as Record<string, unknown> | undefined,
+          };
+        }
+        tuples.push(tuple);
+      }
+      continuationToken = res.continuation_token || undefined;
+    } while (continuationToken);
     return { tuples };
   }
 
-  async write(input: WriteInput): Promise<void> {
-    await this.requireClient().write({ writes: input.writes, deletes: input.deletes });
+  async write(input: WriteInput, opts?: { authorizationModelId?: string }): Promise<void> {
+    // 기본 transaction 모드(단일 tuple = 1회 transactional Write). duplicate write / missing delete는
+    // OpenFGA가 400 invalid-input으로 던지며, 호출부가 classifyWriteError로 멱등 흡수한다(lazyfga-20).
+    // authorizationModelId를 넘기면 OpenFGA가 발행본 모델 기준으로 tuple을 검증한다.
+    await this.requireClient().write(
+      { writes: input.writes, deletes: input.deletes },
+      opts?.authorizationModelId ? { authorizationModelId: opts.authorizationModelId } : undefined,
+    );
   }
 
   async writeAuthorizationModel(

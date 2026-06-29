@@ -1,9 +1,9 @@
-import { FgaApiError, FgaApiInternalError, FgaApiRateLimitExceededError } from "@openfga/sdk";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { requireRole, type AppEnv } from "../../middleware/auth";
 import { principalActor, recordAudit } from "../audit/audit";
 import { gateway } from "../../openfga";
+import { classifyWriteError } from "../../openfga/write-error";
 import {
   createConnection,
   createRule,
@@ -32,46 +32,8 @@ idpRoutes.use(
   bodyLimit({ maxSize: 256 * 1024, onError: (c) => c.json({ error: "payload too large" }, 413) }),
 );
 
-const TRANSIENT_CODES = new Set(["ECONNREFUSED", "ENOTFOUND", "ECONNRESET", "ETIMEDOUT", "EAI_AGAIN"]);
-
-/**
- * OpenFGA write 오류 분류(lazyfga-15 hardening). **HTTP status 기준**으로 판정한다:
- * - 5xx/429, 또는 HTTP 응답이 없음(statusCode undefined = 네트워크 단절) → transient(→502, IdP 재전송).
- *   ECONNRESET/소켓 끊김 등은 SDK가 .code를 보존하지 않으므로 statusCode 부재로 잡는다(FgaApiError 포함).
- * - 4xx(결정적): **메시지 free-text로는 절대 transient/retry 판정하지 않는다**(이벤트 값이 'timeout' 등을
- *   품어 무한재시도 유발하는 것 방지). invalid-input 코드 + op 패턴이 맞을 때만 멱등(skipped).
- */
-export function classifyWriteError(
-  e: unknown,
-  op: "write" | "delete",
-): { idempotent: boolean; transient: boolean } {
-  if (e instanceof FgaApiInternalError || e instanceof FgaApiRateLimitExceededError)
-    return { idempotent: false, transient: true };
-  const statusCode = (e as { statusCode?: number } | null)?.statusCode;
-  if (typeof statusCode === "number" && (statusCode >= 500 || statusCode === 429))
-    return { idempotent: false, transient: true };
-  if (statusCode === undefined) {
-    // HTTP 응답 없음 = 네트워크 단계 오류 → 재시도 가능.
-    if (e instanceof FgaApiError) return { idempotent: false, transient: true };
-    const code = (e as { code?: string } | null)?.code;
-    if (code && TRANSIENT_CODES.has(code)) return { idempotent: false, transient: true };
-    const m = String((e as { message?: string } | null)?.message ?? e).toLowerCase();
-    if (m.includes("fetch failed") || m.includes("network") || m.includes("timeout") || m.includes("econnrefused"))
-      return { idempotent: false, transient: true };
-    // 정체불명 + status 없음 → 무한재시도 방지 위해 결정적으로 취급(아래로 폴스루).
-  }
-  // 결정적(4xx 등): 멱등 흡수는 invalid-input 코드/신호 + op별 패턴이 함께 맞을 때만.
-  const apiCode = (e as { responseData?: { code?: string } } | null)?.responseData?.code;
-  const msg = String((e as { message?: string } | null)?.message ?? e).toLowerCase();
-  const isInvalidInput =
-    apiCode === "write_failed_due_to_invalid_input" ||
-    msg.includes("write_failed_due_to_invalid_input");
-  const opPattern =
-    op === "write"
-      ? msg.includes("already exists") || msg.includes("duplicate")
-      : msg.includes("not found") || msg.includes("cannot delete") || msg.includes("does not exist");
-  return { idempotent: isInvalidInput && opPattern, transient: false };
-}
+// lazyfga-15 → openfga/write-error.ts로 이전(permission 모듈과 공유). 기존 import 경로 유지를 위해 재노출.
+export { classifyWriteError } from "../../openfga/write-error";
 
 const isValidMatch = (m: unknown): m is MatchPredicate[] =>
   Array.isArray(m) &&

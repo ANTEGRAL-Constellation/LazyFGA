@@ -7,3 +7,4 @@ export * from "./policy"; // lazyfga-8: named policy 계약
 export * from "./reason"; // lazyfga-11: ReasonResult / ReasonStep / MissingLink
 export * from "./condition"; // lazyfga-13/14: 조건(ABAC/CEL) 계약
 export * from "./audit"; // lazyfga-17: audit 엔트리 계약
+export * from "./grant"; // lazyfga-20: 권한 grant/revoke 계약 + validateGrant/validateRevoke

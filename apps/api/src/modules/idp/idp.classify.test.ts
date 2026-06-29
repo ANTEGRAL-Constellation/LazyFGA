@@ -1,6 +1,7 @@
 import { FgaApiError } from "@openfga/sdk";
 import { describe, expect, test } from "bun:test";
 import { classifyWriteError } from "./idp.routes";
+import { isTransientApiError } from "../../openfga/write-error";
 
 // FgaApiError without an HTTP response (network단절: ECONNRESET/소켓 끊김 등). SDK가 .code를
 // 보존하지 않으므로 statusCode 부재로만 식별된다.
@@ -67,5 +68,32 @@ describe("classifyWriteError (lazyfga-15 hardening)", () => {
     expect(
       classifyWriteError({ statusCode: 400, responseData: { code: "validation_error" }, message: "relation not found" }, "write"),
     ).toEqual({ idempotent: false, transient: false });
+  });
+
+  test("delete with invalid-input + 'relation not found' → NOT idempotent (LFGA-20: no over-match swallowing real rejection)", () => {
+    expect(
+      classifyWriteError(
+        {
+          statusCode: 400,
+          responseData: { code: "write_failed_due_to_invalid_input" },
+          message: "type 'document' relation 'bogus' not found",
+        },
+        "delete",
+      ),
+    ).toEqual({ idempotent: false, transient: false });
+  });
+});
+
+describe("isTransientApiError", () => {
+  test("5xx / 429 → transient", () => {
+    expect(isTransientApiError({ statusCode: 503 })).toBe(true);
+    expect(isTransientApiError({ statusCode: 429 })).toBe(true);
+  });
+  test("deterministic 4xx → not transient", () => {
+    expect(isTransientApiError({ statusCode: 400, message: "bad object filter" })).toBe(false);
+    expect(isTransientApiError({ statusCode: 404 })).toBe(false);
+  });
+  test("network FgaApiError (no statusCode) → transient", () => {
+    expect(isTransientApiError(fgaNetworkError("ECONNRESET"))).toBe(true);
   });
 });

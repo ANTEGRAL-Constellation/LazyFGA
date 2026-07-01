@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Cancel superseded runs on the same ref to save minutes.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-test:
+    name: Lint, typecheck, build, test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # pnpm must be installed before setup-node so its pnpm cache can resolve.
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      # Some packages run their tests with `bun test`, so Bun is required too.
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Single turbo invocation so the task DAG (dependsOn) is scheduled optimally.
+      - name: Lint, typecheck, build, test
+        run: pnpm exec turbo run lint typecheck build test
+
+      - name: Prettier check
+        run: pnpm exec prettier --check "**/*.{ts,tsx,json,md}"
+
+  license-audit:
+    name: Dependency license audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Report production dependency licenses. Informational for now; tighten
+      # into a fail-on-disallowed gate once an allowlist policy is agreed.
+      - name: List production dependency licenses
+        run: pnpm licenses list --prod

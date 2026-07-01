@@ -1,0 +1,24 @@
+name: Secret scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  trufflehog:
+    name: TruffleHog
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history so PR diffs and first-push full scans resolve
+
+      - name: TruffleHog secret scan
+        uses: trufflesecurity/trufflehog@main
+        with:
+          # verified = confirmed live by the provider API; unknown = verification errored.
+          # Fully OSS action, no license key required (works on org and public repos).
+          # The action exits non-zero when results are found, failing the job.
+          extra_args: --results=verified,unknown

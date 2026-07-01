@@ -9,13 +9,13 @@
 
 [OpenFGA](https://openfga.dev)는 Google Zanzibar 기반의 강력한 ReBAC 엔진이다. 표현력도, 성능도 충분하다. 그런데 이걸 실제로 도입하려는 사람이 마주하는 현실은 이렇다.
 
-- **모델은 손으로 쓰는 DSL이다.** `.fga` 문법으로 `type`, `relation`, `from`, `but not`을 직접 타이핑한다. 화면의 그래프는 *내가 쓴 텍스트를 그려주는* read-only 뷰일 뿐, 캔버스에서 노드를 끌어다 모델을 **만드는** 도구가 아니다.
+- **모델은 손으로 쓰는 DSL이다.** `.fga` 문법으로 `type`, `relation`, `from`, `but not`을 직접 타이핑한다. 화면의 그래프는 _내가 쓴 텍스트를 그려주는_ read-only 뷰일 뿐, 캔버스에서 노드를 끌어다 모델을 **만드는** 도구가 아니다.
 
 - **어려움은 데이터가 아니라 "모델"에 있다.** tuple(누가 무엇에 어떤 관계인지)은 CRUD면 된다. 정작 사람이 막히는 건 `viewer from parent`(상속), `group#member`(userset), `or`/`and`/`but not` 같은 **모델 구조**다.
 
 - **조건은 CEL을 글로 쓴다.** "업무시간에만", "사내 IP에서만" 같은 속성 기반 규칙을 코드로 작성하고, 문법 오류와 씨름한다.
 
-- **결정은 블랙박스다.** Check는 `{ "allowed": true }`나 `false`만 돌려준다. *왜* 허용·거부됐는지는 별도로 풀어봐야 안다.
+- **결정은 블랙박스다.** Check는 `{ "allowed": true }`나 `false`만 돌려준다. _왜_ 허용·거부됐는지는 별도로 풀어봐야 안다.
 
 - **IdP에 붙이려면 매번 글루 코드를 짠다.** 인증은 ZITADEL·Keycloak·Auth0가 한다. 하지만 "이 사람이 이걸 할 수 있나?"를 묻는 다리는 프로젝트마다 처음부터 새로 만든다.
 
@@ -29,17 +29,17 @@
 
 ### 1. 노드로 그리는 모델 설계 — Visual-first authoring
 
-캔버스에 resource 타입을 노드로 꺼내고, "속함 / 권한 상속"을 엣지로 잇는다. 노드를 더블클릭하면 그 타입 안의 **role × permission 행렬**이 열린다. 체크박스로 *"editor는 read·write 가능"* 을 칠하면, 대응하는 OpenFGA relation이 자동으로 만들어진다.
+캔버스에 resource 타입을 노드로 꺼내고, "속함 / 권한 상속"을 엣지로 잇는다. 노드를 더블클릭하면 그 타입 안의 **role × permission 행렬**이 열린다. 체크박스로 _"editor는 read·write 가능"_ 을 칠하면, 대응하는 OpenFGA relation이 자동으로 만들어진다.
 
 - **매크로는 노드, 마이크로는 행렬.** 타입 사이의 관계는 그래프로(원래 그래프 모양이니까), 타입 안의 권한은 표로(원래 표 모양이니까) 다룬다.
-- **캔버스 ↔ DSL은 양방향이다 — 지원 범위 안에서.** 비주얼이 표현하는 범위 안에서는 그래프를 바꾸면 DSL이, DSL을 바꾸면 그래프가 따라온다. 그 바깥의 고급 구문은 텍스트가 원본이 되고 캔버스는 read-only로 표시한다 (아래 *비주얼이 표현하는 범위* 참고).
-- **왜 쓸모 있나:** Zanzibar 모델의 학습 곡선 대부분이 사라진다. 권한을 *그림으로* 사고하게 된다.
+- **캔버스 ↔ DSL은 양방향이다 — 지원 범위 안에서.** 비주얼이 표현하는 범위 안에서는 그래프를 바꾸면 DSL이, DSL을 바꾸면 그래프가 따라온다. 그 바깥의 고급 구문은 텍스트가 원본이 되고 캔버스는 read-only로 표시한다 (아래 _비주얼이 표현하는 범위_ 참고).
+- **왜 쓸모 있나:** Zanzibar 모델의 학습 곡선 대부분이 사라진다. 권한을 _그림으로_ 사고하게 된다.
 
 ### 2. WAF식 조건 빌더 — Visual conditions
 
-Cloudflare WAF 룰을 만들듯, `AND` / `OR` 블록을 선형으로 쌓아 조건을 만든다. *"업무시간 AND 사내 IP"* 같은 규칙이 클릭으로 완성되고, 내부적으로 OpenFGA의 [CEL condition](https://openfga.dev/docs/modeling/conditions)으로 컴파일된다.
+Cloudflare WAF 룰을 만들듯, `AND` / `OR` 블록을 선형으로 쌓아 조건을 만든다. _"업무시간 AND 사내 IP"_ 같은 규칙이 클릭으로 완성되고, 내부적으로 OpenFGA의 [CEL condition](https://openfga.dev/docs/modeling/conditions)으로 컴파일된다.
 
-- **무엇을 만드는가 (중요):** 이 빌더가 만드는 건 **속성 조건(시간·IP·요청값)이지 권한 로직 자체가 아니다.** 누가 무엇을 할 수 있는지(role↔permission)는 모델의 행렬에서 정해지고, 조건은 그 위에 *"단, ~할 때만"* 을 얹는다.
+- **무엇을 만드는가 (중요):** 이 빌더가 만드는 건 **속성 조건(시간·IP·요청값)이지 권한 로직 자체가 아니다.** 누가 무엇을 할 수 있는지(role↔permission)는 모델의 행렬에서 정해지고, 조건은 그 위에 _"단, ~할 때만"_ 을 얹는다.
 - **왜 쓸모 있나:** 속성 기반(ABAC) 규칙을 코드 없이, 비개발자도 읽고 만들 수 있다.
 
 ### 3. 이름 붙인 정책 = REST API 한 줄 — Named policy as a PDP
@@ -67,21 +67,21 @@ POST /access/v1/evaluation
 모든 결정에 사람이 읽을 수 있는 `reason`이 붙는다 — 단 허용과 거부는 성격이 다르다.
 
 - **허용(allow):** 권한이 성립한 *경로*를 그래프 위에 보여준다 (witnessing path; 모델/데이터 경합·깊이 초과 시 best-effort 폴백).
-- **거부(deny):** 보여줄 경로가 없으므로, *"가장 가까운 빠진 연결고리"* 를 best-effort로 짚어준다 (예: *"folder:reports 의 viewer였다면 통과했음"*).
+- **거부(deny):** 보여줄 경로가 없으므로, _"가장 가까운 빠진 연결고리"_ 를 best-effort로 짚어준다 (예: _"folder:reports 의 viewer였다면 통과했음"_).
 - **왜 쓸모 있나:** 인가 디버깅이 "왜 막혔지…"에서 "이 연결만 있었으면 됐군"으로 바뀐다. 동시에 모델을 배우는 도구가 된다.
 
 ### 5. 아무 IdP에나 꽂는 신원 연동 — IdP-agnostic integration
 
 인증(authn)은 IdP가, 인가(authz)는 lazyFGA가. 둘을 잇는 길은 **시점이 다른 두 가지**다 — 섞으면 안 된다.
 
-- **① 신원 동기화 (인증 플로우 시점):** 유저 생성·그룹/역할 부여 같은 IdP 이벤트를 **ZITADEL Actions** 같은 hook이나 webhook으로 받아 OpenFGA tuple로 떨군다. OIDC [토큰 claims를 그대로 인가 입력](https://openfga.dev/docs/modeling/token-claims-contextual-tuples)으로 쓴다. → *그래프를 신원과 최신으로 유지*
-- **② 결정 호출 (요청 시점):** 앱 또는 API 게이트웨이의 PEP가 매 요청마다 위의 evaluate API를 부른다. → *allow/deny 판단*
+- **① 신원 동기화 (인증 플로우 시점):** 유저 생성·그룹/역할 부여 같은 IdP 이벤트를 **ZITADEL Actions** 같은 hook이나 webhook으로 받아 OpenFGA tuple로 떨군다. OIDC [토큰 claims를 그대로 인가 입력](https://openfga.dev/docs/modeling/token-claims-contextual-tuples)으로 쓴다. → _그래프를 신원과 최신으로 유지_
+- **② 결정 호출 (요청 시점):** 앱 또는 API 게이트웨이의 PEP가 매 요청마다 위의 evaluate API를 부른다. → _allow/deny 판단_
 
 > ZITADEL Actions는 인증 플로우에 도는 거라 ①에 맞다. 매 리소스 요청 판단인 ②는 보통 앱/게이트웨이 PEP가 맡는다 — 이 둘을 구분하는 게 중요하다.
 
 어느 IdP든 공통분모는 **"OIDC claims + webhook"** 하나다. ZITADEL을 첫 레시피로 삼되, 같은 패턴이 Keycloak·Auth0·Okta·Cognito에 그대로 매핑된다.
 
-- **왜 쓸모 있나:** *"Bring your IdP."* 인가 시스템을 처음부터 만들 필요가 없다. **연동 표면은 REST 한 줄** — 단, 모델과 tuple 데이터는 여전히 내가 소유·유지한다.
+- **왜 쓸모 있나:** _"Bring your IdP."_ 인가 시스템을 처음부터 만들 필요가 없다. **연동 표면은 REST 한 줄** — 단, 모델과 tuple 데이터는 여전히 내가 소유·유지한다.
 
 ### 6. 운영에 필요한 것들 — Self-hosted control plane
 
@@ -93,13 +93,13 @@ POST /access/v1/evaluation
 
 ## 비주얼이 표현하는 범위 (그리고 그 경계)
 
-비주얼-퍼스트가 *"모든 OpenFGA 모델을 그림으로"* 라는 뜻은 아니다. 경계를 분명히 둔다.
+비주얼-퍼스트가 _"모든 OpenFGA 모델을 그림으로"_ 라는 뜻은 아니다. 경계를 분명히 둔다.
 
 - **100% 비주얼 (대부분의 실제 모델):** resource 타입, role↔permission, containment 기반 권한 상속, group(team) 부여, 기본 속성 조건.
 - **Advanced (명시적으로 표시):** 중첩 intersection(`and`)·exclusion(`but not`), 복잡한 다중 userset 등. 여기서는 **텍스트(DSL)가 원본**이고 캔버스는 read-only로 보여준다. 양방향 sync도 이 지원 범위 안에서만 보장한다.
 - **막다른 길 없음:** 비주얼로 시작해도 advanced로 내려갈 수 있고, advanced 구문이 섞여 있어도 모델 전체를 계속 시각화·검증할 수 있다.
 
-즉 *흔한 80%는 누구나 그림으로, 어려운 20%는 숨기지 않고 안내한다.*
+즉 _흔한 80%는 누구나 그림으로, 어려운 20%는 숨기지 않고 안내한다._
 
 ---
 
@@ -143,6 +143,7 @@ POST /access/v1/evaluation
 **1차 타깃 →** ReBAC가 필요하지만 Zanzibar DSL 학습에 시간을 못 쓰는 **백엔드 개발자** (IdP는 이미 있고, 인가만 빠르게 붙이고 싶은).
 
 확장 타깃:
+
 - 권한을 UI로 보고 관리하려는 **운영자 · 보안 담당**
 - 사내 여러 서비스에 인가를 표준으로 깔려는 **플랫폼 팀**
 
@@ -151,4 +152,4 @@ POST /access/v1/evaluation
 ## 지금은 범위 밖
 
 - **자체 인증(authn) 제공** — 인증은 IdP의 몫. lazyFGA는 인가에 집중한다.
-- **OpenFGA를 대체하는 새 엔진** — lazyFGA는 OpenFGA를 *대체*하지 않는다. OpenFGA *위의* 컨트롤 플레인이다.
+- **OpenFGA를 대체하는 새 엔진** — lazyFGA는 OpenFGA를 *대체*하지 않는다. OpenFGA _위의_ 컨트롤 플레인이다.

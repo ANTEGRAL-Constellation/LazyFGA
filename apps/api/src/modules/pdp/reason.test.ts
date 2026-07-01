@@ -39,8 +39,7 @@ describe("explain — allow witness", () => {
     const deps = fakeDeps({
       allow: (rel, obj) =>
         (rel === "viewer" && obj === "document:123") || (rel === "member" && obj === "team:eng"),
-      tuples: (obj, rel) =>
-        obj === "document:123" && rel === "viewer" ? ["team:eng#member"] : [],
+      tuples: (obj, rel) => (obj === "document:123" && rel === "viewer" ? ["team:eng#member"] : []),
     });
     const r = await explain("user:alice", "read", "document:123", undefined, pin(true), deps);
     expect(r.truncated).toBeFalsy();
@@ -92,7 +91,11 @@ describe("explain — deny", () => {
       anyOf: ["viewer", "editor", "owner"],
       on: "document",
     });
-    expect(r.missingLinks).toContainEqual({ kind: "parent", relation: "parent", needs: "can_read" });
+    expect(r.missingLinks).toContainEqual({
+      kind: "parent",
+      relation: "parent",
+      needs: "can_read",
+    });
   });
 });
 

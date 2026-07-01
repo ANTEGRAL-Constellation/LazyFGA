@@ -7,11 +7,7 @@ import type { Principal } from "../../middleware/auth";
  * **감사 실패가 감사 대상 작업을 절대 깨지 않는다**(fire-and-forget + 내부 catch).
  * 시그니처는 하위호환: 기존 `recordAudit(action, data)` 호출은 그대로 동작(actor 기본 "system").
  */
-export function recordAudit(
-  action: string,
-  data?: Record<string, unknown>,
-  actor?: string,
-): void {
+export function recordAudit(action: string, data?: Record<string, unknown>, actor?: string): void {
   try {
     void db
       .insert(auditLog)

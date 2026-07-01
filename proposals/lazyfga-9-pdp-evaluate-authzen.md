@@ -1,11 +1,11 @@
 # PDP Evaluate (AuthZEN 1.0 호환) - Spec Proposal
 
-| Item       | Detail                           |
-|------------|----------------------------------|
-| Author     | Seonguk Moon                     |
-| Created    | 2026-06-28                       |
-| Status     | **Implemented**                  |
-| Reviewers  | Claude, Codex (M3 cross-review)  |
+| Item      | Detail                          |
+| --------- | ------------------------------- |
+| Author    | Seonguk Moon                    |
+| Created   | 2026-06-28                      |
+| Status    | **Implemented**                 |
+| Reviewers | Claude, Codex (M3 cross-review) |
 
 ---
 
@@ -56,6 +56,7 @@ PEP ──Bearer(service token)──▶ POST /access/v1/evaluation
 ### 4.3 Core Logic
 
 evaluate(req) — 결정적·단일 Check:
+
 1. 인증: 유효한 service token 또는 admin 토큰 아니면 401.
 2. 요청 검증: `subject.type/id`, `action.name`, `resource.type/id` 필수. 누락 시 400.
 3. 정책 조회: `policy = findByActionResource(action.name, resource.type)`.
@@ -73,14 +74,14 @@ evaluate(req) — 결정적·단일 Check:
 
 ### 4.4 AuthZEN 매핑 표 (오해 방지)
 
-| AuthZEN 필드 | lazyFGA 사용 |
-|---|---|
-| `subject.type`,`subject.id` | OpenFGA user 식별자 `type:id` |
-| `action.name` | policy.permission (relation `can_<name>`) |
-| `resource.type` | policy.resourceType / object type |
-| `resource.id` | object 인스턴스 id |
-| `context` | OpenFGA Check `context`(조건용, 통과) |
-| 응답 `decision` | OpenFGA Check `allowed` |
+| AuthZEN 필드                | lazyFGA 사용                              |
+| --------------------------- | ----------------------------------------- |
+| `subject.type`,`subject.id` | OpenFGA user 식별자 `type:id`             |
+| `action.name`               | policy.permission (relation `can_<name>`) |
+| `resource.type`             | policy.resourceType / object type         |
+| `resource.id`               | object 인스턴스 id                        |
+| `context`                   | OpenFGA Check `context`(조건용, 통과)     |
+| 응답 `decision`             | OpenFGA Check `allowed`                   |
 
 ## 5. API Design
 
@@ -98,6 +99,7 @@ body:
 }
 → 200 { "decision": true }
 ```
+
 (편의 shorthand는 후속: `POST /policy/evaluate { id, subject, object, context }` — 내부적으로 동일 evaluate 호출. MVP는 AuthZEN 정식 엔드포인트 우선.)
 
 ```ts
@@ -107,28 +109,31 @@ export interface EvaluationRequest {
   action: { name: string };
   resource: { type: string; id: string };
   context?: Record<string, unknown>;
-  options?: { reason?: boolean };   // reason=true면 응답 context.reason 부착(lazyfga-11)
+  options?: { reason?: boolean }; // reason=true면 응답 context.reason 부착(lazyfga-11)
 }
-export interface EvaluationResponse { decision: boolean; context?: Record<string, unknown> }
+export interface EvaluationResponse {
+  decision: boolean;
+  context?: Record<string, unknown>;
+}
 ```
 
 ### 5-2. Error Handling
 
-| Status | Description |
-|--------|-------------|
-| 400 | 필수 필드 누락/형식 오류 |
-| 401 | service/admin 토큰 없음·무효 |
-| 200 + `decision:false` | 정책 없음(`NO_POLICY`) 또는 관계 부재 → deny-by-default |
-| 500 | OpenFGA Check 자체 오류(모델-정책 불일치 등) + audit 경고 |
+| Status                 | Description                                               |
+| ---------------------- | --------------------------------------------------------- |
+| 400                    | 필수 필드 누락/형식 오류                                  |
+| 401                    | service/admin 토큰 없음·무효                              |
+| 200 + `decision:false` | 정책 없음(`NO_POLICY`) 또는 관계 부재 → deny-by-default   |
+| 500                    | OpenFGA Check 자체 오류(모델-정책 불일치 등) + audit 경고 |
 
 ## 6. Implementation Plan
 
 ### 6-1. Milestones
 
-| Phase   | Task                                              | Estimated | Owner |
-|---------|---------------------------------------------------|-----------|-------|
-| Phase 1 | AuthZEN 요청/응답 타입 + 엔드포인트 + 인증 연결     | 0.5d      | TBD   |
-| Phase 2 | evaluate 코어(정책 조회 → Check 구성 → 결정)        | 1d        | TBD   |
+| Phase   | Task                                                 | Estimated | Owner |
+| ------- | ---------------------------------------------------- | --------- | ----- |
+| Phase 1 | AuthZEN 요청/응답 타입 + 엔드포인트 + 인증 연결      | 0.5d      | TBD   |
+| Phase 2 | evaluate 코어(정책 조회 → Check 구성 → 결정)         | 1d        | TBD   |
 | Phase 3 | deny-by-default·에러 처리 + 통합 테스트(픽스처 모델) | 0.5d      | TBD   |
 
 ### 6-2. Dependencies

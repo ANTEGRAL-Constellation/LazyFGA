@@ -24,7 +24,11 @@ const EMPTY: GrantForm = {
   conditionName: "",
 };
 
-type RevokeBody = { subject: GrantSubject; relation: string; resource: { type: string; id: string } };
+type RevokeBody = {
+  subject: GrantSubject;
+  relation: string;
+  resource: { type: string; id: string };
+};
 
 function toSubject(f: GrantForm): GrantSubject {
   const base = { type: f.subjectType.trim(), id: f.subjectId.trim() };
@@ -119,10 +123,13 @@ export function useGrants(): {
       });
       const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
       if (!res.ok) {
-        setError(`${(data.code as string) ?? "error"}: ${(data.error as string) ?? `HTTP ${res.status}`}`);
+        setError(
+          `${(data.code as string) ?? "error"}: ${(data.error as string) ?? `HTTP ${res.status}`}`,
+        );
       } else {
         ok = true;
-        if (method === "POST") setStatus(data.created ? "granted (new)" : "already granted (no-op)");
+        if (method === "POST")
+          setStatus(data.created ? "granted (new)" : "already granted (no-op)");
         else setStatus(data.deleted ? "revoked" : "already absent (no-op)");
       }
     } catch (e) {
@@ -147,7 +154,8 @@ export function useGrants(): {
       const r = toRequest(form);
       return mutate("DELETE", { subject: r.subject, relation: r.relation, resource: r.resource });
     },
-    revokeEntry: (e) => mutate("DELETE", { subject: e.subject, relation: e.relation, resource: e.resource }),
+    revokeEntry: (e) =>
+      mutate("DELETE", { subject: e.subject, relation: e.relation, resource: e.resource }),
     listByResource: async () => {
       const t = form.resourceType.trim();
       const id = form.resourceId.trim();

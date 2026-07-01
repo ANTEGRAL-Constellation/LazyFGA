@@ -145,7 +145,12 @@ async function findWitness(
   return { found: false, truncated: sawTruncation };
 }
 
-function describePath(user: string, permission: string, object: string, path: ReasonStep[]): string {
+function describePath(
+  user: string,
+  permission: string,
+  object: string,
+  path: ReasonStep[],
+): string {
   const parts = path.map((s) =>
     s.via === "role"
       ? `role ${s.role}${s.direct ? " (direct)" : s.groupObject ? ` (via ${s.groupObject} membership)` : ""}`
@@ -156,17 +161,23 @@ function describePath(user: string, permission: string, object: string, path: Re
 
 function describeMissing(object: string, links: MissingLink[]): string {
   const bits = links.map((l) =>
-    l.kind === "role" ? `one of [${l.anyOf.join(", ")}] on ${object}` : `${l.needs} via parent (${l.relation})`,
+    l.kind === "role"
+      ? `one of [${l.anyOf.join(", ")}] on ${object}`
+      : `${l.needs} via parent (${l.relation})`,
   );
   return `denied: needs ${bits.length ? bits.join(", or ") : "a grant that does not exist in the model"}`;
 }
 
 function denyLinks(ir: ModelIR, onType: string, permission: string): MissingLink[] {
-  const perm = ir.resources.find((r) => r.name === onType)?.permissions.find((p) => p.name === permission);
+  const perm = ir.resources
+    .find((r) => r.name === onType)
+    ?.permissions.find((p) => p.name === permission);
   const links: MissingLink[] = [];
   if (perm) {
-    if (perm.grantedByRoles.length > 0) links.push({ kind: "role", anyOf: perm.grantedByRoles, on: onType });
-    for (const rel of perm.inheritFromParents) links.push({ kind: "parent", relation: rel, needs: `can_${permission}` });
+    if (perm.grantedByRoles.length > 0)
+      links.push({ kind: "role", anyOf: perm.grantedByRoles, on: onType });
+    for (const rel of perm.inheritFromParents)
+      links.push({ kind: "parent", relation: rel, needs: `can_${permission}` });
   }
   return links;
 }

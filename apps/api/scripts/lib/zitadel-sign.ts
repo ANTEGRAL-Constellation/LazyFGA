@@ -5,7 +5,11 @@ import { createHmac } from "node:crypto";
 // 헤더 형식 `t=<unixSeconds>,v1=<hex>`. signature.ts의 ZITADEL preset이 검증하는 형식과 일치한다.
 
 /** HMAC-SHA256( secret, `<unixSeconds>.<rawBody>` ) hex. */
-export function computeZitadelSignature(rawBody: Uint8Array, secret: string, unixSeconds: number): string {
+export function computeZitadelSignature(
+  rawBody: Uint8Array,
+  secret: string,
+  unixSeconds: number,
+): string {
   const h = createHmac("sha256", secret);
   h.update(String(unixSeconds));
   h.update(".");
@@ -14,6 +18,10 @@ export function computeZitadelSignature(rawBody: Uint8Array, secret: string, uni
 }
 
 /** `ZITADEL-Signature` 헤더 값 생성. 형식: "t=<unixSeconds>,v1=<hex>". */
-export function zitadelSignatureHeader(rawBody: Uint8Array, secret: string, unixSeconds: number): string {
+export function zitadelSignatureHeader(
+  rawBody: Uint8Array,
+  secret: string,
+  unixSeconds: number,
+): string {
   return `t=${unixSeconds},v1=${computeZitadelSignature(rawBody, secret, unixSeconds)}`;
 }

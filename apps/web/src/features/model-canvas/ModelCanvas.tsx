@@ -30,7 +30,11 @@ export function ModelCanvas() {
   return (
     <div className="lf-canvas" data-testid="model-canvas">
       <div className="lf-toolbar">
-        <button data-testid="add-resource" disabled={g.readOnly} onClick={() => promptAdd("resource")}>
+        <button
+          data-testid="add-resource"
+          disabled={g.readOnly}
+          onClick={() => promptAdd("resource")}
+        >
           + Resource
         </button>
         <button data-testid="add-group" disabled={g.readOnly} onClick={() => promptAdd("group")}>

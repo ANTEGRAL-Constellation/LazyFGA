@@ -1,6 +1,6 @@
 # lazyFGA
 
-> **An authorization control plane you can *draw*, on top of [OpenFGA](https://openfga.dev).**
+> **An authorization control plane you can _draw_, on top of [OpenFGA](https://openfga.dev).**
 > Design the model as nodes, assemble attribute conditions as blocks, publish it, and ask
 > "can this user do this?" over a standard [AuthZEN](https://openid.github.io/authzen/) API — with
 > a human-readable reason for every decision. Self-hosted.
@@ -17,14 +17,14 @@ adapter, a DB-backed audit log, and an inline playground.
 
 ## The five pillars → where they live
 
-| Pillar | Code |
-|---|---|
-| 1. Node-based model authoring | `apps/web/src/features/model-canvas` + `apps/web/src/features/permission-matrix` + `packages/compiler` |
-| 2. WAF-style attribute conditions → CEL | `apps/web/src/features/condition-builder` + `packages/shared/src/condition.ts` + `packages/compiler/src/condition-to-cel.ts` |
-| 3. Named policy as a PDP (AuthZEN) | `apps/api/src/modules/policy` + `apps/api/src/modules/pdp` |
-| 4. Explainability (allow path / deny links) | `apps/api/src/modules/pdp/reason.ts` + `apps/web/src/features/explain` + `apps/web/src/features/playground` |
-| 5. IdP-agnostic identity sync | `apps/api/src/modules/idp` (+ `adapters/zitadel.ts`) |
-| Ops (audit, tokens) | `apps/api/src/modules/audit` + `apps/api/src/modules/auth` |
+| Pillar                                      | Code                                                                                                                         |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| 1. Node-based model authoring               | `apps/web/src/features/model-canvas` + `apps/web/src/features/permission-matrix` + `packages/compiler`                       |
+| 2. WAF-style attribute conditions → CEL     | `apps/web/src/features/condition-builder` + `packages/shared/src/condition.ts` + `packages/compiler/src/condition-to-cel.ts` |
+| 3. Named policy as a PDP (AuthZEN)          | `apps/api/src/modules/policy` + `apps/api/src/modules/pdp`                                                                   |
+| 4. Explainability (allow path / deny links) | `apps/api/src/modules/pdp/reason.ts` + `apps/web/src/features/explain` + `apps/web/src/features/playground`                  |
+| 5. IdP-agnostic identity sync               | `apps/api/src/modules/idp` (+ `adapters/zitadel.ts`)                                                                         |
+| Ops (audit, tokens)                         | `apps/api/src/modules/audit` + `apps/api/src/modules/auth`                                                                   |
 
 ## Quickstart
 

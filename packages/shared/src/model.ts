@@ -149,8 +149,7 @@ export interface ValidationError {
   message: string;
 }
 
-const subjectGroup = (ref: SubjectRef): string | null =>
-  ref.kind === "group" ? ref.group : null;
+const subjectGroup = (ref: SubjectRef): string | null => (ref.kind === "group" ? ref.group : null);
 
 /**
  * IR 정적 검증(§4.3 규칙 1~8). 변환(compiler) 이전에 항상 통과해야 한다.
@@ -263,7 +262,11 @@ export function validateModelIR(ir: ModelIR): ValidationError[] {
       checkName(role.name, `${rolePath}.name`);
       claimRelation(role.name, `${rolePath}.name`);
       if (role.assignableBy.length === 0) {
-        add("EMPTY_SUBJECTS", `${rolePath}.assignableBy`, `role "${role.name}" must be assignable by >= 1 subject`);
+        add(
+          "EMPTY_SUBJECTS",
+          `${rolePath}.assignableBy`,
+          `role "${role.name}" must be assignable by >= 1 subject`,
+        );
       }
       role.assignableBy.forEach((ref, ai) => {
         const grp = subjectGroup(ref);

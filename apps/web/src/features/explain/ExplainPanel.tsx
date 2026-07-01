@@ -71,19 +71,39 @@ export function ExplainPanel() {
         <label>
           subject
           <span className="lf-row">
-            <input value={subjectType} onChange={(e) => setSubjectType(e.target.value)} data-testid="ex-subject-type" />
-            <input value={subjectId} onChange={(e) => setSubjectId(e.target.value)} data-testid="ex-subject-id" />
+            <input
+              value={subjectType}
+              onChange={(e) => setSubjectType(e.target.value)}
+              data-testid="ex-subject-type"
+            />
+            <input
+              value={subjectId}
+              onChange={(e) => setSubjectId(e.target.value)}
+              data-testid="ex-subject-id"
+            />
           </span>
         </label>
         <label>
           action
-          <input value={action} onChange={(e) => setAction(e.target.value)} data-testid="ex-action" />
+          <input
+            value={action}
+            onChange={(e) => setAction(e.target.value)}
+            data-testid="ex-action"
+          />
         </label>
         <label>
           resource
           <span className="lf-row">
-            <input value={resourceType} onChange={(e) => setResourceType(e.target.value)} data-testid="ex-resource-type" />
-            <input value={resourceId} onChange={(e) => setResourceId(e.target.value)} data-testid="ex-resource-id" />
+            <input
+              value={resourceType}
+              onChange={(e) => setResourceType(e.target.value)}
+              data-testid="ex-resource-type"
+            />
+            <input
+              value={resourceId}
+              onChange={(e) => setResourceId(e.target.value)}
+              data-testid="ex-resource-id"
+            />
           </span>
         </label>
         <label>

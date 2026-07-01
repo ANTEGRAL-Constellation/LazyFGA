@@ -47,9 +47,7 @@ describe("parseDslToIr — advanced (read-only) detection", () => {
     `model\n  schema 1.1\ntype user\ntype document\n  relations\n${relations}`;
 
   test("EXCLUSION (but not) → advanced", () => {
-    const dsl = wrap(
-      "    define banned: [user]\n    define editor: [user] but not banned",
-    );
+    const dsl = wrap("    define banned: [user]\n    define editor: [user] but not banned");
     const { coverage } = parseDslToIr(dsl);
     expect(coverage.fullyRepresentable).toBe(false);
     expect(coverage.advanced).toContainEqual({
@@ -60,11 +58,13 @@ describe("parseDslToIr — advanced (read-only) detection", () => {
   });
 
   test("INTERSECTION (and) → advanced", () => {
-    const dsl = wrap(
-      "    define a: [user]\n    define b: [user]\n    define c: a and b",
-    );
+    const dsl = wrap("    define a: [user]\n    define b: [user]\n    define c: a and b");
     const { coverage } = parseDslToIr(dsl);
-    expect(coverage.advanced).toContainEqual({ type: "document", relation: "c", reason: "INTERSECTION" });
+    expect(coverage.advanced).toContainEqual({
+      type: "document",
+      relation: "c",
+      reason: "INTERSECTION",
+    });
   });
 
   test("role-implication (computed, not can_) → NON_ROLE_UNION", () => {

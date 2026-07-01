@@ -115,7 +115,9 @@ export const auditLog = pgTable(
     id: uuid("id").primaryKey().defaultRandom(),
     // precision 3(ms): JS Date/커서가 ms 정밀도이므로 DB도 ms로 저장해야 keyset 경계가
     // 정확히 round-trip된다(microsecond 저장 시 같은 ms 행이 페이지 경계에서 skip/중복될 수 있음).
-    occurredAt: timestamp("occurred_at", { withTimezone: true, precision: 3 }).notNull().defaultNow(),
+    occurredAt: timestamp("occurred_at", { withTimezone: true, precision: 3 })
+      .notNull()
+      .defaultNow(),
     actor: text("actor").notNull().default("system"),
     action: text("action").notNull(),
     data: jsonb("data").$type<Record<string, unknown>>().notNull().default({}),

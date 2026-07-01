@@ -28,13 +28,29 @@ async function main(): Promise<void> {
   const existing = await getConnectionByProvider("zitadel");
   const connectionId = existing
     ? existing.id
-    : (await createConnection({ provider: "zitadel", preset: "zitadel", signingSecret: SIGNING_SECRET })).id;
+    : (
+        await createConnection({
+          provider: "zitadel",
+          preset: "zitadel",
+          signingSecret: SIGNING_SECRET,
+        })
+      ).id;
   console.log(existing ? "zitadel connection exists" : "created zitadel connection");
 
   // clear-then-insert로 멱등화(규칙 테이블엔 unique 키가 없음).
   for (const r of await listRulesByConnection(connectionId)) await deleteRule(r.id);
-  await createRule(connectionId, { eventType: "user.grant.added", match: [], tupleTemplate: TEAM_MEMBERSHIP, op: "write" });
-  await createRule(connectionId, { eventType: "user.grant.removed", match: [], tupleTemplate: TEAM_MEMBERSHIP, op: "delete" });
+  await createRule(connectionId, {
+    eventType: "user.grant.added",
+    match: [],
+    tupleTemplate: TEAM_MEMBERSHIP,
+    op: "write",
+  });
+  await createRule(connectionId, {
+    eventType: "user.grant.removed",
+    match: [],
+    tupleTemplate: TEAM_MEMBERSHIP,
+    op: "delete",
+  });
   console.log("seeded 2 zitadel mapping rules (project-based: added → write, removed → delete)");
 }
 

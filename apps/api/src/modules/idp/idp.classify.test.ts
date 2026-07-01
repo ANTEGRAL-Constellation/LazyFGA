@@ -21,7 +21,9 @@ describe("classifyWriteError (lazyfga-15 hardening)", () => {
   });
 
   test("raw socket error by code → transient", () => {
-    expect(classifyWriteError({ code: "ECONNRESET", message: "read ECONNRESET" }, "write").transient).toBe(true);
+    expect(
+      classifyWriteError({ code: "ECONNRESET", message: "read ECONNRESET" }, "write").transient,
+    ).toBe(true);
   });
 
   test("5xx / 429 → transient", () => {
@@ -66,7 +68,14 @@ describe("classifyWriteError (lazyfga-15 hardening)", () => {
 
   test("write op with 'not found' (wrong op pattern / not invalid-input) → deterministic fail, not idempotent", () => {
     expect(
-      classifyWriteError({ statusCode: 400, responseData: { code: "validation_error" }, message: "relation not found" }, "write"),
+      classifyWriteError(
+        {
+          statusCode: 400,
+          responseData: { code: "validation_error" },
+          message: "relation not found",
+        },
+        "write",
+      ),
     ).toEqual({ idempotent: false, transient: false });
   });
 

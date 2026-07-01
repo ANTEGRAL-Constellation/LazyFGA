@@ -36,3 +36,4 @@ apps/web/dist/
 
 # local dev artifacts (screenshots etc.)
 .dev/
+.gstack/

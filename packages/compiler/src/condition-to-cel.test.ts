@@ -19,7 +19,12 @@ describe("conditionToCel", () => {
       tree: {
         op: "and",
         children: [
-          { kind: "time", param: "current_time", op: "lt", rhs: { kind: "param", param: "expiry" } },
+          {
+            kind: "time",
+            param: "current_time",
+            op: "lt",
+            rhs: { kind: "param", param: "expiry" },
+          },
           { kind: "ip", param: "user_ip", op: "in_cidr", cidr: "10.0.0.0/8" },
         ],
       },
@@ -92,7 +97,9 @@ describe("tryParseCondition (reverse, subset only)", () => {
   });
 
   test("mixed && / || → null", () => {
-    expect(tryParseCondition("r", params, 'current_time < expiry && tier == "x" || tier == "y"')).toBeNull();
+    expect(
+      tryParseCondition("r", params, 'current_time < expiry && tier == "x" || tier == "y"'),
+    ).toBeNull();
   });
 
   test("unknown function → null", () => {
@@ -120,7 +127,12 @@ describe("IR round-trip with a conditioned role assignment", () => {
             { name: "current_time", type: "timestamp" },
             { name: "expiry", type: "timestamp" },
           ],
-          tree: { kind: "time", param: "current_time", op: "lt", rhs: { kind: "param", param: "expiry" } },
+          tree: {
+            kind: "time",
+            param: "current_time",
+            op: "lt",
+            rhs: { kind: "param", param: "expiry" },
+          },
         },
       ],
     };

@@ -1,11 +1,6 @@
 import type { Policy } from "@lazyfga/shared";
 import { getCurrentVersion } from "../model/model.repo";
-import {
-  findByActionResource,
-  findById,
-  insertPolicy,
-  updatePolicy,
-} from "./policy.repo";
+import { findByActionResource, findById, insertPolicy, updatePolicy } from "./policy.repo";
 
 export class PolicyError extends Error {
   constructor(
@@ -33,7 +28,10 @@ async function assertModelHasTarget(permission: string, resourceType: string): P
     throw new PolicyError(422, `current model has no resource type "${resourceType}"`);
   }
   if (!resource.permissions.some((p) => p.name === permission)) {
-    throw new PolicyError(422, `"${resourceType}" has no permission "can_${permission}" in the current model`);
+    throw new PolicyError(
+      422,
+      `"${resourceType}" has no permission "can_${permission}" in the current model`,
+    );
   }
 }
 
@@ -46,9 +44,13 @@ export async function createPolicy(input: {
   if (!SLUG_RE.test(input.id)) {
     throw new PolicyError(422, `id must be a slug matching ${SLUG_RE.source}`);
   }
-  if (await findById(input.id)) throw new PolicyError(409, `policy id "${input.id}" already exists`);
+  if (await findById(input.id))
+    throw new PolicyError(409, `policy id "${input.id}" already exists`);
   if (await findByActionResource(input.permission, input.resourceType)) {
-    throw new PolicyError(409, `a policy for (${input.permission}, ${input.resourceType}) already exists`);
+    throw new PolicyError(
+      409,
+      `a policy for (${input.permission}, ${input.resourceType}) already exists`,
+    );
   }
   await assertModelHasTarget(input.permission, input.resourceType);
   try {

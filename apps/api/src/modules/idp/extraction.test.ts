@@ -13,11 +13,19 @@ describe("extractEvent — ZITADEL preset", () => {
       resourceOwner: "org1",
       event_payload: { userName: "bob@x" },
     });
-    expect(ev).toEqual({ type: "user.human.added", subject: { type: "user", id: "bob" }, attributes: { org: "org1" } });
+    expect(ev).toEqual({
+      type: "user.human.added",
+      subject: { type: "user", id: "bob" },
+      attributes: { org: "org1" },
+    });
   });
 
   test("self-registered also matches the signup rule", () => {
-    const ev = extractEvent(Z, { event_type: "user.human.selfregistered", aggregateID: "carol", resourceOwner: "org2" });
+    const ev = extractEvent(Z, {
+      event_type: "user.human.selfregistered",
+      aggregateID: "carol",
+      resourceOwner: "org2",
+    });
     expect(ev?.subject.id).toBe("carol");
   });
 
@@ -40,7 +48,11 @@ describe("extractEvent — ZITADEL preset", () => {
       aggregateID: "grant-99",
       event_payload: { userId: "alice", projectId: "eng" },
     });
-    expect(ev).toEqual({ type: "user.grant.removed", subject: { type: "user", id: "alice" }, attributes: { project: "eng" } });
+    expect(ev).toEqual({
+      type: "user.grant.removed",
+      subject: { type: "user", id: "alice" },
+      attributes: { project: "eng" },
+    });
   });
 
   test("unmatched event type → null (ignored, not every event maps)", () => {
@@ -48,13 +60,28 @@ describe("extractEvent — ZITADEL preset", () => {
   });
 
   test("matched event but missing/empty/non-string subject → null (not coerced)", () => {
-    expect(extractEvent(Z, { event_type: "user.grant.added", event_payload: { projectId: "eng" } })).toBeNull(); // no userId
-    expect(extractEvent(Z, { event_type: "user.grant.added", event_payload: { userId: "", projectId: "eng" } })).toBeNull();
-    expect(extractEvent(Z, { event_type: "user.grant.added", event_payload: { userId: 123, projectId: "eng" } })).toBeNull();
+    expect(
+      extractEvent(Z, { event_type: "user.grant.added", event_payload: { projectId: "eng" } }),
+    ).toBeNull(); // no userId
+    expect(
+      extractEvent(Z, {
+        event_type: "user.grant.added",
+        event_payload: { userId: "", projectId: "eng" },
+      }),
+    ).toBeNull();
+    expect(
+      extractEvent(Z, {
+        event_type: "user.grant.added",
+        event_payload: { userId: 123, projectId: "eng" },
+      }),
+    ).toBeNull();
   });
 
   test("numeric scalar attribute is coerced to string", () => {
-    const ev = extractEvent(Z, { event_type: "user.grant.added", event_payload: { userId: "alice", projectId: 42 } });
+    const ev = extractEvent(Z, {
+      event_type: "user.grant.added",
+      event_payload: { userId: "alice", projectId: 42 },
+    });
     expect(ev?.attributes.project).toBe("42");
   });
 
@@ -78,7 +105,11 @@ describe("extractEvent — Standard Webhooks preset", () => {
   const SW = PRESETS["standard-webhooks"]!;
   test("user.created → subject from data.id, org from data.orgId", () => {
     const ev = extractEvent(SW, { type: "user.created", data: { id: "u1", orgId: "acme" } });
-    expect(ev).toEqual({ type: "user.created", subject: { type: "user", id: "u1" }, attributes: { org: "acme" } });
+    expect(ev).toEqual({
+      type: "user.created",
+      subject: { type: "user", id: "u1" },
+      attributes: { org: "acme" },
+    });
   });
 });
 
@@ -88,7 +119,12 @@ describe("getPath prototype-pollution guard (review)", () => {
     signature: Z.signature,
     typePath: "type",
     extraction: [
-      { match: ["x"], subjectType: "user", subjectIdPath: "__proto__.polluted", attributePaths: { c: "constructor.name" } },
+      {
+        match: ["x"],
+        subjectType: "user",
+        subjectIdPath: "__proto__.polluted",
+        attributePaths: { c: "constructor.name" },
+      },
     ],
   };
   test("__proto__ / constructor path segments resolve to nothing → null subject", () => {
@@ -99,7 +135,9 @@ describe("getPath prototype-pollution guard (review)", () => {
     const p: ProviderPreset = {
       signature: Z.signature,
       typePath: "type",
-      extraction: [{ match: ["x"], subjectType: "user", subjectIdPath: "toString", attributePaths: {} }],
+      extraction: [
+        { match: ["x"], subjectType: "user", subjectIdPath: "toString", attributePaths: {} },
+      ],
     };
     expect(extractEvent(p, { type: "x" })).toBeNull(); // toString is inherited, not own → undefined
   });
@@ -112,7 +150,10 @@ describe("readEventType / attributeNamesForEvent (review: fanOut validation supp
     expect(readEventType(Z, null)).toBeUndefined();
   });
   test("attributeNamesForEvent returns the produced attribute names for an event type", () => {
-    expect([...attributeNamesForEvent(Z, "user.grant.added")].sort()).toEqual(["project", "roleKeys"]);
+    expect([...attributeNamesForEvent(Z, "user.grant.added")].sort()).toEqual([
+      "project",
+      "roleKeys",
+    ]);
     expect([...attributeNamesForEvent(Z, "user.grant.removed")]).toEqual(["project"]);
     expect([...attributeNamesForEvent(Z, "user.human.added")]).toEqual(["org"]);
     expect([...attributeNamesForEvent(Z, "unknown")]).toEqual([]);

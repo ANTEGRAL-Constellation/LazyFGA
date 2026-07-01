@@ -8,7 +8,7 @@
 
 1. **컴파일러를 `packages/`로 분리해 web·api가 공유.** 비주얼 모델 ↔ OpenFGA DSL 변환은 제품의 심장이다. web(브라우저 실시간 미리보기)과 api(발행 시 권위 검증)가 **같은 코드**를 쓰게 해 drift를 없앤다. 컨셉의 "지원 범위 안에서만 양방향"도 `compiler/coverage.ts` 한 곳에서 경계를 판정한다.
 2. **모듈러 모놀리스.** 한 api 서비스 안에 PDP·model·idp·policy·audit·auth를 모듈로 나눈다. 경계가 명확해 나중에 PDP만 떼어내기 쉽다.
-3. **OpenFGA는 별도 컨테이너.** 자기 store/DB를 가진다. lazyFGA는 그 *위의* 컨트롤 플레인이다 (OpenFGA를 대체하지 않는다는 컨셉 원칙과 일치).
+3. **OpenFGA는 별도 컨테이너.** 자기 store/DB를 가진다. lazyFGA는 그 _위의_ 컨트롤 플레인이다 (OpenFGA를 대체하지 않는다는 컨셉 원칙과 일치).
 4. **데이터 소유 분리.** 정책·audit·service token·모델 메타 = lazyFGA Postgres("사람이 만든 의도"). 관계 tuple·authorization model = OpenFGA("실행 진실").
 
 ---
@@ -89,24 +89,24 @@ lazyfga/
 
 ## 컨셉 ↔ 구조 매핑
 
-| 컨셉 기능 | 사는 곳 |
-|---|---|
-| 노드 모델 저작 | `web/model-canvas` + `packages/compiler` |
-| role×permission 행렬 | `web/permission-matrix` + `compiler/matrix.ts` |
-| WAF 조건 빌더 | `web/condition-builder` + `compiler/condition-to-cel.ts` |
-| named policy PDP | `api/modules/pdp` + `modules/policy` |
-| explainability | `web/explain` + `pdp/reason.ts` |
-| IdP-agnostic 연동 | `api/modules/idp/adapters/*` |
-| 비주얼 범위 경계 | `compiler/coverage.ts` (단일 진실) |
-| audit · service token | `api/modules/audit` · `modules/auth` |
+| 컨셉 기능             | 사는 곳                                                  |
+| --------------------- | -------------------------------------------------------- |
+| 노드 모델 저작        | `web/model-canvas` + `packages/compiler`                 |
+| role×permission 행렬  | `web/permission-matrix` + `compiler/matrix.ts`           |
+| WAF 조건 빌더         | `web/condition-builder` + `compiler/condition-to-cel.ts` |
+| named policy PDP      | `api/modules/pdp` + `modules/policy`                     |
+| explainability        | `web/explain` + `pdp/reason.ts`                          |
+| IdP-agnostic 연동     | `api/modules/idp/adapters/*`                             |
+| 비주얼 범위 경계      | `compiler/coverage.ts` (단일 진실)                       |
+| audit · service token | `api/modules/audit` · `modules/auth`                     |
 
 ---
 
 ## 데이터 소유 (요약)
 
-| 저장소 | 무엇을 | 비고 |
-|---|---|---|
+| 저장소           | 무엇을                                                                       | 비고               |
+| ---------------- | ---------------------------------------------------------------------------- | ------------------ |
 | lazyFGA Postgres | named policy, 모델 메타/버전 포인터, audit log, service token, IdP 연동 설정 | "사람이 만든 의도" |
-| OpenFGA store | authorization model, relation tuples, conditions | "실행 진실" |
+| OpenFGA store    | authorization model, relation tuples, conditions                             | "실행 진실"        |
 
 > 원칙: lazyFGA는 OpenFGA의 위에 있고, OpenFGA가 가진 정보(model/tuple)를 중복 저장하지 않는다. lazyFGA는 OpenFGA가 모르는 것(정책 이름, 의도, 감사, 토큰)만 가진다.

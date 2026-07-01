@@ -1,11 +1,11 @@
 # Demo Scenario + Docs Finalization - Spec Proposal
 
-| Item       | Detail                           |
-|------------|----------------------------------|
-| Author     | Seonguk Moon                     |
-| Created    | 2026-06-29                       |
-| Status     | **Implemented**                  |
-| Reviewers  | Claude (M7 cross-review; Codex unavailable) |
+| Item      | Detail                                      |
+| --------- | ------------------------------------------- |
+| Author    | Seonguk Moon                                |
+| Created   | 2026-06-29                                  |
+| Status    | **Implemented**                             |
+| Reviewers | Claude (M7 cross-review; Codex unavailable) |
 
 ---
 
@@ -75,26 +75,27 @@ scripts/demo/run.ts  (admin 토큰으로 lazyFGA API 호출 + 서명 replay)
 ### 5-1. New / Modified
 
 신규 lazyFGA REST API 없음. 스크립트는 기존 lazyFGA 엔드포인트를 호출하고, **구조 tuple만 OpenFGA SDK로 직접** 기록한다(런타임 엔드포인트 추가 아님). 산출물:
+
 - `scripts/demo/run.ts`, `scripts/demo/reset.ts`, 데모 IR/픽스처.
 - `README.md`(마감), `docs/getting-started.md`, `docs/api.md`(엔드포인트 요약).
 
 ### 5-2. Error Handling
 
-| 상황 | 처리 |
-|------|------|
-| 스택 미기동 | 스크립트가 `/healthz` 선검사 후 명확한 안내로 중단 |
-| admin 토큰 부재/무효 | 401 안내 후 중단 |
-| 모델/정책 시드 실패 | 단계·사유 출력 후 중단(부분 적용 방지 안내) |
-| replay 서명 불일치 | 연결 secret 불일치 안내(설정 점검) |
+| 상황                 | 처리                                               |
+| -------------------- | -------------------------------------------------- |
+| 스택 미기동          | 스크립트가 `/healthz` 선검사 후 명확한 안내로 중단 |
+| admin 토큰 부재/무효 | 401 안내 후 중단                                   |
+| 모델/정책 시드 실패  | 단계·사유 출력 후 중단(부분 적용 방지 안내)        |
+| replay 서명 불일치   | 연결 secret 불일치 안내(설정 점검)                 |
 
 ## 6. Implementation Plan
 
 ### 6-1. Milestones
 
-| Phase   | Task                                                       | Estimated | Owner |
-|---------|------------------------------------------------------------|-----------|-------|
-| Phase 1 | 데모 IR/정책/규칙 시드 러너 + idempotent + `/healthz` 선검사   | 1d        | TBD   |
-| Phase 2 | 서명 replay(ZITADEL grant→tuple) + reset 스크립트            | 1d        | TBD   |
+| Phase   | Task                                                                                                     | Estimated | Owner |
+| ------- | -------------------------------------------------------------------------------------------------------- | --------- | ----- |
+| Phase 1 | 데모 IR/정책/규칙 시드 러너 + idempotent + `/healthz` 선검사                                             | 1d        | TBD   |
+| Phase 2 | 서명 replay(ZITADEL grant→tuple) + reset 스크립트                                                        | 1d        | TBD   |
 | Phase 3 | README/getting-started/api 문서 + CONCEPT/ARCHITECTURE/ROADMAP/CLAUDE.md 동기화 + 전체 E2E 워크스루 검증 | 1d        | TBD   |
 
 ### 6-2. Dependencies

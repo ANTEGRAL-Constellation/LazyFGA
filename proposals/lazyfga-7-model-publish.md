@@ -1,11 +1,11 @@
 # Model Publish (Write Auth Model + 버전/diff) - Spec Proposal
 
-| Item       | Detail                           |
-|------------|----------------------------------|
-| Author     | Seonguk Moon                     |
-| Created    | 2026-06-28                       |
-| Status     | **Implemented**                  |
-| Reviewers  | Claude, Codex (M2 cross-review)  |
+| Item      | Detail                          |
+| --------- | ------------------------------- |
+| Author    | Seonguk Moon                    |
+| Created   | 2026-06-28                      |
+| Status    | **Implemented**                 |
+| Reviewers | Claude, Codex (M2 cross-review) |
 
 ---
 
@@ -46,21 +46,23 @@ web → POST /model(IR) → model.service
 ### 4.2 Data Model Changes
 
 신규 테이블 `model_version`:
-| column | type | 설명 |
-|--------|------|------|
-| id | uuid PK | lazyFGA 버전 id |
-| authorization_model_id | text | OpenFGA가 반환한 model id |
-| ir_json | jsonb | 발행 시점 ModelIR 스냅샷 |
-| dsl | text | 컴파일된 DSL |
-| note | text null | 사용자 메모 |
-| created_at | timestamptz | |
-| created_by | text | admin/token 식별자 |
+
+| column                 | type        | 설명                      |
+| ---------------------- | ----------- | ------------------------- |
+| id                     | uuid PK     | lazyFGA 버전 id           |
+| authorization_model_id | text        | OpenFGA가 반환한 model id |
+| ir_json                | jsonb       | 발행 시점 ModelIR 스냅샷  |
+| dsl                    | text        | 컴파일된 DSL              |
+| note                   | text null   | 사용자 메모               |
+| created_at             | timestamptz |                           |
+| created_by             | text        | admin/token 식별자        |
 
 `instance_config`(lazyfga-1)에 `current_model_version_id` 추가(최신 발행본 포인터).
 
 ### 4.3 Core Logic
 
 발행 절차(원자적 의도):
+
 1. 입력 IR에 `validateModelIR` → 위반 시 422, 발행 중단.
 2. `compileIrToDsl(ir)` → `{dsl, model}`. 실패 시 422.
 3. `openfga.writeAuthorizationModel(model)` → `authorizationModelId`. (OpenFGA 자체 모델 검증도 통과해야 함; 실패 시 502로 표면화.)
@@ -68,6 +70,7 @@ web → POST /model(IR) → model.service
 5. audit 이벤트 기록.
 
 구조 diff(`from`,`to` 두 IR 비교):
+
 - type 집합 차집합 → added/removed types.
 - 공통 type 내 roles/permissions/parents 집합 비교 → added/removed/changed(특히 permission.grantedByRoles 변경은 "권한 확대/축소"로 라벨).
 - 출력은 사람이 읽는 항목 리스트(JSON). 결정적 정렬.
@@ -85,40 +88,58 @@ GET  /model/versions   → 200 { versions: [{id, authorizationModelId, createdAt
 GET  /model/versions/:id → 200 { version, ir, dsl } | 404
 GET  /model/diff?from=&to= → 200 { changes: DiffChange[] } | 404
 ```
+
 모든 엔드포인트는 admin 인증 필요(`lazyfga-10`). (M2에선 로컬 전용으로 빌드 후 `lazyfga-10`/M3에서 가드 부착.)
 
 ```ts
 type DiffChange =
-  | { kind: "TYPE_ADDED"|"TYPE_REMOVED"; type: string }
-  | { kind: "ROLE_ADDED"|"ROLE_REMOVED"; type: string; role: string }
-  | { kind: "PERMISSION_ADDED"|"PERMISSION_REMOVED"; type: string; permission: string }
+  | { kind: "TYPE_ADDED" | "TYPE_REMOVED"; type: string }
+  | { kind: "ROLE_ADDED" | "ROLE_REMOVED"; type: string; role: string }
+  | { kind: "PERMISSION_ADDED" | "PERMISSION_REMOVED"; type: string; permission: string }
   | { kind: "GRANT_CHANGED"; type: string; permission: string; added: string[]; removed: string[] }
   // 아래 두 종류는 교차리뷰에서 추가(인가에 영향을 주는 변경을 diff에 노출):
-  | { kind: "ROLE_ASSIGNABLE_CHANGED"; type: string; role: string; added: string[]; removed: string[] }
-  | { kind: "PERMISSION_INHERIT_CHANGED"; type: string; permission: string; added: string[]; removed: string[] }
-  | { kind: "PARENT_ADDED"|"PARENT_REMOVED"; type: string; relationName: string; parentType: string };
+  | {
+      kind: "ROLE_ASSIGNABLE_CHANGED";
+      type: string;
+      role: string;
+      added: string[];
+      removed: string[];
+    }
+  | {
+      kind: "PERMISSION_INHERIT_CHANGED";
+      type: string;
+      permission: string;
+      added: string[];
+      removed: string[];
+    }
+  | {
+      kind: "PARENT_ADDED" | "PARENT_REMOVED";
+      type: string;
+      relationName: string;
+      parentType: string;
+    };
 ```
 
 ### 5-2. Error Handling
 
-| Status | Description |
-|--------|-------------|
-| 401 | 인증 실패(admin 토큰 없음/오류) |
-| 403 | service 토큰으로 control-plane 접근(역할 부족) |
-| 422 | IR 검증 실패 또는 컴파일 실패(`ValidationError[]`/`CompileError` 동반) |
-| 404 | 존재하지 않는 버전 id |
-| 502 | OpenFGA WriteAuthorizationModel 실패 |
-| 500 | DB 기록 실패(OpenFGA 고아 모델 가능 → audit 경고) |
+| Status | Description                                                            |
+| ------ | ---------------------------------------------------------------------- |
+| 401    | 인증 실패(admin 토큰 없음/오류)                                        |
+| 403    | service 토큰으로 control-plane 접근(역할 부족)                         |
+| 422    | IR 검증 실패 또는 컴파일 실패(`ValidationError[]`/`CompileError` 동반) |
+| 404    | 존재하지 않는 버전 id                                                  |
+| 502    | OpenFGA WriteAuthorizationModel 실패                                   |
+| 500    | DB 기록 실패(OpenFGA 고아 모델 가능 → audit 경고)                      |
 
 ## 6. Implementation Plan
 
 ### 6-1. Milestones
 
-| Phase   | Task                                            | Estimated | Owner |
-|---------|-------------------------------------------------|-----------|-------|
-| Phase 1 | `model_version` 스키마 + 발행 절차(1~5)           | 1.5d      | TBD   |
-| Phase 2 | 버전 조회 엔드포인트 + current 포인터              | 0.5d      | TBD   |
-| Phase 3 | 구조 diff 구현 + 테스트                           | 1d        | TBD   |
+| Phase   | Task                                    | Estimated | Owner |
+| ------- | --------------------------------------- | --------- | ----- |
+| Phase 1 | `model_version` 스키마 + 발행 절차(1~5) | 1.5d      | TBD   |
+| Phase 2 | 버전 조회 엔드포인트 + current 포인터   | 0.5d      | TBD   |
+| Phase 3 | 구조 diff 구현 + 테스트                 | 1d        | TBD   |
 
 ### 6-2. Dependencies
 

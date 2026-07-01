@@ -59,9 +59,16 @@ describe("condition edit ops (pure)", () => {
     const ir = clone();
     const next = updateCondition(ir, "biz", {
       ...biz,
-      tree: { kind: "time", param: "current_time", op: "lte", rhs: { kind: "param", param: "expiry" } },
+      tree: {
+        kind: "time",
+        param: "current_time",
+        op: "lte",
+        rhs: { kind: "param", param: "expiry" },
+      },
     });
-    expect((next.conditions![0]!.tree as { op?: string; param?: string }).param).toBe("current_time");
+    expect((next.conditions![0]!.tree as { op?: string; param?: string }).param).toBe(
+      "current_time",
+    );
   });
 
   test("renameCondition updates referencing SubjectRef.condition", () => {
@@ -90,11 +97,15 @@ describe("condition edit ops (pure)", () => {
 
 describe("policyContextParams", () => {
   test("direct conditioned role → its params", () => {
-    expect(policyContextParams(base, { permission: "read", resourceType: "folder" })).toEqual(biz.params);
+    expect(policyContextParams(base, { permission: "read", resourceType: "folder" })).toEqual(
+      biz.params,
+    );
   });
 
   test("follows inherited parent to find conditioned grant", () => {
-    expect(policyContextParams(base, { permission: "read", resourceType: "document" })).toEqual(biz.params);
+    expect(policyContextParams(base, { permission: "read", resourceType: "document" })).toEqual(
+      biz.params,
+    );
   });
 
   test("no conditions on path → empty", () => {

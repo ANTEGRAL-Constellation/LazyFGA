@@ -31,7 +31,8 @@ function scalarValue(
   if (path.startsWith("attributes.")) {
     const v = ev.attributes[path.slice("attributes.".length)];
     if (v === undefined) return { error: `unresolved {{${path}}}` };
-    if (Array.isArray(v)) return { error: `attribute {{${path}}} is an array; use fan-out ({{item}})` };
+    if (Array.isArray(v))
+      return { error: `attribute {{${path}}} is an array; use fan-out ({{item}})` };
     return { value: v };
   }
   return { error: `unresolved {{${path}}}` };
@@ -76,7 +77,8 @@ export function renderTuple(
     let out = s;
     for (const path of placeholders) {
       const { value, error } = scalarValue(ev, path, item);
-      if (error !== undefined || value === undefined) return { error: error ?? `unresolved {{${path}}}` };
+      if (error !== undefined || value === undefined)
+        return { error: error ?? `unresolved {{${path}}}` };
       if (FORBIDDEN_IN_VALUE.test(value))
         return { error: `value for {{${path}}} contains forbidden char (:#* or space)` };
       out = out.split(`{{${path}}}`).join(value);

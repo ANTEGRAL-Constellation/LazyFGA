@@ -14,7 +14,12 @@ import type {
 const isGroup = (n: ConditionNode): n is { op: "and" | "or"; children: ConditionNode[] } =>
   "children" in n;
 
-const TIME_OP: Record<"lt" | "lte" | "gt" | "gte", string> = { lt: "<", lte: "<=", gt: ">", gte: ">=" };
+const TIME_OP: Record<"lt" | "lte" | "gt" | "gte", string> = {
+  lt: "<",
+  lte: "<=",
+  gt: ">",
+  gte: ">=",
+};
 const VALUE_OP: Record<"eq" | "neq" | "lt" | "lte" | "gt" | "gte", string> = {
   eq: "==",
   neq: "!=",
@@ -40,7 +45,9 @@ function celLiteral(v: string | number | boolean): string {
 function leafToCel(leaf: ConditionLeaf): string {
   if (leaf.kind === "time") {
     const rhs =
-      leaf.rhs.kind === "literal" ? `timestamp(${JSON.stringify(leaf.rhs.rfc3339)})` : leaf.rhs.param;
+      leaf.rhs.kind === "literal"
+        ? `timestamp(${JSON.stringify(leaf.rhs.rfc3339)})`
+        : leaf.rhs.param;
     return `${leaf.param} ${TIME_OP[leaf.op]} ${rhs}`;
   }
   if (leaf.kind === "ip") return `${leaf.param}.in_cidr(${JSON.stringify(leaf.cidr)})`;
@@ -188,7 +195,6 @@ export function tryParseCondition(
     if (!leaf) return null;
     leaves.push(leaf);
   }
-  const tree: ConditionNode =
-    leaves.length === 1 ? leaves[0]! : { op: split.op, children: leaves };
+  const tree: ConditionNode = leaves.length === 1 ? leaves[0]! : { op: split.op, children: leaves };
   return { name, params, tree };
 }

@@ -1,11 +1,11 @@
 # Model IR (5-primitive) - Spec Proposal
 
-| Item       | Detail                           |
-|------------|----------------------------------|
-| Author     | Seonguk Moon                     |
-| Created    | 2026-06-28                       |
-| Status     | **Implemented**                  |
-| Reviewers  | Claude, Codex (M1 cross-review)  |
+| Item      | Detail                          |
+| --------- | ------------------------------- |
+| Author    | Seonguk Moon                    |
+| Created   | 2026-06-28                      |
+| Status    | **Implemented**                 |
+| Reviewers | Claude, Codex (M1 cross-review) |
 
 ---
 
@@ -38,6 +38,7 @@
 ### 4.1 Architecture Overview
 
 IR은 순수 데이터다. 소비자/생산자:
+
 ```
 web/model-canvas, web/permission-matrix  ── read/write ──▶  ModelIR
 packages/compiler (ir-to-dsl / dsl-to-ir) ── transform ──▶  OpenFGA DSL/JSON
@@ -54,55 +55,58 @@ IR 스키마(개념상 오해가 없도록 각 필드의 DSL 대응을 명시):
 ```ts
 // packages/shared/src/model.ts
 export interface ModelIR {
-  schemaVersion: "1.1";          // OpenFGA schema 버전 고정
-  groups: GroupType[];           // 주체(subject) 묶음 — 예: team
-  resources: ResourceType[];     // 보호 대상 — 예: folder, document
+  schemaVersion: "1.1"; // OpenFGA schema 버전 고정
+  groups: GroupType[]; // 주체(subject) 묶음 — 예: team
+  resources: ResourceType[]; // 보호 대상 — 예: folder, document
 }
 
 // 주체 그룹. DSL: `type <name> { relations { define member: [<memberTypes>] } }`
 export interface GroupType {
-  name: string;                          // 예: "team"  → OpenFGA type 이름
-  memberTypes: SubjectRef[];             // member 관계의 type restriction. 예: [user, team#member]
+  name: string; // 예: "team"  → OpenFGA type 이름
+  memberTypes: SubjectRef[]; // member 관계의 type restriction. 예: [user, team#member]
 }
 
 export interface ResourceType {
-  name: string;                  // 예: "document" → OpenFGA type
-  parents: ParentRef[];          // 상속(Hierarchy). 없으면 빈 배열
-  roles: Role[];                 // 부여(assignable) 가능한 관계
-  permissions: Permission[];     // 검사(computed) 관계. DSL에서 `can_<name>`
+  name: string; // 예: "document" → OpenFGA type
+  parents: ParentRef[]; // 상속(Hierarchy). 없으면 빈 배열
+  roles: Role[]; // 부여(assignable) 가능한 관계
+  permissions: Permission[]; // 검사(computed) 관계. DSL에서 `can_<name>`
 }
 
 // 상속 엣지. DSL: `define <relationName>: [<parentTypes...>]` + 권한이 `... from <relationName>`
 export interface ParentRef {
-  relationName: string;          // 예: "parent". ResourceType 내 relation 네임스페이스(role/permission/parent) 전역 유일
-  parentTypes: string[];         // 예: ["folder"] 또는 ["folder","document"]. 모두 resources 내 존재. 같은 relationName은 단일 ParentRef로 병합
+  relationName: string; // 예: "parent". ResourceType 내 relation 네임스페이스(role/permission/parent) 전역 유일
+  parentTypes: string[]; // 예: ["folder"] 또는 ["folder","document"]. 모두 resources 내 존재. 같은 relationName은 단일 ParentRef로 병합
 }
 
 // 부여 가능한 역할. DSL: `define <name>: [<assignableBy>]`
 export interface Role {
-  name: string;                  // 예: "owner" | "editor" | "viewer"
-  assignableBy: SubjectRef[];    // type restriction. 예: [user, team#member]
+  name: string; // 예: "owner" | "editor" | "viewer"
+  assignableBy: SubjectRef[]; // type restriction. 예: [user, team#member]
 }
 
 // 검사용 권한(액션). DSL: `define can_<name>: <grantedByRoles를 or로> [or can_<name> from <parent>]`
 export interface Permission {
-  name: string;                  // 예: "read" → 관계 이름은 "can_read"
-  grantedByRoles: string[];      // 이 권한을 주는 역할 목록(행렬의 열). 같은 ResourceType.roles[].name 중 하나 이상
-  inheritFromParents: string[];  // 상속받을 ParentRef.relationName 목록(없으면 빈 배열)
-  condition?: ConditionRef;      // 예약(= lazyfga-14, 배치 재검토). MVP에선 항상 undefined
+  name: string; // 예: "read" → 관계 이름은 "can_read"
+  grantedByRoles: string[]; // 이 권한을 주는 역할 목록(행렬의 열). 같은 ResourceType.roles[].name 중 하나 이상
+  inheritFromParents: string[]; // 상속받을 ParentRef.relationName 목록(없으면 빈 배열)
+  condition?: ConditionRef; // 예약(= lazyfga-14, 배치 재검토). MVP에선 항상 undefined
 }
 
 // 주체 참조: 직접 user이거나, 그룹 멤버 userset
 export type SubjectRef =
-  | { kind: "user" }                       // DSL: user
+  | { kind: "user" } // DSL: user
   | { kind: "group"; group: string; relation: "member" }; // DSL: <group>#member
 
-export interface ConditionRef { name: string } // 예약
+export interface ConditionRef {
+  name: string;
+} // 예약
 ```
 
 > **역할 계층 비목표 근거 (2026-06-28 확정):** CONCEPT은 owner⊇editor⊇viewer 같은 ranking을 "편의"로 언급했으나, 동일 의미를 행렬로 완전히 표현할 수 있다(예: read 열에 viewer·editor·owner 모두 체크). MVP는 행렬을 **유일한 권한 출처**로 삼아 단순성을 택한다. 역할→역할 함의(`implies`)는 후속 확장 여지로만 둔다. — 사용자 확정: 행렬 방식 채택.
 
 검증 규칙(`validateModelIR(ir): Result<void, ValidationError[]>`):
+
 1. 모든 `name`은 OpenFGA 식별자 규칙(`^[a-zA-Z0-9_]+$`)을 만족하고 예약어와 충돌하지 않는다.
 2. type 이름(groups+resources)은 전역 유일. `user`는 예약 base type이므로 사용자 정의 금지.
 3. 한 ResourceType 내 **relation 네임스페이스 전역**(role 이름, `can_<permission>`, `ParentRef.relationName`)이 서로 유일하다 — role·permission·parent relation 이름이 충돌하지 않는다.
@@ -124,10 +128,18 @@ export interface ConditionRef { name: string } // 예약
 export function validateModelIR(ir: ModelIR): ValidationError[]; // 빈 배열 = 유효
 
 export interface ValidationError {
-  code: "BAD_NAME" | "DUP_TYPE" | "DUP_RELATION" | "UNKNOWN_PARENT"
-      | "UNKNOWN_ROLE" | "UNKNOWN_GROUP" | "EMPTY_GRANT" | "RESERVED_USER"
-      | "PARENT_MISSING_PERMISSION" | "DUP_PARENT_RELATION";
-  path: string;     // 예: "resources[1].permissions[0].grantedByRoles[2]"
+  code:
+    | "BAD_NAME"
+    | "DUP_TYPE"
+    | "DUP_RELATION"
+    | "UNKNOWN_PARENT"
+    | "UNKNOWN_ROLE"
+    | "UNKNOWN_GROUP"
+    | "EMPTY_GRANT"
+    | "RESERVED_USER"
+    | "PARENT_MISSING_PERMISSION"
+    | "DUP_PARENT_RELATION";
+  path: string; // 예: "resources[1].permissions[0].grantedByRoles[2]"
   message: string;
 }
 ```
@@ -140,11 +152,11 @@ REST 아님. 발생 가능한 에러 = §4.3 검증 규칙 1~6 위반 → `Valid
 
 ### 6-1. Milestones
 
-| Phase   | Task                                              | Estimated | Owner |
-|---------|---------------------------------------------------|-----------|-------|
-| Phase 1 | `ModelIR` 타입 + 런타임 스키마 정의                | 0.5d      | TBD   |
-| Phase 2 | `validateModelIR` 규칙 1~6 구현 + 단위 테스트       | 1d        | TBD   |
-| Phase 3 | doc/folder/team 레퍼런스 픽스처 작성               | 0.5d      | TBD   |
+| Phase   | Task                                          | Estimated | Owner |
+| ------- | --------------------------------------------- | --------- | ----- |
+| Phase 1 | `ModelIR` 타입 + 런타임 스키마 정의           | 0.5d      | TBD   |
+| Phase 2 | `validateModelIR` 규칙 1~6 구현 + 단위 테스트 | 1d        | TBD   |
+| Phase 3 | doc/folder/team 레퍼런스 픽스처 작성          | 0.5d      | TBD   |
 
 ### 6-2. Dependencies
 

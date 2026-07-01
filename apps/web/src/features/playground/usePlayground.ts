@@ -18,7 +18,11 @@ export interface CaseResult {
 }
 
 const DEFAULT_CASES: TestCase[] = [
-  { subject: { type: "user", id: "alice" }, action: { name: "read" }, resource: { type: "document", id: "123" } },
+  {
+    subject: { type: "user", id: "alice" },
+    action: { name: "read" },
+    resource: { type: "document", id: "123" },
+  },
 ];
 
 function isTestCase(c: unknown): c is TestCase {
@@ -71,7 +75,10 @@ export function usePlayground(): {
   const [cases, setCasesState] = useState<TestCase[]>(loadCases);
   const [results, setResults] = useState<CaseResult[]>([]);
   const [running, setRunning] = useState(false);
-  const [policyOptions, setPolicyOptions] = useState<PolicyOptions>({ actions: [], resourceTypes: [] });
+  const [policyOptions, setPolicyOptions] = useState<PolicyOptions>({
+    actions: [],
+    resourceTypes: [],
+  });
   // 케이스 세대 번호. 진행 중 runAll의 결과를 그 사이 변경된 케이스에 잘못 매핑하지 않도록 무효화.
   const generation = useRef(0);
 
@@ -93,7 +100,9 @@ export function usePlayground(): {
         headers: token ? { authorization: `Bearer ${token}` } : {},
       });
       if (!res.ok) return;
-      const data = (await res.json()) as { policies: Array<{ permission: string; resourceType: string }> };
+      const data = (await res.json()) as {
+        policies: Array<{ permission: string; resourceType: string }>;
+      };
       setPolicyOptions({
         actions: [...new Set(data.policies.map((p) => p.permission))],
         resourceTypes: [...new Set(data.policies.map((p) => p.resourceType))],
@@ -112,8 +121,16 @@ export function usePlayground(): {
         try {
           const res = await fetch(`${API_BASE}/access/v1/evaluation`, {
             method: "POST",
-            headers: { "content-type": "application/json", ...(token ? { authorization: `Bearer ${token}` } : {}) },
-            body: JSON.stringify({ subject: tc.subject, action: tc.action, resource: tc.resource, context: tc.context }),
+            headers: {
+              "content-type": "application/json",
+              ...(token ? { authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({
+              subject: tc.subject,
+              action: tc.action,
+              resource: tc.resource,
+              context: tc.context,
+            }),
           });
           if (!res.ok) {
             out.push({ error: `HTTP ${res.status}` });
@@ -135,5 +152,15 @@ export function usePlayground(): {
     }
   }
 
-  return { token, setToken, cases, setCases, results, running, runAll, loadPolicyOptions, policyOptions };
+  return {
+    token,
+    setToken,
+    cases,
+    setCases,
+    results,
+    running,
+    runAll,
+    loadPolicyOptions,
+    policyOptions,
+  };
 }

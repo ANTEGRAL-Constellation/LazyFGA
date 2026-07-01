@@ -37,7 +37,12 @@ modelRoutes.get("/current", async (c) => {
   const v = await getCurrentVersion();
   if (!v) return c.json({ error: "no model published yet" }, 404);
   return c.json({
-    version: { id: v.id, authorizationModelId: v.authorizationModelId, createdAt: v.createdAt, note: v.note },
+    version: {
+      id: v.id,
+      authorizationModelId: v.authorizationModelId,
+      createdAt: v.createdAt,
+      note: v.note,
+    },
     ir: v.irJson,
     dsl: v.dsl,
   });
@@ -71,7 +76,12 @@ modelRoutes.get("/versions/:id", async (c) => {
   const v = await getVersion(c.req.param("id"));
   if (!v) return c.json({ error: "version not found" }, 404);
   return c.json({
-    version: { id: v.id, authorizationModelId: v.authorizationModelId, createdAt: v.createdAt, note: v.note },
+    version: {
+      id: v.id,
+      authorizationModelId: v.authorizationModelId,
+      createdAt: v.createdAt,
+      note: v.note,
+    },
     ir: v.irJson,
     dsl: v.dsl,
   });

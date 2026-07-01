@@ -3,7 +3,13 @@ import { FgaApiError, FgaApiInternalError, FgaApiRateLimitExceededError } from "
 // OpenFGA write/delete 오류 분류(lazyfga-15 hardening). idp(웹훅 동기화)·permission(lazyfga-20
 // grant/revoke)이 공유한다. 분류 의미는 두 곳에서 동일해야 하므로 단일 모듈로 둔다.
 
-const TRANSIENT_CODES = new Set(["ECONNREFUSED", "ENOTFOUND", "ECONNRESET", "ETIMEDOUT", "EAI_AGAIN"]);
+const TRANSIENT_CODES = new Set([
+  "ECONNREFUSED",
+  "ENOTFOUND",
+  "ECONNRESET",
+  "ETIMEDOUT",
+  "EAI_AGAIN",
+]);
 
 /**
  * 일시적(재시도 가능) OpenFGA 오류인가. **HTTP status 기준**:
@@ -22,7 +28,12 @@ export function isTransientApiError(e: unknown): boolean {
     const code = (e as { code?: string } | null)?.code;
     if (code && TRANSIENT_CODES.has(code)) return true;
     const m = String((e as { message?: string } | null)?.message ?? e).toLowerCase();
-    if (m.includes("fetch failed") || m.includes("network") || m.includes("timeout") || m.includes("econnrefused"))
+    if (
+      m.includes("fetch failed") ||
+      m.includes("network") ||
+      m.includes("timeout") ||
+      m.includes("econnrefused")
+    )
       return true;
     // 정체불명 + status 없음 → 무한재시도 방지 위해 결정적으로 취급(false).
   }

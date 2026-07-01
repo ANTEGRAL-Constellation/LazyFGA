@@ -67,7 +67,12 @@ export async function grant(req: GrantRequest, actor: string): Promise<{ created
   }
   recordAudit(
     "permission.grant",
-    { subject: req.subject, relation: req.relation, resource: req.resource, condition: req.condition },
+    {
+      subject: req.subject,
+      relation: req.relation,
+      resource: req.resource,
+      condition: req.condition,
+    },
     actor,
   );
   return { created: true };
@@ -123,10 +128,15 @@ async function readTuples(input: { user?: string; object?: string }): Promise<Re
 }
 
 /** 리소스 위 배정 목록(단일 Read). 배정 가능 relation으로만 필터(parent edge 등 제외). */
-export async function listByResource(resource: { type: string; id: string }): Promise<GrantEntry[]> {
+export async function listByResource(resource: {
+  type: string;
+  id: string;
+}): Promise<GrantEntry[]> {
   const { ir } = await publishedModel();
   const tuples = await readTuples({ object: `${resource.type}:${resource.id}` });
-  return tuples.filter((t) => isAssignableRelation(ir, resource.type, t.relation)).map(tupleToEntry);
+  return tuples
+    .filter((t) => isAssignableRelation(ir, resource.type, t.relation))
+    .map(tupleToEntry);
 }
 
 /**

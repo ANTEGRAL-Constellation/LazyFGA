@@ -64,8 +64,10 @@ export function useExplain(): {
       }
       const data = (await res.json()) as { decision: boolean; context?: { reason?: ReasonResult } };
       if (stale()) return;
-      const reason: ReasonResult =
-        data.context?.reason ?? { decision: data.decision, text: data.decision ? "allowed" : "denied" };
+      const reason: ReasonResult = data.context?.reason ?? {
+        decision: data.decision,
+        text: data.decision ? "allowed" : "denied",
+      };
       setResult(reason);
       setHighlight(computeHighlight(req, reason));
     } catch (e) {

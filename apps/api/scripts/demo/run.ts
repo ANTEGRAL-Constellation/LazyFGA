@@ -29,7 +29,8 @@ const log = (msg: string): void => console.log(`\n▶ ${msg}`);
 async function main(): Promise<void> {
   // 0) 스택 선검사.
   const health = await fetch(`${API}/healthz`).catch(() => null);
-  if (!health || !health.ok) throw new Error(`api not ready at ${API} (start api + openfga + postgres first)`);
+  if (!health || !health.ok)
+    throw new Error(`api not ready at ${API} (start api + openfga + postgres first)`);
 
   // 1) 데모 모델 발행: docFolderTeamIR + 조건 1개(non_expired)를 document.owner 부여에 부착.
   //    (조건은 시연 allow 경로(viewer 상속) 밖이라 evaluate에 context가 없어도 ALLOW가 난다.)
@@ -39,7 +40,12 @@ async function main(): Promise<void> {
       { name: "current_time", type: "timestamp" },
       { name: "expiry", type: "timestamp" },
     ],
-    tree: { kind: "time", param: "current_time", op: "lt", rhs: { kind: "param", param: "expiry" } },
+    tree: {
+      kind: "time",
+      param: "current_time",
+      op: "lt",
+      rhs: { kind: "param", param: "expiry" },
+    },
   };
   let demoIr: ModelIR = addCondition(docFolderTeamIR, nonExpired);
   demoIr = setAssignmentCondition(demoIr, "document", "owner", 0, "non_expired");
@@ -70,7 +76,9 @@ async function main(): Promise<void> {
   if (created.status === 201) {
     connectionId = ((await created.json()) as { connection: { id: string } }).connection.id;
   } else {
-    const list = (await (await fetch(`${API}/idp/connections`, { headers: adminHeaders })).json()) as {
+    const list = (await (
+      await fetch(`${API}/idp/connections`, { headers: adminHeaders })
+    ).json()) as {
       connections: Array<{ id: string; provider: string }>;
     };
     connectionId = list.connections.find((c) => c.provider === "zitadel")!.id;
@@ -91,14 +99,21 @@ async function main(): Promise<void> {
     body: JSON.stringify({
       eventType: "user.grant.added",
       op: "write",
-      tupleTemplate: { user: "user:{{subject}}", relation: "member", object: "team:{{attributes.project}}" },
+      tupleTemplate: {
+        user: "user:{{subject}}",
+        relation: "member",
+        object: "team:{{attributes.project}}",
+      },
     }),
   });
 
   // 4) 서명된 ZITADEL grant 이벤트 replay → user:alice member team:eng (webhook 경로, audited).
   //    실제 ZITADEL shape: usergrant-aggregate → 주체는 event_payload.userId, 타임스탬프는 초.
   log("replay a signed ZITADEL user.grant.added webhook (alice granted project 'eng')");
-  const payload = { event_type: "user.grant.added", event_payload: { userId: "alice", projectId: "eng" } };
+  const payload = {
+    event_type: "user.grant.added",
+    event_payload: { userId: "alice", projectId: "eng" },
+  };
   const raw = new TextEncoder().encode(JSON.stringify(payload));
   const sig = zitadelSignatureHeader(raw, SIGNING, Math.floor(Date.now() / 1000));
   const wh = await fetch(`${API}/idp/webhook/zitadel`, {
@@ -140,11 +155,16 @@ async function main(): Promise<void> {
       options: { reason: true },
     }),
   });
-  const decision = (await evalRes.json()) as { decision: boolean; context?: { reason?: { text: string } } };
+  const decision = (await evalRes.json()) as {
+    decision: boolean;
+    context?: { reason?: { text: string } };
+  };
   console.log(`   decision: ${decision.decision ? "ALLOW" : "DENY"}`);
   console.log(`   reason:   ${decision.context?.reason?.text ?? "(none)"}`);
 
-  console.log("\n✔ demo complete. Explore in the web studio (canvas / conditions / playground / audit).");
+  console.log(
+    "\n✔ demo complete. Explore in the web studio (canvas / conditions / playground / audit).",
+  );
 }
 
 try {

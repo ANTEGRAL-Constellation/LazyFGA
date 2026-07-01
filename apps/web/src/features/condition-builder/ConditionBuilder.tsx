@@ -77,8 +77,7 @@ export function ConditionBuilder({
 
   // ── leaves (root group children; 편집은 nested가 아닐 때만) ──
   const addLeaf = (): void => emitTree([...root.children, defaultLeaf("value", value.params)]);
-  const removeLeaf = (i: number): void =>
-    emitTree(root.children.filter((_, idx) => idx !== i));
+  const removeLeaf = (i: number): void => emitTree(root.children.filter((_, idx) => idx !== i));
   const setLeaf = (i: number, leaf: ConditionLeaf): void =>
     emitTree(root.children.map((c, idx) => (idx === i ? leaf : c)));
 
@@ -126,7 +125,11 @@ export function ConditionBuilder({
                 </option>
               ))}
             </select>
-            <button onClick={() => removeParam(i)} disabled={nested} data-testid={`cond-param-del-${i}`}>
+            <button
+              onClick={() => removeParam(i)}
+              disabled={nested}
+              data-testid={`cond-param-del-${i}`}
+            >
               ✕
             </button>
           </span>
@@ -264,7 +267,9 @@ function LeafRow({
             <input
               value={leaf.rhs.rfc3339}
               placeholder="RFC3339 time"
-              onChange={(e) => onChange({ ...leaf, rhs: { kind: "literal", rfc3339: e.target.value } })}
+              onChange={(e) =>
+                onChange({ ...leaf, rhs: { kind: "literal", rfc3339: e.target.value } })
+              }
               data-testid={`cond-rule-rhs-${index}`}
             />
           ) : (
@@ -302,7 +307,9 @@ function LeafRow({
         <>
           <select
             value={leaf.op}
-            onChange={(e) => onChange({ ...leaf, op: e.target.value as (typeof VALUE_OPS)[number] })}
+            onChange={(e) =>
+              onChange({ ...leaf, op: e.target.value as (typeof VALUE_OPS)[number] })
+            }
             data-testid={`cond-rule-op-${index}`}
           >
             {VALUE_OPS.map((o) => (

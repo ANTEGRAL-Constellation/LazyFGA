@@ -15,9 +15,7 @@ export interface ConditionParam {
 }
 
 /** 시간 비교의 우변: 고정 시각(literal) 또는 다른 timestamp 파라미터. */
-export type TimeRhs =
-  | { kind: "literal"; rfc3339: string }
-  | { kind: "param"; param: string };
+export type TimeRhs = { kind: "literal"; rfc3339: string } | { kind: "param"; param: string };
 
 /** 단일 비교(leaf 술어). */
 export type ConditionLeaf =
@@ -182,12 +180,7 @@ export function isValidConditionName(name: string): boolean {
   return IDENT_RE.test(name) && !RESERVED_WORDS.has(name) && !CEL_RESERVED.has(name);
 }
 
-const VALUE_TYPES: ReadonlySet<ConditionParamType> = new Set([
-  "string",
-  "int",
-  "double",
-  "bool",
-]);
+const VALUE_TYPES: ReadonlySet<ConditionParamType> = new Set(["string", "int", "double", "bool"]);
 const ORDER_OPS: ReadonlySet<string> = new Set(["lt", "lte", "gt", "gte"]);
 
 /** 조건 정의의 정적 검증(빈 배열 = 유효, 예외 없음). lazyfga-13 §4.3 규칙 1~7. */
@@ -220,7 +213,11 @@ export function validateConditionDef(def: ConditionDef): ConditionError[] {
     }
     const t = paramType.get(param)!;
     if (!wanted.includes(t)) {
-      add("TYPE_MISMATCH", `${path}.param`, `param "${param}" is ${t}, expected ${wanted.join("|")}`);
+      add(
+        "TYPE_MISMATCH",
+        `${path}.param`,
+        `param "${param}" is ${t}, expected ${wanted.join("|")}`,
+      );
     }
   };
 
@@ -250,7 +247,11 @@ export function validateConditionDef(def: ConditionDef): ConditionError[] {
           (t === "double" && typeof v === "number" && Number.isFinite(v)) ||
           (t === "bool" && typeof v === "boolean");
         if (!ok) {
-          add("TYPE_MISMATCH", `${path}.value`, `value ${JSON.stringify(v)} does not match param type ${t}`);
+          add(
+            "TYPE_MISMATCH",
+            `${path}.value`,
+            `value ${JSON.stringify(v)} does not match param type ${t}`,
+          );
         }
         if (t === "bool" && ORDER_OPS.has(leaf.op)) {
           add("TYPE_MISMATCH", `${path}.op`, `ordering op "${leaf.op}" not allowed on bool param`);

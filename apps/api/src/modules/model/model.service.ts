@@ -48,7 +48,8 @@ export async function publishModel(
     // AuthModelJSON(= Omit<AuthorizationModel,"id">)은 WriteAuthorizationModelRequest와 구조 동일.
     model = compiled.model as unknown as WriteAuthorizationModelRequest;
   } catch (e) {
-    if (e instanceof CompileError) throw new PublishError(422, { compile: e.reason, detail: e.detail });
+    if (e instanceof CompileError)
+      throw new PublishError(422, { compile: e.reason, detail: e.detail });
     throw e;
   }
 

@@ -1,11 +1,11 @@
 # Named Policy Store - Spec Proposal
 
-| Item       | Detail                           |
-|------------|----------------------------------|
-| Author     | Seonguk Moon                     |
-| Created    | 2026-06-28                       |
-| Status     | **Implemented**                  |
-| Reviewers  | Claude, Codex (M3 cross-review)  |
+| Item      | Detail                          |
+| --------- | ------------------------------- |
+| Author    | Seonguk Moon                    |
+| Created   | 2026-06-28                      |
+| Status    | **Implemented**                 |
+| Reviewers | Claude, Codex (M3 cross-review) |
 
 ---
 
@@ -46,20 +46,22 @@ lazyfga-9(PDP) → policy.findByActionResource(permission, resourceType)
 ### 4.2 Data Model Changes
 
 신규 테이블 `policy`:
-| column | type | 설명 |
-|--------|------|------|
-| id | text PK | slug. 예: "can-read-document" |
-| permission | text | 예: "read" (relation = `can_read`) |
-| resource_type | text | 예: "document" |
-| description | text null | |
-| created_at / updated_at | timestamptz | |
-| condition_ref | text null | `lazyfga-14`에서 **미사용 확정**(조건은 모델 레벨에서 OpenFGA가 강제, 정책 단위 조건 없음). 컬럼은 유지·미사용. |
+
+| column                  | type        | 설명                                                                                                            |
+| ----------------------- | ----------- | --------------------------------------------------------------------------------------------------------------- |
+| id                      | text PK     | slug. 예: "can-read-document"                                                                                   |
+| permission              | text        | 예: "read" (relation = `can_read`)                                                                              |
+| resource_type           | text        | 예: "document"                                                                                                  |
+| description             | text null   |                                                                                                                 |
+| created_at / updated_at | timestamptz |                                                                                                                 |
+| condition_ref           | text null   | `lazyfga-14`에서 **미사용 확정**(조건은 모델 레벨에서 OpenFGA가 강제, 정책 단위 조건 없음). 컬럼은 유지·미사용. |
 
 제약: `UNIQUE(permission, resource_type)`.
 
 ### 4.3 Core Logic
 
 생성/수정 검증:
+
 1. `id`는 slug 규칙(`^[a-z0-9-]+$`), 유일.
 2. `(permission, resource_type)` 유일(중복 시 409).
 3. 현재 발행 모델 로드 → `resource_type` type 존재 && `can_<permission>` relation 존재 확인. 없으면 422(모델 먼저 발행/수정 안내).
@@ -78,13 +80,17 @@ GET    /policies/:id  → 200 { policy } | 404
 PUT    /policies/:id  { permission?, resourceType?, description? } → 200 { policy }
 DELETE /policies/:id  → 204
 ```
+
 모두 admin 인증(`lazyfga-10`).
 
 ```ts
 // packages/shared/src/policy.ts
 export interface Policy {
-  id: string; permission: string; resourceType: string;
-  description?: string; conditionRef?: string; // lazyfga-14: 미사용 확정(조건은 모델 레벨)
+  id: string;
+  permission: string;
+  resourceType: string;
+  description?: string;
+  conditionRef?: string; // lazyfga-14: 미사용 확정(조건은 모델 레벨)
 }
 // 서버 내부 조회 계약
 export interface PolicyRepo {
@@ -95,23 +101,23 @@ export interface PolicyRepo {
 
 ### 5-2. Error Handling
 
-| Status | Description |
-|--------|-------------|
-| 401 | 인증 실패 |
-| 403 | service 토큰으로 control-plane 접근(역할 부족) |
-| 409 | `id` 또는 `(permission, resourceType)` 중복 |
-| 422 | slug 규칙 위반 / 현재 모델에 type·relation 부재 |
-| 404 | 없는 정책 |
+| Status | Description                                     |
+| ------ | ----------------------------------------------- |
+| 401    | 인증 실패                                       |
+| 403    | service 토큰으로 control-plane 접근(역할 부족)  |
+| 409    | `id` 또는 `(permission, resourceType)` 중복     |
+| 422    | slug 규칙 위반 / 현재 모델에 type·relation 부재 |
+| 404    | 없는 정책                                       |
 
 ## 6. Implementation Plan
 
 ### 6-1. Milestones
 
 | Phase   | Task                                          | Estimated | Owner |
-|---------|-----------------------------------------------|-----------|-------|
-| Phase 1 | `policy` 스키마 + CRUD + 유일성 제약            | 1d        | TBD   |
-| Phase 2 | 현재 모델 대조 검증(type/relation 존재)         | 0.5d      | TBD   |
-| Phase 3 | `PolicyRepo` 조회(by id / by action+resource)  | 0.5d      | TBD   |
+| ------- | --------------------------------------------- | --------- | ----- |
+| Phase 1 | `policy` 스키마 + CRUD + 유일성 제약          | 1d        | TBD   |
+| Phase 2 | 현재 모델 대조 검증(type/relation 존재)       | 0.5d      | TBD   |
+| Phase 3 | `PolicyRepo` 조회(by id / by action+resource) | 0.5d      | TBD   |
 
 ### 6-2. Dependencies
 

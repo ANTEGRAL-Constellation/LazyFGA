@@ -1,4 +1,9 @@
-import { validateModelIR, type ModelIR, type SubjectRef, type ValidationError } from "@lazyfga/shared";
+import {
+  validateModelIR,
+  type ModelIR,
+  type SubjectRef,
+  type ValidationError,
+} from "@lazyfga/shared";
 import { transformer } from "@openfga/syntax-transformer";
 import { conditionToCel } from "./condition-to-cel";
 
@@ -34,7 +39,11 @@ function emitDsl(ir: ModelIR): string {
   const lines: string[] = ["model", "  schema 1.1", "type user"];
 
   for (const g of ir.groups) {
-    lines.push(`type ${g.name}`, "  relations", `    define member: ${serializeSubjects(g.memberTypes)}`);
+    lines.push(
+      `type ${g.name}`,
+      "  relations",
+      `    define member: ${serializeSubjects(g.memberTypes)}`,
+    );
   }
 
   for (const r of ir.resources) {

@@ -65,10 +65,7 @@ describe("validateGrant — assignability", () => {
   });
 
   test("userset with non-member relation → subject_type_not_allowed", () => {
-    const r = validateGrant(
-      M,
-      grant({ subject: { type: "team", id: "eng", relation: "owner" } }),
-    );
+    const r = validateGrant(M, grant({ subject: { type: "team", id: "eng", relation: "owner" } }));
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.code).toBe("subject_type_not_allowed");
   });
@@ -126,14 +123,22 @@ const conditioned: ModelIR = {
     {
       name: "expiry",
       params: [{ name: "now", type: "timestamp" }],
-      tree: { kind: "time", param: "now", op: "lt", rhs: { kind: "literal", rfc3339: "2030-01-01T00:00:00Z" } },
+      tree: {
+        kind: "time",
+        param: "now",
+        op: "lt",
+        rhs: { kind: "literal", rfc3339: "2030-01-01T00:00:00Z" },
+      },
     },
   ],
 };
 
 describe("validateGrant — conditions (lazyfga-14)", () => {
   test("conditionless grant on condition-only subject type → condition_required", () => {
-    const r = validateGrant(conditioned, grant({ subject: { type: "user", id: "a" }, relation: "editor" }));
+    const r = validateGrant(
+      conditioned,
+      grant({ subject: { type: "user", id: "a" }, relation: "editor" }),
+    );
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.code).toBe("condition_required");
   });
@@ -149,7 +154,11 @@ describe("validateGrant — conditions (lazyfga-14)", () => {
   test("grant with permitted condition → ok", () => {
     const r = validateGrant(
       conditioned,
-      grant({ subject: { type: "user", id: "a" }, relation: "editor", condition: { name: "expiry" } }),
+      grant({
+        subject: { type: "user", id: "a" },
+        relation: "editor",
+        condition: { name: "expiry" },
+      }),
     );
     expect(r).toEqual({ ok: true });
   });
@@ -157,7 +166,11 @@ describe("validateGrant — conditions (lazyfga-14)", () => {
   test("grant with unknown condition → unknown_condition", () => {
     const r = validateGrant(
       conditioned,
-      grant({ subject: { type: "user", id: "a" }, relation: "editor", condition: { name: "nope" } }),
+      grant({
+        subject: { type: "user", id: "a" },
+        relation: "editor",
+        condition: { name: "nope" },
+      }),
     );
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.code).toBe("unknown_condition");
@@ -184,7 +197,11 @@ describe("validateGrant — conditions (lazyfga-14)", () => {
     expect(
       validateGrant(
         conditioned,
-        grant({ subject: { type: "user", id: "a" }, relation: "viewer", condition: { name: "expiry" } }),
+        grant({
+          subject: { type: "user", id: "a" },
+          relation: "viewer",
+          condition: { name: "expiry" },
+        }),
       ),
     ).toEqual({ ok: true });
   });
@@ -193,11 +210,19 @@ describe("validateGrant — conditions (lazyfga-14)", () => {
 describe("validateRevoke — structural only (ignores conditions)", () => {
   test("revoke on condition-only subject type → ok (no condition_required)", () => {
     expect(
-      validateRevoke(conditioned, { subject: { type: "user", id: "a" }, relation: "editor", resource: { type: "document", id: "r" } }),
+      validateRevoke(conditioned, {
+        subject: { type: "user", id: "a" },
+        relation: "editor",
+        resource: { type: "document", id: "r" },
+      }),
     ).toEqual({ ok: true });
   });
   test("revoke of non-assignable relation → relation_not_assignable", () => {
-    const r = validateRevoke(M, { subject: { type: "user", id: "a" }, relation: "read", resource: { type: "document", id: "r" } });
+    const r = validateRevoke(M, {
+      subject: { type: "user", id: "a" },
+      relation: "read",
+      resource: { type: "document", id: "r" },
+    });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.code).toBe("relation_not_assignable");
   });
@@ -217,7 +242,9 @@ describe("tuple-key builders", () => {
   });
   test("grantTupleKey with condition + context", () => {
     expect(
-      grantTupleKey(grant({ condition: { name: "expiry", context: { now: "2025-01-01T00:00:00Z" } } })),
+      grantTupleKey(
+        grant({ condition: { name: "expiry", context: { now: "2025-01-01T00:00:00Z" } } }),
+      ),
     ).toEqual({
       user: "user:alice",
       relation: "editor",
@@ -227,7 +254,11 @@ describe("tuple-key builders", () => {
   });
   test("revokeTupleKey omits condition", () => {
     expect(
-      revokeTupleKey({ subject: { type: "team", id: "eng", relation: "member" }, relation: "viewer", resource: { type: "folder", id: "f" } }),
+      revokeTupleKey({
+        subject: { type: "team", id: "eng", relation: "member" },
+        relation: "viewer",
+        resource: { type: "folder", id: "f" },
+      }),
     ).toEqual({ user: "team:eng#member", relation: "viewer", object: "folder:f" });
   });
 });

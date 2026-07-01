@@ -117,7 +117,12 @@ describe("validateModelIR", () => {
     const cond: ConditionDef = {
       name: "non_expired",
       params: [{ name: "t", type: "timestamp" }],
-      tree: { kind: "time", param: "t", op: "lt", rhs: { kind: "literal", rfc3339: "2026-01-01T00:00:00Z" } },
+      tree: {
+        kind: "time",
+        param: "t",
+        op: "lt",
+        rhs: { kind: "literal", rfc3339: "2026-01-01T00:00:00Z" },
+      },
     };
     ir.conditions = [cond, { ...cond }];
     expect(codes(ir)).toContain("DUP_CONDITION");
@@ -132,7 +137,12 @@ describe("validateModelIR", () => {
           { name: "current_time", type: "timestamp" },
           { name: "expiry", type: "timestamp" },
         ],
-        tree: { kind: "time", param: "current_time", op: "lt", rhs: { kind: "param", param: "expiry" } },
+        tree: {
+          kind: "time",
+          param: "current_time",
+          op: "lt",
+          rhs: { kind: "param", param: "expiry" },
+        },
       },
     ];
     ir.resources[0]!.roles[0]!.assignableBy[0]!.condition = "non_expired";

@@ -56,9 +56,7 @@ export const grantRequestSchema: z.ZodType<GrantRequest> = z.object({
   subject: grantSubjectSchema,
   relation: z.string(),
   resource: z.object({ type: z.string(), id: z.string() }),
-  condition: z
-    .object({ name: z.string(), context: z.record(z.unknown()).optional() })
-    .optional(),
+  condition: z.object({ name: z.string(), context: z.record(z.unknown()).optional() }).optional(),
 });
 
 export const revokeRequestSchema: z.ZodType<RevokeRequest> = z.object({
@@ -96,7 +94,11 @@ export function grantTupleKey(req: GrantRequest): GrantTupleKey {
   return key;
 }
 
-export function revokeTupleKey(req: RevokeRequest): { user: string; relation: string; object: string } {
+export function revokeTupleKey(req: RevokeRequest): {
+  user: string;
+  relation: string;
+  object: string;
+} {
   return {
     user: subjectToUser(req.subject),
     relation: req.relation,
@@ -150,13 +152,15 @@ function structural(
   req: RevokeRequest,
 ): { ok: true; candidates: SubjectRef[] } | { ok: false; code: GrantErrorCode; message: string } {
   const { subject, relation, resource } = req;
-  if (!IDENT_RE.test(subject.type)) return fail("malformed_request", `invalid subject.type "${subject.type}"`);
+  if (!IDENT_RE.test(subject.type))
+    return fail("malformed_request", `invalid subject.type "${subject.type}"`);
   if (subject.id === "" || FORBIDDEN_IN_ID.test(subject.id))
     return fail("malformed_request", `invalid subject.id "${subject.id}"`);
   if (subject.relation !== undefined && !IDENT_RE.test(subject.relation))
     return fail("malformed_request", `invalid subject.relation "${subject.relation}"`);
   if (!IDENT_RE.test(relation)) return fail("malformed_request", `invalid relation "${relation}"`);
-  if (!IDENT_RE.test(resource.type)) return fail("malformed_request", `invalid resource.type "${resource.type}"`);
+  if (!IDENT_RE.test(resource.type))
+    return fail("malformed_request", `invalid resource.type "${resource.type}"`);
   if (resource.id === "" || FORBIDDEN_IN_ID.test(resource.id))
     return fail("malformed_request", `invalid resource.id "${resource.id}"`);
 

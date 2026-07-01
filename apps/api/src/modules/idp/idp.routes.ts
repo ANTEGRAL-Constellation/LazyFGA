@@ -102,7 +102,9 @@ idpRoutes.post("/webhook/:provider", async (c) => {
   if (!verifyWebhookSignature(preset.signature, raw, c.req.raw.headers, conn.signingSecret)) {
     // 미인증 요청은 DB audit에 쓰지 않는다(공격자가 audit_log를 무한 적재하는 amplification 방지).
     // 보안 신호는 앱 로그로만 남긴다(로그는 자체 로테이션이 있고 DB/디스크 증식 벡터가 아님).
-    console.warn(`[idp] unauthorized webhook for provider="${provider}" (signature verification failed)`);
+    console.warn(
+      `[idp] unauthorized webhook for provider="${provider}" (signature verification failed)`,
+    );
     return c.json({ error: "invalid signature" }, 401);
   }
 
@@ -117,7 +119,11 @@ idpRoutes.post("/webhook/:provider", async (c) => {
   // 관측성: 이벤트 타입을 함께 남겨 "무시된 타입"과 "매칭됐으나 주체 부재(잘못된 payload)"를 구분 가능하게 한다.
   const ev = extractEvent(preset, body);
   if (!ev) {
-    recordAudit("idp.webhook.no_events", { provider, eventType: readEventType(preset, body) }, `idp:${provider}`);
+    recordAudit(
+      "idp.webhook.no_events",
+      { provider, eventType: readEventType(preset, body) },
+      `idp:${provider}`,
+    );
     return c.json({ applied: 0, skipped: 0, failed: 0 }, 200);
   }
   const rules = await getRulesByProvider(provider);
@@ -139,7 +145,8 @@ idpRoutes.post("/webhook/:provider", async (c) => {
     const result = await applyEvents([ev], rules, deps);
     return c.json(result, 200);
   } catch (e) {
-    if (e instanceof WriteError && e.transient) return c.json({ error: "upstream unavailable" }, 502);
+    if (e instanceof WriteError && e.transient)
+      return c.json({ error: "upstream unavailable" }, 502);
     throw e;
   }
 });
@@ -167,7 +174,11 @@ idpRoutes.post("/connections", async (c) => {
       signingSecret: b.signingSecret,
       enabled: typeof b.enabled === "boolean" ? b.enabled : undefined,
     });
-    recordAudit("idp.connection.create", { id: connection.id, provider: connection.provider }, principalActor(c.get("principal")));
+    recordAudit(
+      "idp.connection.create",
+      { id: connection.id, provider: connection.provider },
+      principalActor(c.get("principal")),
+    );
     return c.json({ connection }, 201);
   } catch (e) {
     if (String(e).includes("duplicate") || String(e).includes("unique"))
@@ -182,7 +193,10 @@ idpRoutes.put("/connections/:id", async (c) => {
   const id = c.req.param("id");
   if (!(await getConnectionById(id))) return c.json({ error: "connection not found" }, 404);
   const b = await c.req.json().catch(() => ({}));
-  if (b?.signingSecret !== undefined && (typeof b.signingSecret !== "string" || b.signingSecret === ""))
+  if (
+    b?.signingSecret !== undefined &&
+    (typeof b.signingSecret !== "string" || b.signingSecret === "")
+  )
     return c.json({ error: "signingSecret must be a non-empty string" }, 422);
   if (b?.enabled !== undefined && typeof b.enabled !== "boolean")
     return c.json({ error: "enabled must be a boolean" }, 422);
@@ -228,7 +242,10 @@ idpRoutes.post("/connections/:id/rules", async (c) => {
     !isValidPriority(b.priority)
   ) {
     return c.json(
-      { error: "eventType, op(write|delete), tupleTemplate{user,relation,object}, match[], integer priority" },
+      {
+        error:
+          "eventType, op(write|delete), tupleTemplate{user,relation,object}, match[], integer priority",
+      },
       422,
     );
   }
@@ -243,7 +260,11 @@ idpRoutes.post("/connections/:id/rules", async (c) => {
     fanOut: typeof b.fanOut === "string" ? b.fanOut : undefined,
     priority: typeof b.priority === "number" ? b.priority : undefined,
   });
-  recordAudit("idp.rule.create", { id: rule.id, connectionId: id }, principalActor(c.get("principal")));
+  recordAudit(
+    "idp.rule.create",
+    { id: rule.id, connectionId: id },
+    principalActor(c.get("principal")),
+  );
   return c.json({ rule }, 201);
 });
 
@@ -256,21 +277,32 @@ idpRoutes.put("/rules/:ruleId", async (c) => {
   const b = await c.req.json().catch(() => ({}));
   if (b?.op !== undefined && b.op !== "write" && b.op !== "delete")
     return c.json({ error: "op must be write|delete" }, 422);
-  if (b?.match !== undefined && !isValidMatch(b.match)) return c.json({ error: "invalid match[]" }, 422);
+  if (b?.match !== undefined && !isValidMatch(b.match))
+    return c.json({ error: "invalid match[]" }, 422);
   if (!isValidPriority(b?.priority)) return c.json({ error: "priority must be an integer" }, 422);
   const tt = b?.tupleTemplate as TupleTemplate | undefined;
   if (
     tt !== undefined &&
-    (typeof tt.user !== "string" || typeof tt.relation !== "string" || typeof tt.object !== "string")
+    (typeof tt.user !== "string" ||
+      typeof tt.relation !== "string" ||
+      typeof tt.object !== "string")
   ) {
     return c.json({ error: "invalid tupleTemplate" }, 422);
   }
-  if (b?.fanOut !== undefined && b.fanOut !== null && (typeof b.fanOut !== "string" || b.fanOut.trim() === ""))
+  if (
+    b?.fanOut !== undefined &&
+    b.fanOut !== null &&
+    (typeof b.fanOut !== "string" || b.fanOut.trim() === "")
+  )
     return c.json({ error: "fanOut must be a non-empty string or null" }, 422);
   // 병합본으로 fanOut↔template↔preset 정합성을 검증(template만 바꿔도, fanOut만 비워도 잡힌다).
-  const mergedTemplate = tt !== undefined ? { user: tt.user, relation: tt.relation, object: tt.object } : existing.tupleTemplate;
+  const mergedTemplate =
+    tt !== undefined
+      ? { user: tt.user, relation: tt.relation, object: tt.object }
+      : existing.tupleTemplate;
   const mergedEventType = typeof b?.eventType === "string" ? b.eventType : existing.eventType;
-  const mergedFanOut = b?.fanOut === null ? undefined : typeof b?.fanOut === "string" ? b.fanOut : existing.fanOut;
+  const mergedFanOut =
+    b?.fanOut === null ? undefined : typeof b?.fanOut === "string" ? b.fanOut : existing.fanOut;
   if (conn) {
     const ferr = fanOutError(conn, mergedEventType, mergedFanOut, mergedTemplate);
     if (ferr) return c.json({ error: ferr }, 422);
@@ -278,7 +310,8 @@ idpRoutes.put("/rules/:ruleId", async (c) => {
   const rule = await updateRule(ruleId, {
     eventType: typeof b?.eventType === "string" ? b.eventType : undefined,
     match: b?.match !== undefined ? (b.match as MatchPredicate[]) : undefined,
-    tupleTemplate: tt !== undefined ? { user: tt.user, relation: tt.relation, object: tt.object } : undefined,
+    tupleTemplate:
+      tt !== undefined ? { user: tt.user, relation: tt.relation, object: tt.object } : undefined,
     op: b?.op === "write" || b?.op === "delete" ? b.op : undefined,
     fanOut: b?.fanOut === null ? null : typeof b?.fanOut === "string" ? b.fanOut : undefined,
     priority: typeof b?.priority === "number" ? b.priority : undefined,

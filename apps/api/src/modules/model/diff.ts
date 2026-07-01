@@ -5,9 +5,26 @@ export type DiffChange =
   | { kind: "ROLE_ADDED" | "ROLE_REMOVED"; type: string; role: string }
   | { kind: "PERMISSION_ADDED" | "PERMISSION_REMOVED"; type: string; permission: string }
   | { kind: "GRANT_CHANGED"; type: string; permission: string; added: string[]; removed: string[] }
-  | { kind: "ROLE_ASSIGNABLE_CHANGED"; type: string; role: string; added: string[]; removed: string[] }
-  | { kind: "PERMISSION_INHERIT_CHANGED"; type: string; permission: string; added: string[]; removed: string[] }
-  | { kind: "PARENT_ADDED" | "PARENT_REMOVED"; type: string; relationName: string; parentType: string };
+  | {
+      kind: "ROLE_ASSIGNABLE_CHANGED";
+      type: string;
+      role: string;
+      added: string[];
+      removed: string[];
+    }
+  | {
+      kind: "PERMISSION_INHERIT_CHANGED";
+      type: string;
+      permission: string;
+      added: string[];
+      removed: string[];
+    }
+  | {
+      kind: "PARENT_ADDED" | "PARENT_REMOVED";
+      type: string;
+      relationName: string;
+      parentType: string;
+    };
 
 const typeNames = (ir: ModelIR): string[] => [
   ...ir.groups.map((g) => g.name),
@@ -86,7 +103,8 @@ export function diffModels(from: ModelIR, to: ModelIR): DiffChange[] {
       }
     }
     for (const pname of frPerms.keys()) {
-      if (!trPerms.has(pname)) changes.push({ kind: "PERMISSION_REMOVED", type: name, permission: pname });
+      if (!trPerms.has(pname))
+        changes.push({ kind: "PERMISSION_REMOVED", type: name, permission: pname });
     }
 
     const fp = parentPairs(fr);
@@ -94,12 +112,22 @@ export function diffModels(from: ModelIR, to: ModelIR): DiffChange[] {
     for (const pair of tp)
       if (!fp.has(pair)) {
         const [relationName, parentType] = pair.split(SEP);
-        changes.push({ kind: "PARENT_ADDED", type: name, relationName: relationName!, parentType: parentType! });
+        changes.push({
+          kind: "PARENT_ADDED",
+          type: name,
+          relationName: relationName!,
+          parentType: parentType!,
+        });
       }
     for (const pair of fp)
       if (!tp.has(pair)) {
         const [relationName, parentType] = pair.split(SEP);
-        changes.push({ kind: "PARENT_REMOVED", type: name, relationName: relationName!, parentType: parentType! });
+        changes.push({
+          kind: "PARENT_REMOVED",
+          type: name,
+          relationName: relationName!,
+          parentType: parentType!,
+        });
       }
   }
 

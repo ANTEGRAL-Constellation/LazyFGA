@@ -51,7 +51,8 @@ export function ConditionBuilderPanel(): JSX.Element {
     const renaming = next.name !== selected;
     // 충돌하거나 유효하지 않은 이름(빈 문자열/예약어/CEL 예약어)으로의 리네임은 거부.
     const reject =
-      renaming && (conditions.some((c) => c.name === next.name) || !isValidConditionName(next.name));
+      renaming &&
+      (conditions.some((c) => c.name === next.name) || !isValidConditionName(next.name));
     if (renaming && !reject) {
       renameCondition(selected, next.name);
       setSelected(next.name);
@@ -135,9 +136,7 @@ function AttachForm({
 
   return (
     <div className="lf-cond-attach" data-testid="cond-attach">
-      <div className="lf-cond-sub">
-        attach &ldquo;{conditionName}&rdquo; to a role assignment
-      </div>
+      <div className="lf-cond-sub">attach &ldquo;{conditionName}&rdquo; to a role assignment</div>
       <span className="lf-row">
         <select
           value={res?.name ?? ""}

@@ -1,11 +1,11 @@
 # ZITADEL Adapter (flagship: event to tuple) - Spec Proposal
 
-| Item       | Detail                           |
-|------------|----------------------------------|
-| Author     | Seonguk Moon                     |
-| Created    | 2026-06-29                       |
-| Status     | **Implemented**                  |
-| Reviewers  | Claude (M6 cross-review + adversarial re-review; Codex unavailable) |
+| Item      | Detail                                                              |
+| --------- | ------------------------------------------------------------------- |
+| Author    | Seonguk Moon                                                        |
+| Created   | 2026-06-29                                                          |
+| Status    | **Implemented**                                                     |
+| Reviewers | Claude (M6 cross-review + adversarial re-review; Codex unavailable) |
 
 ---
 
@@ -59,12 +59,14 @@
 ### 4.3 Core Logic
 
 **`verifySignature`(ZITADEL Actions V2).**
+
 - 헤더 `ZITADEL-Signature`에서 타임스탬프 `t`와 HMAC `v`를 파싱.
 - `now - t`가 허용오차(기본 5분) 초과면 거부(replay 방지).
 - `HMAC_SHA256(signing_key, <ZITADEL 규약의 서명 페이로드: t + raw body>)`를 계산해 `v`와 **상수시간** 비교. ZITADEL 공식 `actions.ValidateRequestPayload`와 동일한 바이트 구성을 따른다(정확한 구성은 ZITADEL 문서/SDK로 확정).
 - 키는 `idp_connection.signing_secret`(Target Signing Key).
 
 **`parseEvents`(payload → 정규 이벤트).** ZITADEL Actions V2 이벤트 트리거 payload에서 aggregate(user) id와 이벤트 타입, 관련 필드를 추출한다. 정확한 payload JSON 스키마는 이벤트 트리거별로 다르므로 구현 시 샘플 payload로 확정한다.
+
 - `user.human.added` → `IdpEvent{ type:"user.human.added", subject:{id:<userId>}, attributes:{ orgId, username? } }`.
 - `user.grant.added` / `user.grant.changed` / `user.grant.removed` → grant당 `IdpEvent{ type, subject:{id:<userId>}, attributes:{ projectId, grantId } }`. **projectId/grantId는 추가·변경·삭제 이벤트 모두에 존재**하므로 삭제가 roleKey 의존 없이 신뢰성 있게 대칭된다.
 - **역할 단위(선택 확장):** roleKey별 tuple이 필요하면 `parseEvents`가 roleKey당 이벤트로 펼치고 `attributes.projectRole=<정규화 roleKey>`를 넣는다. roleKey는 자유 문자열이라 `:`/`#`/`*`/공백을 `_`로 치환해 식별자-안전 slug로 만든 뒤 사용하고(원문은 `attributes.projectRoleRaw`), `lazyfga-15` 주입 방지 제약을 통과시킨다. 단 grant 삭제 이벤트가 roleKey를 안 주면 역할 단위 삭제는 stale 위험(Non-Goal) — 그래서 데모 seed는 이 경로를 쓰지 않는다.
@@ -72,6 +74,7 @@
 > 정확한 ZITADEL 이벤트명/페이로드 필드는 ZITADEL 이벤트 목록과 샘플로 확정한다(문서상 `user.human.added` 확인됨; grant 계열 이벤트명은 구현 시 검증).
 
 **데모 기본 매핑 규칙(시드, 편집 가능).** "프로젝트 grant → OpenFGA 그룹(team) 멤버십"으로 재구성(원 컨셉의 '직관적 그룹'). **삭제 신뢰성을 위해 projectId로 키잉**한다:
+
 - `user.grant.added` / `user.grant.changed`, match `[]` → `op:"write"`, template `{ user:"user:{{subject.id}}", relation:"member", object:"team:{{attributes.projectId}}" }`(변경도 멱등 write로 멤버십 보장).
 - `user.grant.removed`, match `[]` → `op:"delete"`, 동일 template.
 - (선택) `user.human.added` → no-op(향후 user 등록 규칙 여지).
@@ -96,8 +99,12 @@ import type { IdpAdapter, IdpEvent } from "../types";
 
 export const zitadelAdapter: IdpAdapter = {
   provider: "zitadel",
-  verifySignature(rawBody, headers, secret) { /* ZITADEL-Signature(t,v) HMAC-SHA256, replay 허용오차 */ },
-  parseEvents(body, headers): IdpEvent[] { /* user.human.added / user.grant.* → roleKey당 1 이벤트 */ },
+  verifySignature(rawBody, headers, secret) {
+    /* ZITADEL-Signature(t,v) HMAC-SHA256, replay 허용오차 */
+  },
+  parseEvents(body, headers): IdpEvent[] {
+    /* user.human.added / user.grant.* → roleKey당 1 이벤트 */
+  },
 };
 // 레지스트리 등록: registry["zitadel"] = zitadelAdapter
 ```
@@ -106,21 +113,21 @@ export const zitadelAdapter: IdpAdapter = {
 
 ### 5-2. Error Handling
 
-| 상황 | 처리 |
-|------|------|
-| `ZITADEL-Signature` 누락/형식 오류 | `lazyfga-15`에서 401 |
-| 타임스탬프 허용오차 초과(replay) | 401 |
-| HMAC 불일치 | 401 |
+| 상황                                       | 처리                                                                             |
+| ------------------------------------------ | -------------------------------------------------------------------------------- |
+| `ZITADEL-Signature` 누락/형식 오류         | `lazyfga-15`에서 401                                                             |
+| 타임스탬프 허용오차 초과(replay)           | 401                                                                              |
+| HMAC 불일치                                | 401                                                                              |
 | 알 수 없는 이벤트 타입 / payload 필드 부재 | `parseEvents`가 빈 배열 반환 → 200 no-op + `idp.webhook.no_events` audit(흔적만) |
 
 ## 6. Implementation Plan
 
 ### 6-1. Milestones
 
-| Phase   | Task                                                              | Estimated | Owner |
-|---------|-------------------------------------------------------------------|-----------|-------|
-| Phase 1 | `zitadelAdapter.verifySignature`(HMAC + replay) + 단위 테스트(고정 payload/서명) | 1d        | TBD   |
-| Phase 2 | `parseEvents`(user/grant, roleKey 펼침) + 레지스트리 등록 + 테스트       | 1d        | TBD   |
+| Phase   | Task                                                                                      | Estimated | Owner |
+| ------- | ----------------------------------------------------------------------------------------- | --------- | ----- |
+| Phase 1 | `zitadelAdapter.verifySignature`(HMAC + replay) + 단위 테스트(고정 payload/서명)          | 1d        | TBD   |
+| Phase 2 | `parseEvents`(user/grant, roleKey 펼침) + 레지스트리 등록 + 테스트                        | 1d        | TBD   |
 | Phase 3 | 데모 기본 규칙 시드 스크립트 + ZITADEL 연동 절차 문서 + E2E(서명된 grant payload → tuple) | 1d        | TBD   |
 
 ### 6-2. Dependencies

@@ -16,20 +16,30 @@ describe("verifyWebhookSignature — ZITADEL preset (kv_t_v, seconds)", () => {
   const hdr = (v: string): Headers => new Headers({ "ZITADEL-Signature": v });
 
   test("accepts a freshly signed request", () => {
-    expect(verifyWebhookSignature(spec, body, hdr(sign(body, SECRET, nowSec())), SECRET)).toBe(true);
+    expect(verifyWebhookSignature(spec, body, hdr(sign(body, SECRET, nowSec())), SECRET)).toBe(
+      true,
+    );
   });
   test("rejects tampered body / wrong secret", () => {
     const t = nowSec();
-    expect(verifyWebhookSignature(spec, enc({ evil: 1 }), hdr(sign(body, SECRET, t)), SECRET)).toBe(false);
+    expect(verifyWebhookSignature(spec, enc({ evil: 1 }), hdr(sign(body, SECRET, t)), SECRET)).toBe(
+      false,
+    );
     expect(verifyWebhookSignature(spec, body, hdr(sign(body, SECRET, t)), "other")).toBe(false);
   });
   test("rejects stale and far-future timestamps (both-sided)", () => {
-    expect(verifyWebhookSignature(spec, body, hdr(sign(body, SECRET, nowSec() - 301)), SECRET)).toBe(false);
-    expect(verifyWebhookSignature(spec, body, hdr(sign(body, SECRET, nowSec() + 301)), SECRET)).toBe(false);
+    expect(
+      verifyWebhookSignature(spec, body, hdr(sign(body, SECRET, nowSec() - 301)), SECRET),
+    ).toBe(false);
+    expect(
+      verifyWebhookSignature(spec, body, hdr(sign(body, SECRET, nowSec() + 301)), SECRET),
+    ).toBe(false);
   });
   test("rejects float timestamp / missing / empty-or-nonhex v1", () => {
     const t = nowSec();
-    expect(verifyWebhookSignature(spec, body, hdr(`t=${t}.5,v1=${"a".repeat(64)}`), SECRET)).toBe(false);
+    expect(verifyWebhookSignature(spec, body, hdr(`t=${t}.5,v1=${"a".repeat(64)}`), SECRET)).toBe(
+      false,
+    );
     expect(verifyWebhookSignature(spec, body, new Headers(), SECRET)).toBe(false);
     expect(verifyWebhookSignature(spec, body, hdr(`t=${t},v1=`), SECRET)).toBe(false);
     expect(verifyWebhookSignature(spec, body, hdr(`t=${t},v1=zzzz`), SECRET)).toBe(false);
@@ -46,11 +56,15 @@ describe("verifyWebhookSignature — ZITADEL preset (kv_t_v, seconds)", () => {
   test("accepts when one of multiple v1 signatures matches (key rotation)", () => {
     const t = nowSec();
     const good = createHmac("sha256", SECRET).update(`${t}.`).update(body).digest("hex");
-    expect(verifyWebhookSignature(spec, body, hdr(`t=${t},v1=${"0".repeat(64)},v1=${good}`), SECRET)).toBe(true);
+    expect(
+      verifyWebhookSignature(spec, body, hdr(`t=${t},v1=${"0".repeat(64)},v1=${good}`), SECRET),
+    ).toBe(true);
   });
   test("header name is case-insensitive", () => {
     const v = sign(body, SECRET, nowSec());
-    expect(verifyWebhookSignature(spec, body, new Headers({ "zitadel-signature": v }), SECRET)).toBe(true);
+    expect(
+      verifyWebhookSignature(spec, body, new Headers({ "zitadel-signature": v }), SECRET),
+    ).toBe(true);
   });
 });
 
@@ -72,7 +86,14 @@ describe("verifyWebhookSignature — Stripe-style (kv_t_v)", () => {
   test("accepts a valid signature", () => {
     const t = nowSec();
     const sig = createHmac("sha256", SECRET).update(`${t}.`).update(body).digest("hex");
-    expect(verifyWebhookSignature(spec, body, new Headers({ "Stripe-Signature": `t=${t},v1=${sig}` }), SECRET)).toBe(true);
+    expect(
+      verifyWebhookSignature(
+        spec,
+        body,
+        new Headers({ "Stripe-Signature": `t=${t},v1=${sig}` }),
+        SECRET,
+      ),
+    ).toBe(true);
   });
 });
 
@@ -127,15 +148,36 @@ describe("verifyWebhookSignature — GitHub-style (scheme_hex, no timestamp)", (
   const SECRET = "ghsecret";
   test("accepts sha256=<hex> over the raw body", () => {
     const sig = createHmac("sha256", SECRET).update(body).digest("hex");
-    expect(verifyWebhookSignature(spec, body, new Headers({ "X-Hub-Signature-256": `sha256=${sig}` }), SECRET)).toBe(true);
+    expect(
+      verifyWebhookSignature(
+        spec,
+        body,
+        new Headers({ "X-Hub-Signature-256": `sha256=${sig}` }),
+        SECRET,
+      ),
+    ).toBe(true);
   });
   test("rejects a tampered body", () => {
     const sig = createHmac("sha256", SECRET).update(body).digest("hex");
-    expect(verifyWebhookSignature(spec, enc({ evil: 1 }), new Headers({ "X-Hub-Signature-256": `sha256=${sig}` }), SECRET)).toBe(false);
+    expect(
+      verifyWebhookSignature(
+        spec,
+        enc({ evil: 1 }),
+        new Headers({ "X-Hub-Signature-256": `sha256=${sig}` }),
+        SECRET,
+      ),
+    ).toBe(false);
   });
 
   test("rejects a mismatched scheme label (review: md5= not compared as sha256)", () => {
     const sig = createHmac("sha256", SECRET).update(body).digest("hex");
-    expect(verifyWebhookSignature(spec, body, new Headers({ "X-Hub-Signature-256": `md5=${sig}` }), SECRET)).toBe(false);
+    expect(
+      verifyWebhookSignature(
+        spec,
+        body,
+        new Headers({ "X-Hub-Signature-256": `md5=${sig}` }),
+        SECRET,
+      ),
+    ).toBe(false);
   });
 });

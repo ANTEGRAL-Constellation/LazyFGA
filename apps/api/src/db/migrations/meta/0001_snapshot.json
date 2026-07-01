@@ -48,12 +48,8 @@
           "name": "instance_config_current_model_version_id_model_version_id_fk",
           "tableFrom": "instance_config",
           "tableTo": "model_version",
-          "columnsFrom": [
-            "current_model_version_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["current_model_version_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }

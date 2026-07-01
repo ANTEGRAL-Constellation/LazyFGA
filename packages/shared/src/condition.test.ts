@@ -40,7 +40,17 @@ describe("conditionDefSchema (zod shape)", () => {
       tree: {
         op: "or",
         children: [
-          { op: "and", children: [{ kind: "time", param: "t", op: "gt", rhs: { kind: "literal", rfc3339: "2026-01-01T00:00:00Z" } }] },
+          {
+            op: "and",
+            children: [
+              {
+                kind: "time",
+                param: "t",
+                op: "gt",
+                rhs: { kind: "literal", rfc3339: "2026-01-01T00:00:00Z" },
+              },
+            ],
+          },
         ],
       },
     };
@@ -55,7 +65,10 @@ describe("describeCondition", () => {
     );
   });
   test("single-child group has no parens", () => {
-    const node: ConditionNode = { op: "and", children: [{ kind: "value", param: "tier", op: "eq", value: "gold" }] };
+    const node: ConditionNode = {
+      op: "and",
+      children: [{ kind: "value", param: "tier", op: "eq", value: "gold" }],
+    };
     expect(describeCondition(node)).toBe('tier == "gold"');
   });
   test("empty group → (empty)", () => {
@@ -66,10 +79,13 @@ describe("describeCondition", () => {
       op: "or",
       children: [
         { kind: "value", param: "a", op: "eq", value: 1 },
-        { op: "and", children: [
-          { kind: "value", param: "b", op: "gt", value: 2 },
-          { kind: "value", param: "c", op: "lt", value: 3 },
-        ] },
+        {
+          op: "and",
+          children: [
+            { kind: "value", param: "b", op: "gt", value: 2 },
+            { kind: "value", param: "c", op: "lt", value: 3 },
+          ],
+        },
       ],
     };
     expect(describeCondition(node)).toBe("(a == 1 OR (b > 2 AND c < 3))");
@@ -116,7 +132,12 @@ describe("validateConditionDef", () => {
     const errs = validateConditionDef({
       name: "c",
       params: [{ name: "p", type: "string" }],
-      tree: { kind: "time", param: "p", op: "lt", rhs: { kind: "literal", rfc3339: "2026-01-01T00:00:00Z" } },
+      tree: {
+        kind: "time",
+        param: "p",
+        op: "lt",
+        rhs: { kind: "literal", rfc3339: "2026-01-01T00:00:00Z" },
+      },
     });
     expect(errs.some((e) => e.code === "TYPE_MISMATCH")).toBe(true);
   });
@@ -177,7 +198,9 @@ describe("validateConditionDef", () => {
       ],
       tree: { kind: "time", param: "t", op: "lt", rhs: { kind: "param", param: "s" } },
     });
-    expect(errs.some((e) => e.code === "TYPE_MISMATCH" && e.path.endsWith(".rhs.param"))).toBe(true);
+    expect(errs.some((e) => e.code === "TYPE_MISMATCH" && e.path.endsWith(".rhs.param"))).toBe(
+      true,
+    );
   });
 
   test("EMPTY_GROUP", () => {
@@ -200,7 +223,12 @@ describe("validateConditionDef", () => {
       validateConditionDef({
         name: "timestamp",
         params: [{ name: "t", type: "timestamp" }],
-        tree: { kind: "time", param: "t", op: "lt", rhs: { kind: "literal", rfc3339: "2026-01-01T00:00:00Z" } },
+        tree: {
+          kind: "time",
+          param: "t",
+          op: "lt",
+          rhs: { kind: "literal", rfc3339: "2026-01-01T00:00:00Z" },
+        },
       }).some((e) => e.code === "BAD_NAME"),
     ).toBe(true);
   });

@@ -10,7 +10,10 @@ const enc = (o: unknown): Uint8Array => new TextEncoder().encode(JSON.stringify(
 const nowSec = (): number => Math.floor(Date.now() / 1000);
 
 // 한 이벤트를 매핑 규칙으로 적용하고 생성된 tuple을 수집(write는 전부 "applied").
-async function applyOne(ev: ReturnType<typeof extractEvent>, rules: MappingRule[]): Promise<RenderedTuple[]> {
+async function applyOne(
+  ev: ReturnType<typeof extractEvent>,
+  rules: MappingRule[],
+): Promise<RenderedTuple[]> {
   expect(ev).not.toBeNull();
   const tuples: RenderedTuple[] = [];
   const deps: ApplyDeps = {
@@ -30,18 +33,34 @@ describe("end-to-end — ZITADEL preset (sign → verify → extract → map →
   const teamRule: MappingRule = {
     eventType: "user.grant.added",
     match: [],
-    tupleTemplate: { user: "user:{{subject}}", relation: "member", object: "team:{{attributes.project}}" },
+    tupleTemplate: {
+      user: "user:{{subject}}",
+      relation: "member",
+      object: "team:{{attributes.project}}",
+    },
     op: "write",
     priority: 0,
   };
 
   test("grant.added → user:alice member team:eng", async () => {
-    const body = enc({ event_type: "user.grant.added", event_payload: { userId: "alice", projectId: "eng" } });
+    const body = enc({
+      event_type: "user.grant.added",
+      event_payload: { userId: "alice", projectId: "eng" },
+    });
     const t = nowSec();
     const sig = `t=${t},v1=${createHmac("sha256", SECRET).update(`${t}.`).update(body).digest("hex")}`;
-    expect(verifyWebhookSignature(preset.signature, body, new Headers({ "ZITADEL-Signature": sig }), SECRET)).toBe(true);
+    expect(
+      verifyWebhookSignature(
+        preset.signature,
+        body,
+        new Headers({ "ZITADEL-Signature": sig }),
+        SECRET,
+      ),
+    ).toBe(true);
     const ev = extractEvent(preset, JSON.parse(new TextDecoder().decode(body)));
-    expect(await applyOne(ev, [teamRule])).toEqual([{ user: "user:alice", relation: "member", object: "team:eng" }]);
+    expect(await applyOne(ev, [teamRule])).toEqual([
+      { user: "user:alice", relation: "member", object: "team:eng" },
+    ]);
   });
 
   test("optional roleKeys fan-out → one role tuple per key", async () => {
@@ -52,7 +71,11 @@ describe("end-to-end — ZITADEL preset (sign → verify → extract → map →
     const fanRule: MappingRule = {
       eventType: "user.grant.added",
       match: [],
-      tupleTemplate: { user: "user:{{subject}}", relation: "{{item}}", object: "project:{{attributes.project}}" },
+      tupleTemplate: {
+        user: "user:{{subject}}",
+        relation: "{{item}}",
+        object: "project:{{attributes.project}}",
+      },
       op: "write",
       fanOut: "roleKeys",
       priority: 0,
@@ -83,10 +106,16 @@ describe("end-to-end — Standard Webhooks preset (generality proof)", () => {
     const rule: MappingRule = {
       eventType: "user.created",
       match: [],
-      tupleTemplate: { user: "user:{{subject}}", relation: "member", object: "org:{{attributes.org}}" },
+      tupleTemplate: {
+        user: "user:{{subject}}",
+        relation: "member",
+        object: "org:{{attributes.org}}",
+      },
       op: "write",
       priority: 0,
     };
-    expect(await applyOne(ev, [rule])).toEqual([{ user: "user:u1", relation: "member", object: "org:acme" }]);
+    expect(await applyOne(ev, [rule])).toEqual([
+      { user: "user:u1", relation: "member", object: "org:acme" },
+    ]);
   });
 });

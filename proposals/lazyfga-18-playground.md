@@ -1,17 +1,17 @@
 # Playground (inline assertion testing) - Spec Proposal
 
-| Item       | Detail                           |
-|------------|----------------------------------|
-| Author     | Seonguk Moon                     |
-| Created    | 2026-06-29                       |
-| Status     | **Implemented**                  |
-| Reviewers  | Claude (M7 cross-review + adversarial re-review; Codex unavailable) |
+| Item      | Detail                                                              |
+| --------- | ------------------------------------------------------------------- |
+| Author    | Seonguk Moon                                                        |
+| Created   | 2026-06-29                                                          |
+| Status    | **Implemented**                                                     |
+| Reviewers | Claude (M7 cross-review + adversarial re-review; Codex unavailable) |
 
 ---
 
 ## 1. Summary
 
-발행된 모델·정책에 대해 *"alice가 document:1 을 read 할 수 있나?"* 같은 인가 질의를 **그 자리에서 여러 건 테스트**하는 web 패널이다. 각 케이스를 AuthZEN evaluate로 실행해 allow/deny(+ 선택 기대값 대비 pass/fail)를 표로 보여주고, `lazyfga-12` explain을 재사용해 결정 경로를 펼친다. (CONCEPT 설계원칙 "예시(assertion)로 그 자리에서 테스트")
+발행된 모델·정책에 대해 _"alice가 document:1 을 read 할 수 있나?"_ 같은 인가 질의를 **그 자리에서 여러 건 테스트**하는 web 패널이다. 각 케이스를 AuthZEN evaluate로 실행해 allow/deny(+ 선택 기대값 대비 pass/fail)를 표로 보여주고, `lazyfga-12` explain을 재사용해 결정 경로를 펼친다. (CONCEPT 설계원칙 "예시(assertion)로 그 자리에서 테스트")
 
 ## 2. Background & Motivation
 
@@ -82,10 +82,11 @@ export interface TestCase {
   expected?: boolean;
 }
 export function usePlayground(): {
-  token: string; setToken(t: string): void;   // evaluate 호출용(service/admin), explain과 공유
+  token: string;
+  setToken(t: string): void; // evaluate 호출용(service/admin), explain과 공유
   cases: TestCase[];
-  setCases(next: TestCase[]): void;        // localStorage 동기화
-  runAll(): Promise<void>;                  // token으로 인증, evaluate를 케이스별 직접 호출
+  setCases(next: TestCase[]): void; // localStorage 동기화
+  runAll(): Promise<void>; // token으로 인증, evaluate를 케이스별 직접 호출
   results: Array<{ decision?: boolean; pass?: boolean; error?: string }>;
   running: boolean;
 };
@@ -93,21 +94,21 @@ export function usePlayground(): {
 
 ### 5-2. Error Handling
 
-| 상황 | 처리 |
-|------|------|
+| 상황                        | 처리                                       |
+| --------------------------- | ------------------------------------------ |
 | evaluate 비2xx(400/401/5xx) | 해당 케이스 결과 "error" 표기, 나머지 계속 |
-| 정책 없음(NO_POLICY) | deny로 표시(평가 결과; `lazyfga-9`) |
-| tuple 없음 | 모두 deny(정상) + 데이터 시드 안내 |
-| 토큰 미입력 | 실행 비활성 + 안내 |
+| 정책 없음(NO_POLICY)        | deny로 표시(평가 결과; `lazyfga-9`)        |
+| tuple 없음                  | 모두 deny(정상) + 데이터 시드 안내         |
+| 토큰 미입력                 | 실행 비활성 + 안내                         |
 
 ## 6. Implementation Plan
 
 ### 6-1. Milestones
 
-| Phase   | Task                                                        | Estimated | Owner |
-|---------|-------------------------------------------------------------|-----------|-------|
-| Phase 1 | TestCase 모델 + CaseList 편집 + localStorage 영속             | 0.5d      | TBD   |
-| Phase 2 | RunAll(케이스별 evaluate) + 결과 표 + expected pass/fail       | 1d        | TBD   |
+| Phase   | Task                                                                        | Estimated | Owner |
+| ------- | --------------------------------------------------------------------------- | --------- | ----- |
+| Phase 1 | TestCase 모델 + CaseList 편집 + localStorage 영속                           | 0.5d      | TBD   |
+| Phase 2 | RunAll(케이스별 evaluate) + 결과 표 + expected pass/fail                    | 1d        | TBD   |
 | Phase 3 | explain 재사용 토글 + action/resource 픽커(정책·모델) + 빈데이터 안내 + E2E | 1d        | TBD   |
 
 ### 6-2. Dependencies

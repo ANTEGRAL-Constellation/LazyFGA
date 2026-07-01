@@ -4,7 +4,8 @@ import { usePlayground, type TestCase } from "./usePlayground";
 // lazyfga-18: 인가 어서션을 그 자리에서 여러 건 테스트. 발행본 모델/정책 기준 평가(읽기 전용).
 // tuple 데이터는 IdP 동기화/시드로 채운다(Q4=A). 케이스별 explain은 lazyfga-12를 재사용.
 
-const expectedToSelect = (e: boolean | undefined): string => (e === undefined ? "" : e ? "allow" : "deny");
+const expectedToSelect = (e: boolean | undefined): string =>
+  e === undefined ? "" : e ? "allow" : "deny";
 const selectToExpected = (s: string): boolean | undefined => (s === "" ? undefined : s === "allow");
 
 export function PlaygroundPanel(): JSX.Element {
@@ -114,7 +115,12 @@ export function PlaygroundPanel(): JSX.Element {
             <button
               disabled={!pg.token}
               onClick={() =>
-                void explain.run({ subject: c.subject, action: c.action, resource: c.resource, context: c.context })
+                void explain.run({
+                  subject: c.subject,
+                  action: c.action,
+                  resource: c.resource,
+                  context: c.context,
+                })
               }
               data-testid={`pg-explain-${i}`}
               title="explain on canvas"
@@ -130,7 +136,11 @@ export function PlaygroundPanel(): JSX.Element {
           <button onClick={addCase} data-testid="pg-add">
             + case
           </button>
-          <button onClick={() => void pg.runAll()} disabled={pg.running || !pg.token} data-testid="pg-run">
+          <button
+            onClick={() => void pg.runAll()}
+            disabled={pg.running || !pg.token}
+            data-testid="pg-run"
+          >
             {pg.running ? "running..." : "Run all"}
           </button>
           {!pg.token && (

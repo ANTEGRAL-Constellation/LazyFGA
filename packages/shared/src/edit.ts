@@ -12,14 +12,16 @@ const DEFAULT_PARENT_RELATION = "parent";
 /** 모든 IR 편집 연산은 순수하다: 입력을 변형하지 않고 새 IR을 반환한다. */
 
 export function addResource(ir: ModelIR, name: string): ModelIR {
-  if (ir.groups.some((g) => g.name === name) || ir.resources.some((r) => r.name === name)) return ir;
+  if (ir.groups.some((g) => g.name === name) || ir.resources.some((r) => r.name === name))
+    return ir;
   const next = clone(ir);
   next.resources.push({ name, parents: [], roles: [], permissions: [] });
   return next;
 }
 
 export function addGroup(ir: ModelIR, name: string): ModelIR {
-  if (ir.groups.some((g) => g.name === name) || ir.resources.some((r) => r.name === name)) return ir;
+  if (ir.groups.some((g) => g.name === name) || ir.resources.some((r) => r.name === name))
+    return ir;
   const next = clone(ir);
   next.groups.push({ name, memberTypes: [{ kind: "user" }] });
   return next;
@@ -52,7 +54,9 @@ export function removeType(ir: ModelIR, name: string): ModelIR {
       role.assignableBy = stripGroupRefs(role.assignableBy);
     }
     for (const perm of r.permissions) {
-      perm.inheritFromParents = perm.inheritFromParents.filter((rel) => !removedRelations.includes(rel));
+      perm.inheritFromParents = perm.inheritFromParents.filter(
+        (rel) => !removedRelations.includes(rel),
+      );
     }
   }
   return next;
@@ -120,7 +124,12 @@ export function disconnectParent(
 // ── 행렬(matrix) 편집 ──────────────────────────────────────────────────────────
 
 /** 셀 토글: permission.grantedByRoles ∋ role 를 켜고/끈다. */
-export function toggleCell(ir: ModelIR, typeName: string, permission: string, role: string): ModelIR {
+export function toggleCell(
+  ir: ModelIR,
+  typeName: string,
+  permission: string,
+  role: string,
+): ModelIR {
   const next = clone(ir);
   const perm = findResource(next, typeName)?.permissions.find((p) => p.name === permission);
   if (!perm) return ir;

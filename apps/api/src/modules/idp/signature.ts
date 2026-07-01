@@ -159,6 +159,8 @@ export function verifyWebhookSignature(
   }
   signed = signed.split("{body}").join(bodyStr);
 
-  const expected = createHmac(spec.algorithm, hmacKey(spec, secret)).update(signed).digest(spec.encoding);
+  const expected = createHmac(spec.algorithm, hmacKey(spec, secret))
+    .update(signed)
+    .digest(spec.encoding);
   return parsed.signatures.some((sig) => encodedEqual(expected, sig, spec.encoding));
 }

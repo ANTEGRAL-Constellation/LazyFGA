@@ -38,7 +38,11 @@ describe("interpretWriteError", () => {
 
   test("deterministic 4xx (non-idempotent) → 400 backstop GrantError", () => {
     const r = interpretWriteError(
-      { statusCode: 400, responseData: { code: "validation_error" }, message: "relation not found" },
+      {
+        statusCode: 400,
+        responseData: { code: "validation_error" },
+        message: "relation not found",
+      },
       "write",
     );
     expect("error" in r && r.error).toBeInstanceOf(GrantError);

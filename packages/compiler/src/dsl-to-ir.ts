@@ -144,14 +144,16 @@ function classifyDirect(
     return { kind: "role", role: { name: relName, assignableBy: refs.map(toSubjectRef) } };
   }
   if (refs.length > 0 && refs.every(isResourceTypeRef)) {
-    return { kind: "parent", parent: { relationName: relName, parentTypes: refs.map((r) => r.type) } };
+    return {
+      kind: "parent",
+      parent: { relationName: relName, parentTypes: refs.map((r) => r.type) },
+    };
   }
   return { kind: "advanced", reason: "UNCLASSIFIABLE" };
 }
 
 type PermClass =
-  | { kind: "permission"; permission: Permission }
-  | { kind: "advanced"; reason: CoverageReason };
+  { kind: "permission"; permission: Permission } | { kind: "advanced"; reason: CoverageReason };
 
 /** rewrite relation(can_<perm>)을 permission | advanced로 분류. */
 function classifyPermission(
@@ -194,7 +196,10 @@ function classifyPermission(
 
   // grantedByRoles가 비면 IR(validateModelIR EMPTY_GRANT)로 표현 불가 → advanced.
   if (grantedByRoles.length === 0) return { kind: "advanced", reason: "NON_ROLE_UNION" };
-  return { kind: "permission", permission: { name: relName.slice(4), grantedByRoles, inheritFromParents } };
+  return {
+    kind: "permission",
+    permission: { name: relName.slice(4), grantedByRoles, inheritFromParents },
+  };
 }
 
 /**

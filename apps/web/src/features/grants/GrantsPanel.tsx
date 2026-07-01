@@ -140,7 +140,9 @@ export function GrantsPanel(): JSX.Element {
           </thead>
           <tbody>
             {g.entries.map((e, i) => (
-              <tr key={`${e.resource.type}:${e.resource.id}#${e.relation}@${e.subject.type}:${e.subject.id}#${e.subject.relation ?? ""}:${i}`}>
+              <tr
+                key={`${e.resource.type}:${e.resource.id}#${e.relation}@${e.subject.type}:${e.subject.id}#${e.subject.relation ?? ""}:${i}`}
+              >
                 <td>
                   <code>
                     {e.subject.type}:{e.subject.id}
@@ -159,7 +161,9 @@ export function GrantsPanel(): JSX.Element {
                     className="lf-mini"
                     onClick={() => void g.revokeEntry(e)}
                     disabled={g.busy || !isRevocable(e)}
-                    title={isRevocable(e) ? "revoke" : "not revocable (wildcard/unsupported subject)"}
+                    title={
+                      isRevocable(e) ? "revoke" : "not revocable (wildcard/unsupported subject)"
+                    }
                     data-testid={`grants-revoke-row-${i}`}
                   >
                     revoke

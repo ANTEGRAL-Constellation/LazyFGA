@@ -131,9 +131,7 @@
         "idp_connection_provider_unique": {
           "name": "idp_connection_provider_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "provider"
-          ]
+          "columns": ["provider"]
         }
       },
       "policies": {},
@@ -216,12 +214,8 @@
           "name": "idp_mapping_rule_connection_id_idp_connection_id_fk",
           "tableFrom": "idp_mapping_rule",
           "tableTo": "idp_connection",
-          "columnsFrom": [
-            "connection_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["connection_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -276,12 +270,8 @@
           "name": "instance_config_current_model_version_id_model_version_id_fk",
           "tableFrom": "instance_config",
           "tableTo": "model_version",
-          "columnsFrom": [
-            "current_model_version_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["current_model_version_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -405,10 +395,7 @@
         "policy_perm_resource_unq": {
           "name": "policy_perm_resource_unq",
           "nullsNotDistinct": false,
-          "columns": [
-            "permission",
-            "resource_type"
-          ]
+          "columns": ["permission", "resource_type"]
         }
       },
       "policies": {},

@@ -1,11 +1,11 @@
 # Model Canvas (React Flow) + Live Preview - Spec Proposal
 
-| Item       | Detail                           |
-|------------|----------------------------------|
-| Author     | Seonguk Moon                     |
-| Created    | 2026-06-28                       |
-| Status     | **Implemented**                  |
-| Reviewers  | Claude, Codex (M2 cross-review)  |
+| Item      | Detail                          |
+| --------- | ------------------------------- |
+| Author    | Seonguk Moon                    |
+| Created   | 2026-06-28                      |
+| Status    | **Implemented**                 |
+| Reviewers | Claude, Codex (M2 cross-review) |
 
 ---
 
@@ -53,6 +53,7 @@ DB 변경 없음(클라이언트 상태). 발행 시 서버 반영은 `lazyfga-7
 ### 4.3 Core Logic
 
 캔버스 ↔ IR 매핑(결정적·양방향):
+
 1. **노드:** 각 `ResourceType`/`GroupType` = 노드 1개. 노드 id = type name. 노드 종류(resource/group)로 구분 렌더.
 2. **엣지:** `ResourceType.parents[]`의 각 항 = `child(resource) → parentTypes 각각` 방향 엣지. 엣지 생성 = 대상 resource에서 같은 `relationName`(기본 "parent")의 `ParentRef`가 있으면 그 `parentTypes`에 parent 타입을 추가(병합), 없으면 `ParentRef{relationName, parentTypes:[parent]}` 신규. 엣지 삭제 = 해당 parent 타입을 `parentTypes`에서 제거하고, 비면 ParentRef 제거(+ 참조하던 `permission.inheritFromParents` 정리).
 3. **노드 추가:** 빈 `ResourceType{name, parents:[], roles:[], permissions:[]}` 또는 `GroupType{name, memberTypes:[{kind:"user"}]}` 삽입.
@@ -72,34 +73,36 @@ DB 변경 없음(클라이언트 상태). 발행 시 서버 반영은 `lazyfga-7
 /** ModelIR ⇄ React Flow 노드/엣지 파생 및 변형 액션. */
 export function useModelGraph(): {
   ir: ModelIR;
-  nodes: RFNode[]; edges: RFEdge[];           // IR 파생(read)
+  nodes: RFNode[];
+  edges: RFEdge[]; // IR 파생(read)
   addResource(name: string): void;
   addGroup(name: string): void;
-  removeType(name: string): void;             // 고아 참조 정리 포함
+  removeType(name: string): void; // 고아 참조 정리 포함
   connectParent(childType: string, parentType: string): void; // ParentRef 추가/병합(relationName 기준)
   disconnectParent(childType: string, relationName: string): void;
-  readOnly: boolean;                          // coverage 기반
-  dsl: string; errors: ValidationError[];     // 파생(compile/validate)
+  readOnly: boolean; // coverage 기반
+  dsl: string;
+  errors: ValidationError[]; // 파생(compile/validate)
 };
 ```
 
 ### 5-2. Error Handling
 
-| 상황 | 처리 |
-|------|------|
-| `validateModelIR` 위반 | 변형은 허용하되 `errors`로 인라인 표시(저장/발행은 `lazyfga-7`에서 차단) |
-| `compileIrToDsl` throw | DSL 패널에 컴파일 에러 메시지, 마지막 정상 DSL 유지 |
-| read-only 상태에서 변형 시도 | 무시(핸들러 비활성) |
+| 상황                         | 처리                                                                     |
+| ---------------------------- | ------------------------------------------------------------------------ |
+| `validateModelIR` 위반       | 변형은 허용하되 `errors`로 인라인 표시(저장/발행은 `lazyfga-7`에서 차단) |
+| `compileIrToDsl` throw       | DSL 패널에 컴파일 에러 메시지, 마지막 정상 DSL 유지                      |
+| read-only 상태에서 변형 시도 | 무시(핸들러 비활성)                                                      |
 
 ## 6. Implementation Plan
 
 ### 6-1. Milestones
 
-| Phase   | Task                                                  | Estimated | Owner |
-|---------|-------------------------------------------------------|-----------|-------|
-| Phase 1 | zustand IR 스토어 + IR↔nodes/edges 파생                | 1d        | TBD   |
-| Phase 2 | 노드/엣지 CRUD 액션 + 고아 참조 정리                   | 1.5d      | TBD   |
-| Phase 3 | DSL 실시간 미리보기 + 에러 인라인 + read-only 게이트    | 1d        | TBD   |
+| Phase   | Task                                                 | Estimated | Owner |
+| ------- | ---------------------------------------------------- | --------- | ----- |
+| Phase 1 | zustand IR 스토어 + IR↔nodes/edges 파생              | 1d        | TBD   |
+| Phase 2 | 노드/엣지 CRUD 액션 + 고아 참조 정리                 | 1.5d      | TBD   |
+| Phase 3 | DSL 실시간 미리보기 + 에러 인라인 + read-only 게이트 | 1d        | TBD   |
 
 ### 6-2. Dependencies
 

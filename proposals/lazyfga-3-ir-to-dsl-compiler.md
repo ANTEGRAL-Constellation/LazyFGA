@@ -1,11 +1,11 @@
 # IR → OpenFGA DSL Compiler - Spec Proposal
 
-| Item       | Detail                           |
-|------------|----------------------------------|
-| Author     | Seonguk Moon                     |
-| Created    | 2026-06-28                       |
-| Status     | **Implemented**                  |
-| Reviewers  | Claude, Codex (M1 cross-review)  |
+| Item      | Detail                          |
+| --------- | ------------------------------- |
+| Author    | Seonguk Moon                    |
+| Created   | 2026-06-28                      |
+| Status    | **Implemented**                 |
+| Reviewers | Claude, Codex (M1 cross-review) |
 
 ---
 
@@ -41,6 +41,7 @@ ModelIR ──validateModelIR──▶ (ok) ──compileIrToDsl──▶ { dsl,
                                    │
                                    └── @openfga/frontend-utils (DSL ⇄ JSON transformer)
 ```
+
 DSL 문자열 생성은 자체 직렬화로 수행하고, `AuthorizationModel` JSON은 `@openfga/frontend-utils`의 DSL→JSON 변환기로 얻는다(공식 변환기를 신뢰하여 JSON 정합성 확보).
 
 ### 4.2 Data Model Changes
@@ -59,22 +60,25 @@ DSL 문자열 생성은 자체 직렬화로 수행하고, `AuthorizationModel` J
    - **role**: 각 `r`에 대해 `define <r.name>: [<subjects(r.assignableBy)>]`
    - **permission**: 각 `perm`에 대해
      `define can_<perm.name>: <UNION>`
-     여기서 `UNION` = `perm.grantedByRoles`(입력 순서 유지) 를 ` or `로 연결 + `perm.inheritFromParents`의 각 `rel`에 대해 ` or can_<perm.name> from <rel>` 추가.
+     여기서 `UNION` = `perm.grantedByRoles`(입력 순서 유지) 를 `or`로 연결 + `perm.inheritFromParents`의 각 `rel`에 대해 ` or can_<perm.name> from <rel>` 추가.
 4. **subjects(refs) 직렬화:** 각 `SubjectRef` → `user` 또는 `<group>#member`. 출력 순서 = IR 배열 순서. 결과를 `[...]`로 감싼다(쉼표+공백 구분).
 
 매핑 예(IR 픽스처 → DSL 일부):
+
 ```
 // permission read: grantedByRoles=[viewer,editor,owner], inheritFromParents=[parent]
 define can_read: viewer or editor or owner or can_read from parent
 ```
 
 전제/불변식:
+
 - 호출자는 `compileIrToDsl` 전에 `validateModelIR(ir)`가 빈 배열임을 보장한다. 컴파일러는 재검증을 호출하고, 위반 발견 시 `CompileError`를 던진다(방어).
 - 결정성: IR 배열 순서를 그대로 따르므로 동일 IR은 바이트 단위로 동일한 DSL을 낸다. IR이 정규형(canonical)이며, `lazyfga-4` 역변환은 DSL 선언 순서를 IR 배열 순서로 보존해 왕복 안정성을 유지한다(diff·골든 테스트 안정).
 
 ### 4.4 Worked Example (요약)
 
 `doc-folder-team.ir.json` → 기대 DSL:
+
 ```
 model
   schema 1.1
@@ -96,6 +100,7 @@ type document
     define viewer: [user, team#member]
     define can_read: viewer or editor or owner or can_read from parent
 ```
+
 (이 출력이 골든 픽스처가 된다.)
 
 ## 5. API Design
@@ -112,26 +117,31 @@ type document
 export function compileIrToDsl(ir: ModelIR): { dsl: string; model: AuthModelJSON };
 
 export class CompileError extends Error {
-  constructor(public reason: "IR_INVALID" | "JSON_TRANSFORM_FAILED", public detail: unknown) { super(); }
+  constructor(
+    public reason: "IR_INVALID" | "JSON_TRANSFORM_FAILED",
+    public detail: unknown,
+  ) {
+    super();
+  }
 }
 ```
 
 ### 5-2. Error Handling
 
-| 상황 | 처리 |
-|------|------|
+| 상황                           | 처리                                            |
+| ------------------------------ | ----------------------------------------------- |
 | IR 검증 위반(방어 재검증 실패) | `CompileError("IR_INVALID", ValidationError[])` |
-| DSL→JSON 변환기 실패 | `CompileError("JSON_TRANSFORM_FAILED", cause)` |
+| DSL→JSON 변환기 실패           | `CompileError("JSON_TRANSFORM_FAILED", cause)`  |
 
 ## 6. Implementation Plan
 
 ### 6-1. Milestones
 
-| Phase   | Task                                                      | Estimated | Owner |
-|---------|-----------------------------------------------------------|-----------|-------|
-| Phase 1 | subjects/relation emit 규칙 + DSL 직렬화                  | 1d        | TBD   |
-| Phase 2 | `@openfga/frontend-utils`로 DSL→JSON + 정합 검증          | 0.5d      | TBD   |
-| Phase 3 | 골든 테스트(픽스처→DSL/JSON) + 결정성(반복 동일) 테스트    | 0.5d      | TBD   |
+| Phase   | Task                                                    | Estimated | Owner |
+| ------- | ------------------------------------------------------- | --------- | ----- |
+| Phase 1 | subjects/relation emit 규칙 + DSL 직렬화                | 1d        | TBD   |
+| Phase 2 | `@openfga/frontend-utils`로 DSL→JSON + 정합 검증        | 0.5d      | TBD   |
+| Phase 3 | 골든 테스트(픽스처→DSL/JSON) + 결정성(반복 동일) 테스트 | 0.5d      | TBD   |
 
 ### 6-2. Dependencies
 

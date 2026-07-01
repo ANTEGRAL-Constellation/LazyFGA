@@ -1,11 +1,11 @@
 # Condition to CEL + Model/Policy Integration - Spec Proposal
 
-| Item       | Detail                           |
-|------------|----------------------------------|
-| Author     | Seonguk Moon                     |
-| Created    | 2026-06-29                       |
-| Status     | **Implemented**                  |
-| Reviewers  | Claude (M5 cross-review + adversarial re-review; Codex unavailable) |
+| Item      | Detail                                                              |
+| --------- | ------------------------------------------------------------------- |
+| Author    | Seonguk Moon                                                        |
+| Created   | 2026-06-29                                                          |
+| Status    | **Implemented**                                                     |
+| Reviewers | Claude (M5 cross-review + adversarial re-review; Codex unavailable) |
 
 ---
 
@@ -70,12 +70,13 @@ export interface ModelIR {
   schemaVersion: "1.1";
   groups: GroupType[];
   resources: ResourceType[];
-  conditions?: ConditionDef[];   // 신규: 최상위 조건 정의(OpenFGA `condition` 블록과 1:1)
+  conditions?: ConditionDef[]; // 신규: 최상위 조건 정의(OpenFGA `condition` 블록과 1:1)
 }
 // 제거: Permission.condition, interface ConditionRef
 ```
 
 **예약 해소(중요).**
+
 - `Permission.condition`/`ConditionRef`: 제거(조건은 computed permission이 아니라 role 부여에 붙으므로 불필요). 검증 코드 `CONDITION_RESERVED`도 제거.
 - `Policy.conditionRef`(DB `policy.condition_ref`): 조건은 모델 레벨에서 OpenFGA가 강제하므로 **정책 단위 조건은 도입하지 않는다.** 컬럼/필드는 그대로 두되 MVP 미사용으로 문서화한다(불필요한 마이그레이션 회피). 정책이 필요로 하는 context는 `policyContextParams`로 모델에서 파생한다. **이 결정은 `lazyfga-8` §3.2의 "condition을 정책에 선택 결합" 예약을 대체한다**(해당 절에 supersede 주석 추가).
 
@@ -86,24 +87,27 @@ export interface ModelIR {
 ### 4.3 Core Logic
 
 **정방향 `conditionToCel(def): { decl: string; cel: string }` (결정적).**
+
 - 헤더: `condition <name>(<p1>: <type1>, <p2>: <type2>, ...)` — 파라미터는 `params` 선언 순서 그대로.
 - 타입 매핑: `timestamp`→`timestamp`, `ipaddress`→`ipaddress`, `string`/`int`/`double`/`bool`→동명 CEL 타입.
 - leaf → CEL:
   - `time`: `<param> <op> <rhs>` (`lt`→`<`, `lte`→`<=`, `gt`→`>`, `gte`→`>=`; rhs literal은 `timestamp("<rfc3339>")`, param은 식별자).
   - `ip`: `<param>.in_cidr("<cidr>")`.
   - `value`: `<param> <op> <literal>` (`eq`→`==`, `neq`→`!=`, 나머지 부등호; string은 큰따옴표, int/double/bool은 리터럴).
-- 그룹: children CEL을 ` && `(and)/` || `(or)로 결합, child≥2면 괄호. 결과: `condition <name>(...) { <body> }`.
+- 그룹: children CEL을 `&&`(and)/`||`(or)로 결합, child≥2면 괄호. 결과: `condition <name>(...) { <body> }`.
 
 **조건부 type restriction 방출(`ir-to-dsl`).** `SubjectRef`에 `condition`이 있으면 `user` → `user with <cond>`, `<group>#member` → `<group>#member with <cond>`. 한 relation의 restriction 목록은 조건부/무조건부 혼합 가능(`[user, user with non_expired]`). `condition` 블록은 type 정의들 뒤에 최상위로 방출한다(OpenFGA DSL 문법).
 
 **역방향 `tryParseCondition` + coverage(`dsl-to-ir`).** OpenFGA model JSON의 condition 정의(파라미터 타입 + CEL 본문)를 읽어, 본문이 **우리 생성 문법**(선언된 param에 대한 시간/IP/값 leaf를 단일 `&&` 또는 `||`로 결합)에 부합하면 `ConditionDef`로 복원하고 해당 `with <cond>`를 `SubjectRef.condition`으로 복원한다. 부합하지 않는 임의 CEL은 복원하지 않고 `coverage`를 advanced(`fullyRepresentable=false`)로 표시한다(모델은 계속 시각화, 편집은 read-only). **기존 `CoverageReason: "CONDITION"`(`coverage.ts`)을 그대로 쓰고 방출 시점만 바꾼다**: 현재는 condition이 붙은 모든 ref를 무조건 advanced로 처리하나(`dsl-to-ir.ts` L80·L182, `isPlainRef` L51), 생성 subset에 부합하면 advanced로 보내지 않고 IR로 복원한다.
 
 **coverage 갱신 지점(명시).**
+
 1. `coverage.ts`의 `fullyRepresentable` 전제 "조건 없음"을 "비-subset 조건 없음"으로 완화(생성 subset 조건은 완전 왕복 가능).
 2. `dsl-to-ir.ts` L225-227의 모델 레벨 `notes`는 **복원 못 한** condition에 대해서만 방출한다(subset 복원 성공 시 note 없음).
 3. `isPlainRef`(L51)·group member 분기(L182)·`classifyDirect`(L80)를 subset 조건부 ref를 허용하도록 완화한다. `RelationRefJSON.condition`은 이미 파싱된다.
 
 **`validateModelIR` 갱신.**
+
 - 제거: `CONDITION_RESERVED`(이를 단언하던 기존 테스트 `packages/shared/src/model.test.ts`도 제거/대체).
 - 신규 `CONDITION_UNKNOWN`: `SubjectRef.condition`이 `ModelIR.conditions[].name`에 없으면.
 - 신규 `DUP_CONDITION`: `conditions` 내 이름 중복.
@@ -126,7 +130,9 @@ export interface ModelIR {
 export function conditionToCel(def: ConditionDef): { decl: string; cel: string };
 /** 우리가 생성한 제한 subset의 CEL만 ConditionDef로 복원. 그 밖이면 null. */
 export function tryParseCondition(
-  name: string, params: ConditionParam[], celBody: string,
+  name: string,
+  params: ConditionParam[],
+  celBody: string,
 ): ConditionDef | null;
 
 // packages/shared/src/model.ts  — SubjectRef.condition, ModelIR.conditions(위 §4.2),
@@ -139,11 +145,15 @@ export function tryParseCondition(
 export function addCondition(ir: ModelIR, def: ConditionDef): ModelIR;
 export function updateCondition(ir: ModelIR, name: string, def: ConditionDef): ModelIR;
 export function renameCondition(ir: ModelIR, from: string, to: string): ModelIR; // SubjectRef 참조도 갱신
-export function removeCondition(ir: ModelIR, name: string): ModelIR;             // 참조 SubjectRef.condition 정리
+export function removeCondition(ir: ModelIR, name: string): ModelIR; // 참조 SubjectRef.condition 정리
 // subjectIndex는 같은 IR 스냅샷의 assignableBy 배열 인덱스. 범위 밖/대상 없음이면 ir 그대로 반환(edit 관례).
 // name이 아닌 index인 이유: [user with a, user with b]처럼 동일 base 주체가 중복 가능하기 때문.
 export function setAssignmentCondition(
-  ir: ModelIR, typeName: string, role: string, subjectIndex: number, condition: string | null,
+  ir: ModelIR,
+  typeName: string,
+  role: string,
+  subjectIndex: number,
+  condition: string | null,
 ): ModelIR;
 
 // packages/shared/src/policy.ts (또는 pdp helper)
@@ -154,24 +164,24 @@ export function policyContextParams(ir: ModelIR, policy: Policy): ConditionParam
 
 ### 5-2. Error Handling
 
-| 상황 | 처리 |
-|------|------|
-| `SubjectRef.condition`가 미정의 조건 참조 | `CONDITION_UNKNOWN`(인라인) |
-| `conditions` 이름 중복 | `DUP_CONDITION` |
-| `ConditionDef` 자체 무효 | `validateConditionDef` 코드 → 모델 `ValidationError`로 승격 |
-| 무효 조건 포함 모델 발행 | 422 `PublishError`(발행 차단, `model.service`) |
-| 임의 CEL(생성 subset 외) import | `coverage` advanced(read-only), 예외 아님 |
-| 평가 시 조건 context 값 주어짐 + false | 정상 deny(`decision:false`) |
-| 평가 시 조건 context 키 누락 | OpenFGA 평가 오류 → 500(`lazyfga-9` 경로, 조용한 deny 아님) |
+| 상황                                      | 처리                                                        |
+| ----------------------------------------- | ----------------------------------------------------------- |
+| `SubjectRef.condition`가 미정의 조건 참조 | `CONDITION_UNKNOWN`(인라인)                                 |
+| `conditions` 이름 중복                    | `DUP_CONDITION`                                             |
+| `ConditionDef` 자체 무효                  | `validateConditionDef` 코드 → 모델 `ValidationError`로 승격 |
+| 무효 조건 포함 모델 발행                  | 422 `PublishError`(발행 차단, `model.service`)              |
+| 임의 CEL(생성 subset 외) import           | `coverage` advanced(read-only), 예외 아님                   |
+| 평가 시 조건 context 값 주어짐 + false    | 정상 deny(`decision:false`)                                 |
+| 평가 시 조건 context 키 누락              | OpenFGA 평가 오류 → 500(`lazyfga-9` 경로, 조용한 deny 아님) |
 
 ## 6. Implementation Plan
 
 ### 6-1. Milestones
 
-| Phase   | Task                                                                              | Estimated | Owner |
-|---------|-----------------------------------------------------------------------------------|-----------|-------|
-| Phase 1 | IR 확장 + `validateModelIR` 갱신 + edit 연산 + `conditionToCel`(정방향) + `ir-to-dsl` 방출 + 골든 테스트 | 1.5d      | TBD   |
-| Phase 2 | `tryParseCondition`(역방향) + `dsl-to-ir`/`coverage` + 왕복 테스트                   | 1d        | TBD   |
+| Phase   | Task                                                                                                         | Estimated | Owner |
+| ------- | ------------------------------------------------------------------------------------------------------------ | --------- | ----- |
+| Phase 1 | IR 확장 + `validateModelIR` 갱신 + edit 연산 + `conditionToCel`(정방향) + `ir-to-dsl` 방출 + 골든 테스트     | 1.5d      | TBD   |
+| Phase 2 | `tryParseCondition`(역방향) + `dsl-to-ir`/`coverage` + 왕복 테스트                                           | 1d        | TBD   |
 | Phase 3 | web 연결(assignableBy에 조건 부착 + 조건 목록 + DSL 미리보기) + `policyContextParams` + 발행/평가 검증 + E2E | 1.5d      | TBD   |
 
 ### 6-2. Dependencies

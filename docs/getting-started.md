@@ -21,6 +21,7 @@ pnpm --filter @lazyfga/web dev
 ## 2. Design a model (pillar 1)
 
 In the studio (<http://localhost:5173>):
+
 - Drag resource types onto the canvas; connect a child→parent edge for inheritance.
 - Double-click a type to open its **role × permission matrix**; tick cells to grant.
 - The **OpenFGA DSL** preview updates live (the compiler runs in the browser). Paste DSL to import;

@@ -7,13 +7,7 @@ import {
 import { Hono, type Context } from "hono";
 import { requireRole, type AppEnv } from "../../middleware/auth";
 import { principalActor } from "../audit/audit";
-import {
-  GrantError,
-  grant,
-  listByResource,
-  listBySubject,
-  revoke,
-} from "./permission.service";
+import { GrantError, grant, listByResource, listBySubject, revoke } from "./permission.service";
 
 // lazyfga-20: 구조적 권한 grant/revoke/list. 전부 admin 전용.
 export const permissionRoutes = new Hono<AppEnv>();
@@ -67,14 +61,19 @@ permissionRoutes.get("/", async (c) => {
   try {
     if (resource) {
       const ref = parseResourceRef(resource);
-      if (!ref) return c.json({ error: `invalid resource "${resource}"`, code: "malformed_request" }, 400);
+      if (!ref)
+        return c.json({ error: `invalid resource "${resource}"`, code: "malformed_request" }, 400);
       return c.json({ grants: await listByResource(ref) });
     }
     const subj = parseGrantSubject(subject!);
-    if (!subj) return c.json({ error: `invalid subject "${subject}"`, code: "malformed_request" }, 400);
+    if (!subj)
+      return c.json({ error: `invalid subject "${subject}"`, code: "malformed_request" }, 400);
     const resourceType = c.req.query("resourceType");
     if (resourceType !== undefined && !/^[a-zA-Z0-9_]+$/.test(resourceType)) {
-      return c.json({ error: `invalid resourceType "${resourceType}"`, code: "malformed_request" }, 400);
+      return c.json(
+        { error: `invalid resourceType "${resourceType}"`, code: "malformed_request" },
+        400,
+      );
     }
     return c.json({ grants: await listBySubject(subj, resourceType) });
   } catch (e) {

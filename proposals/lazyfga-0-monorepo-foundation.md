@@ -1,11 +1,11 @@
 # Monorepo Foundation - Spec Proposal
 
-| Item       | Detail                           |
-|------------|----------------------------------|
-| Author     | Seonguk Moon                     |
-| Created    | 2026-06-28                       |
-| Status     | **Implemented**                  |
-| Reviewers  | Claude, Codex (M0 cross-review)  |
+| Item      | Detail                          |
+| --------- | ------------------------------- |
+| Author    | Seonguk Moon                    |
+| Created   | 2026-06-28                      |
+| Status    | **Implemented**                 |
+| Reviewers | Claude, Codex (M0 cross-review) |
 
 ---
 
@@ -56,6 +56,7 @@ lazyfga/ (pnpm workspace root)
 ### 4.3 Core Logic
 
 핵심 로직 없음(골격). 단, 의존성 방향을 lint 규칙(`eslint-plugin-boundaries` 또는 tsconfig path 제약)으로 강제한다:
+
 1. `packages/compiler`는 `apps/*`, `packages/shared` 를 import 할 수 없다(순수·역의존 금지).
 2. `packages/shared`는 어떤 워크스페이스도 import 하지 않는다(최하위 계약).
 3. `apps/*`는 `packages/*`를 import 할 수 있으나 서로(`web↔api`)를 직접 import 하지 않는다(계약은 `shared` 경유).
@@ -75,35 +76,35 @@ GET /healthz → 200 { "status": "ok", "version": <string> }
 ```ts
 // packages/shared/src/index.ts
 // 모든 공유 타입의 단일 진입점. 런타임 코드 없음(타입 전용 export 지향).
-export * from "./model";     // 후속: lazyfga-2
-export * from "./authzen";   // 후속: lazyfga-9
-export * from "./policy";    // 후속: lazyfga-8
-export * from "./reason";    // 후속: lazyfga-11
+export * from "./model"; // 후속: lazyfga-2
+export * from "./authzen"; // 후속: lazyfga-9
+export * from "./policy"; // 후속: lazyfga-8
+export * from "./reason"; // 후속: lazyfga-11
 export * from "./condition"; // 후속: lazyfga-14
 
 // packages/compiler/src/index.ts
 // 비주얼 IR ↔ OpenFGA DSL 변환의 단일 진입점. 외부 런타임 의존성 0.
-export * from "./ir-to-dsl";       // 후속: lazyfga-3
-export * from "./dsl-to-ir";       // 후속: lazyfga-4
-export * from "./coverage";        // 후속: lazyfga-4
+export * from "./ir-to-dsl"; // 후속: lazyfga-3
+export * from "./dsl-to-ir"; // 후속: lazyfga-4
+export * from "./coverage"; // 후속: lazyfga-4
 ```
 
 ### 5-2. Error Handling
 
-| 상황 | 처리 |
-|------|------|
+| 상황                             | 처리                               |
+| -------------------------------- | ---------------------------------- |
 | 워크스페이스 간 의존성 방향 위반 | lint 에러로 빌드 실패(런타임 아님) |
-| `/healthz` 외 부팅 실패 | 프로세스 비정상 종료 + 로그 |
+| `/healthz` 외 부팅 실패          | 프로세스 비정상 종료 + 로그        |
 
 ## 6. Implementation Plan
 
 ### 6-1. Milestones
 
-| Phase   | Task                                                       | Estimated | Owner |
-|---------|------------------------------------------------------------|-----------|-------|
-| Phase 1 | pnpm workspace + 4 패키지 scaffold + tsconfig base         | 0.5d      | TBD   |
-| Phase 2 | turbo 파이프라인 + ESLint/Prettier + 의존성 경계 규칙       | 0.5d      | TBD   |
-| Phase 3 | api `/healthz`(Hono/Bun) + web 부팅(Vite/React)            | 0.5d      | TBD   |
+| Phase   | Task                                                  | Estimated | Owner |
+| ------- | ----------------------------------------------------- | --------- | ----- |
+| Phase 1 | pnpm workspace + 4 패키지 scaffold + tsconfig base    | 0.5d      | TBD   |
+| Phase 2 | turbo 파이프라인 + ESLint/Prettier + 의존성 경계 규칙 | 0.5d      | TBD   |
+| Phase 3 | api `/healthz`(Hono/Bun) + web 부팅(Vite/React)       | 0.5d      | TBD   |
 
 ### 6-2. Dependencies
 

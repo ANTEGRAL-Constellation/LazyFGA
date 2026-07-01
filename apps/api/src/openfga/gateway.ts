@@ -137,7 +137,11 @@ class OpenFgaGatewayImpl implements OpenFgaGateway {
       );
       for (const t of res.tuples ?? []) {
         if (!t.key) continue;
-        const tuple: ReadTuple = { user: t.key.user, relation: t.key.relation, object: t.key.object };
+        const tuple: ReadTuple = {
+          user: t.key.user,
+          relation: t.key.relation,
+          object: t.key.object,
+        };
         if (t.key.condition) {
           tuple.condition = {
             name: t.key.condition.name,

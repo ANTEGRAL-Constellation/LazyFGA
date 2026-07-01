@@ -1,11 +1,11 @@
 # Audit Log (DB-backed change tracking) - Spec Proposal
 
-| Item       | Detail                           |
-|------------|----------------------------------|
-| Author     | Seonguk Moon                     |
-| Created    | 2026-06-29                       |
-| Status     | **Implemented**                  |
-| Reviewers  | Claude (M7 cross-review + adversarial re-review; Codex unavailable) |
+| Item      | Detail                                                              |
+| --------- | ------------------------------------------------------------------- |
+| Author    | Seonguk Moon                                                        |
+| Created   | 2026-06-29                                                          |
+| Status    | **Implemented**                                                     |
+| Reviewers | Claude (M7 cross-review + adversarial re-review; Codex unavailable) |
 
 ---
 
@@ -31,7 +31,7 @@
 
 ### 3.2 Non-Goals
 
-- [ ] **evaluate 결정의 건별 audit**(hot-path, 대량). 기록 대상은 *변경*(CONCEPT)이며, 평가는 주요 *오류*만 기록한다(기존 `pdp.*` 유지).
+- [ ] **evaluate 결정의 건별 audit**(hot-path, 대량). 기록 대상은 _변경_(CONCEPT)이며, 평가는 주요 *오류*만 기록한다(기존 `pdp.*` 유지).
 - [ ] 보존/회전(retention) 정책, 외부 SIEM 내보내기, 변조 방지 서명 — 후속.
 - [ ] 읽기 작업(GET) 감사.
 - [ ] audit를 작업과 같은 트랜잭션에 묶기(감사 실패가 작업을 막으면 안 되므로 의도적으로 best-effort post-commit).
@@ -53,31 +53,35 @@ web/features/audit ── admin 토큰 ──▶ GET /audit → 테이블 표시
 
 **`audit_log`**
 
-| column | type | 설명 |
-|--------|------|------|
-| id | uuid PK | |
-| occurred_at | timestamptz notNull defaultNow | 인덱스(최신순 조회) |
-| actor | text notNull default 'system' | "admin" \| "service:&lt;tokenId&gt;" \| "idp:&lt;provider&gt;" \| "system" |
-| action | text notNull | 예: "model.publish", "policy.create", "idp.tuple.write" |
-| data | jsonb notNull default '{}' | 작업 상세(versionId, slug, tuple 등) |
+| column      | type                           | 설명                                                                       |
+| ----------- | ------------------------------ | -------------------------------------------------------------------------- |
+| id          | uuid PK                        |                                                                            |
+| occurred_at | timestamptz notNull defaultNow | 인덱스(최신순 조회)                                                        |
+| actor       | text notNull default 'system'  | "admin" \| "service:&lt;tokenId&gt;" \| "idp:&lt;provider&gt;" \| "system" |
+| action      | text notNull                   | 예: "model.publish", "policy.create", "idp.tuple.write"                    |
+| data        | jsonb notNull default '{}'     | 작업 상세(versionId, slug, tuple 등)                                       |
 
 > 인덱스: `(occurred_at desc)` 기본; 필요 시 `(action)`·`(actor)` 보조. tuple/모델 원본은 OpenFGA/`model_version`에 있고 audit는 "변경 사실"만 가진다(데이터 중복 최소, ARCHITECTURE 데이터 소유 원칙). 주의: `occurred_at`은 삽입 시각(이벤트 시각 근사, best-effort), 동일 시각은 `id`(uuid)로 안정 정렬하므로 삽입 순서와 다를 수 있다.
 
 ### 4.3 Core Logic
 
 **`recordAudit` 교체(비차단).**
+
 ```ts
 export function recordAudit(action: string, data?: Record<string, unknown>, actor?: string): void {
   // fire-and-forget: 감사 실패가 감사 대상 작업을 절대 깨지 않는다.
-  db.insert(auditLog).values({ action, data: data ?? {}, actor: actor ?? "system" })
+  db.insert(auditLog)
+    .values({ action, data: data ?? {}, actor: actor ?? "system" })
     .catch((e) => console.error(`[audit] insert failed: ${action}`, e));
 }
 ```
+
 - 시그니처 **하위호환**: 기존 `recordAudit(action, data)` 호출부는 그대로 동작(actor 기본 "system"). 컨트롤 플레인 라우트는 principal에서 actor를 채워 호출하도록 점진 갱신(예: `recordAudit("policy.create", {id}, principalActor(c))`).
 - `principalActor(principal)`: `admin` → "admin", `service` → `tokenId ? "service:"+tokenId : "service"`(‘service:undefined’ 방지). IdP 경로는 `"idp:" + provider`.
 - post-commit 호출 유지(예: `model.service`는 트랜잭션 커밋 후 호출 — 변경 없음). 비동기 insert라 hot-path 지연 없음.
 
 **감사 대상 action(변경 중심).**
+
 - model: `model.publish`, `model.publish.db_failure`(기존).
 - policy: `policy.create`, `policy.update`, `policy.delete`(`lazyfga-8` 라우트에 호출 추가).
 - auth: `token.create`, `token.revoke`(`lazyfga-10` 라우트에 호출 추가).
@@ -103,7 +107,7 @@ GET /audit?action=&actor=&from=&to=&limit=&cursor=      (admin)
 // packages/shared/src/audit.ts — web가 GET /audit를 소비하므로 shared에 두고 index에 `export * from "./audit"` 등록
 export interface AuditEntry {
   id: string;
-  occurredAt: string;     // ISO
+  occurredAt: string; // ISO
   actor: string;
   action: string;
   data: Record<string, unknown>;
@@ -115,21 +119,21 @@ export function recordAudit(action: string, data?: Record<string, unknown>, acto
 
 ### 5-2. Error Handling
 
-| 상황 | 처리 |
-|------|------|
-| audit insert 실패 | `console.error`만, 호출자 영향 없음(비차단) |
-| GET /audit 비admin | 401/403(`requireRole("admin")`) |
-| 잘못된 필터/cursor | 400 |
+| 상황               | 처리                                        |
+| ------------------ | ------------------------------------------- |
+| audit insert 실패  | `console.error`만, 호출자 영향 없음(비차단) |
+| GET /audit 비admin | 401/403(`requireRole("admin")`)             |
+| 잘못된 필터/cursor | 400                                         |
 
 ## 6. Implementation Plan
 
 ### 6-1. Milestones
 
-| Phase   | Task                                                          | Estimated | Owner |
-|---------|---------------------------------------------------------------|-----------|-------|
+| Phase   | Task                                                                          | Estimated | Owner |
+| ------- | ----------------------------------------------------------------------------- | --------- | ----- |
 | Phase 1 | `audit_log` 테이블/마이그레이션 + `recordAudit` DB 교체(비차단) + 단위 테스트 | 1d        | TBD   |
-| Phase 2 | mutation 라우트에 actor 채워 호출 갱신 + `GET /audit`(필터·keyset) | 1d        | TBD   |
-| Phase 3 | web `features/audit` 뷰 + E2E                                   | 0.5d      | TBD   |
+| Phase 2 | mutation 라우트에 actor 채워 호출 갱신 + `GET /audit`(필터·keyset)            | 1d        | TBD   |
+| Phase 3 | web `features/audit` 뷰 + E2E                                                 | 0.5d      | TBD   |
 
 ### 6-2. Dependencies
 

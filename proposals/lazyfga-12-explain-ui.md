@@ -1,11 +1,11 @@
 # Explain UI (결정 경로 시각화) - Spec Proposal
 
-| Item       | Detail                           |
-|------------|----------------------------------|
-| Author     | Seonguk Moon                     |
-| Created    | 2026-06-28                       |
-| Status     | **Implemented**                  |
-| Reviewers  | Claude, Codex (M4 cross-review)  |
+| Item      | Detail                          |
+| --------- | ------------------------------- |
+| Author    | Seonguk Moon                    |
+| Created   | 2026-06-28                      |
+| Status    | **Implemented**                 |
+| Reviewers | Claude, Codex (M4 cross-review) |
 
 ---
 
@@ -71,10 +71,11 @@ web/features/explain
 ```ts
 // web/features/explain
 export function useExplain(): {
-  run(req: EvaluationRequest): Promise<void>;   // options.reason=true 강제
-  result?: ReasonResult;                         // packages/shared/reason.ts
+  run(req: EvaluationRequest): Promise<void>; // options.reason=true 강제
+  result?: ReasonResult; // packages/shared/reason.ts
   highlight: { nodes: string[]; edges: string[] }; // 캔버스 강조 대상(ReasonStep 파생)
-  loading: boolean; error?: string;
+  loading: boolean;
+  error?: string;
 };
 ```
 
@@ -82,20 +83,20 @@ export function useExplain(): {
 
 ### 5-2. Error Handling
 
-| 상황 | 처리 |
-|------|------|
-| evaluate 401/500 | 결과 영역에 에러 표시, 캔버스 강조 없음 |
-| reason 없음(decision만 옴) | 텍스트만 표시, 경로 강조 생략 |
-| highlight 대상 노드 부재(모델 변경) | 해당 강조 스킵(깨지지 않게) |
+| 상황                                | 처리                                    |
+| ----------------------------------- | --------------------------------------- |
+| evaluate 401/500                    | 결과 영역에 에러 표시, 캔버스 강조 없음 |
+| reason 없음(decision만 옴)          | 텍스트만 표시, 경로 강조 생략           |
+| highlight 대상 노드 부재(모델 변경) | 해당 강조 스킵(깨지지 않게)             |
 
 ## 6. Implementation Plan
 
 ### 6-1. Milestones
 
-| Phase   | Task                                          | Estimated | Owner |
-|---------|-----------------------------------------------|-----------|-------|
+| Phase   | Task                                            | Estimated | Owner |
+| ------- | ----------------------------------------------- | --------- | ----- |
 | Phase 1 | ExplainForm + evaluate(reason) 호출 + 결과 표시 | 1d        | TBD   |
-| Phase 2 | allow PathView + 캔버스 경로 하이라이트          | 1.5d      | TBD   |
+| Phase 2 | allow PathView + 캔버스 경로 하이라이트         | 1.5d      | TBD   |
 | Phase 3 | deny MissingLinkView + truncated 배지           | 0.5d      | TBD   |
 
 ### 6-2. Dependencies

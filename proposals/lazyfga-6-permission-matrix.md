@@ -1,11 +1,11 @@
 # Permission Matrix UI - Spec Proposal
 
-| Item       | Detail                           |
-|------------|----------------------------------|
-| Author     | Seonguk Moon                     |
-| Created    | 2026-06-28                       |
-| Status     | **Implemented**                  |
-| Reviewers  | Claude, Codex (M2 cross-review)  |
+| Item      | Detail                          |
+| --------- | ------------------------------- |
+| Author    | Seonguk Moon                    |
+| Created   | 2026-06-28                      |
+| Status    | **Implemented**                 |
+| Reviewers | Claude, Codex (M2 cross-review) |
 
 ---
 
@@ -52,6 +52,7 @@ ResourceType(선택)  ──▶  Matrix Panel
 ### 4.3 Core Logic
 
 행렬 셀 토글(결정적):
+
 - 셀(`permission p`, `role r`) 체크 ON = `p.grantedByRoles`에 `r.name` 추가(중복 없음). OFF = 제거.
 - 불변식: `p.grantedByRoles`가 비면 `validateModelIR` 규칙5 위반(EMPTY_GRANT) → 마지막 한 칸 해제 시 경고 표시(허용하되 발행 차단은 `lazyfga-7`).
 - role 삭제 시: 해당 role을 참조하던 모든 permission의 `grantedByRoles`에서 제거(고아 금지).
@@ -68,11 +69,16 @@ ResourceType(선택)  ──▶  Matrix Panel
 // web/features/permission-matrix/useMatrix.ts
 /** 선택된 ResourceType의 행렬 편집 액션. useModelGraph의 IR을 변형. */
 export function useMatrix(typeName: string): {
-  roles: Role[]; permissions: Permission[]; parents: ParentRef[];
+  roles: Role[];
+  permissions: Permission[];
+  parents: ParentRef[];
   toggleCell(permission: string, role: string): void;
-  addRole(name: string): void; removeRole(name: string): void; renameRole(from: string, to: string): void;
+  addRole(name: string): void;
+  removeRole(name: string): void;
+  renameRole(from: string, to: string): void;
   setRoleAssignableBy(role: string, refs: SubjectRef[]): void;
-  addPermission(name: string): void; removePermission(name: string): void;
+  addPermission(name: string): void;
+  removePermission(name: string): void;
   renamePermission(from: string, to: string): void; // Goal 3.1 "이름변경" 충족(교차리뷰 반영)
   toggleInherit(permission: string, parentRelation: string): void;
   errors: ValidationError[]; // 이 타입에 한정
@@ -81,21 +87,21 @@ export function useMatrix(typeName: string): {
 
 ### 5-2. Error Handling
 
-| 상황 | 처리 |
-|------|------|
-| permission grant가 빈 셀 | `EMPTY_GRANT` 경고(인라인), 발행 차단은 `lazyfga-7` |
-| role/permission 이름 충돌·예약어 | `validateModelIR` 에러 인라인 |
-| read-only 모델 | 패널 비활성 |
+| 상황                             | 처리                                                |
+| -------------------------------- | --------------------------------------------------- |
+| permission grant가 빈 셀         | `EMPTY_GRANT` 경고(인라인), 발행 차단은 `lazyfga-7` |
+| role/permission 이름 충돌·예약어 | `validateModelIR` 에러 인라인                       |
+| read-only 모델                   | 패널 비활성                                         |
 
 ## 6. Implementation Plan
 
 ### 6-1. Milestones
 
-| Phase   | Task                                            | Estimated | Owner |
-|---------|-------------------------------------------------|-----------|-------|
-| Phase 1 | 행렬 렌더(roles×permissions) + 셀 토글            | 1d        | TBD   |
-| Phase 2 | role/permission CRUD + assignableBy 편집         | 1d        | TBD   |
-| Phase 3 | inheritFromParents 토글 + 검증 인라인 표시        | 0.5d      | TBD   |
+| Phase   | Task                                       | Estimated | Owner |
+| ------- | ------------------------------------------ | --------- | ----- |
+| Phase 1 | 행렬 렌더(roles×permissions) + 셀 토글     | 1d        | TBD   |
+| Phase 2 | role/permission CRUD + assignableBy 편집   | 1d        | TBD   |
+| Phase 3 | inheritFromParents 토글 + 검증 인라인 표시 | 0.5d      | TBD   |
 
 ### 6-2. Dependencies
 

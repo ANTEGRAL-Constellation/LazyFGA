@@ -16,9 +16,12 @@ async function main(): Promise<void> {
   // IdP zitadel 연결 삭제(규칙 cascade).
   const list = await fetch(`${API}/idp/connections`, { headers: adminHeaders });
   if (list.ok) {
-    const { connections } = (await list.json()) as { connections: Array<{ id: string; provider: string }> };
+    const { connections } = (await list.json()) as {
+      connections: Array<{ id: string; provider: string }>;
+    };
     const zit = connections.find((c) => c.provider === "zitadel");
-    if (zit) await fetch(`${API}/idp/connections/${zit.id}`, { method: "DELETE", headers: adminHeaders });
+    if (zit)
+      await fetch(`${API}/idp/connections/${zit.id}`, { method: "DELETE", headers: adminHeaders });
   }
 
   // 데모 tuple 삭제(SDK; 없으면 무시).

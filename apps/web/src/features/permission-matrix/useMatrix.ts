@@ -32,7 +32,8 @@ export function useMatrix(typeName: string): {
     permissions: resource?.permissions ?? [],
     parents: resource?.parents ?? [],
     groups: ir.groups.map((g) => g.name),
-    toggleCell: (permission, role) => useModelStore.getState().toggleCell(typeName, permission, role),
+    toggleCell: (permission, role) =>
+      useModelStore.getState().toggleCell(typeName, permission, role),
     addRole: (name) => useModelStore.getState().addRole(typeName, name),
     removeRole: (name) => useModelStore.getState().removeRole(typeName, name),
     renameRole: (from, to) => useModelStore.getState().renameRole(typeName, from, to),

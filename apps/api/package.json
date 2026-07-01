@@ -16,7 +16,7 @@
   "dependencies": {
     "@lazyfga/compiler": "workspace:*",
     "@lazyfga/shared": "workspace:*",
-    "@openfga/sdk": "^0.8.0",
+    "@openfga/sdk": "^0.9.6",
     "drizzle-orm": "^0.38.3",
     "hono": "^4.6.14",
     "postgres": "^3.4.5"

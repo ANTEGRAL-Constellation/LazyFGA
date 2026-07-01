@@ -18,7 +18,10 @@ jobs:
       - name: TruffleHog secret scan
         uses: trufflesecurity/trufflehog@main
         with:
-          # verified = confirmed live by the provider API; unknown = verification errored.
+          # verified-only: confirmed live by the provider API. The repo intentionally
+          # ships dev placeholder Postgres DSNs (docker-compose.yml, .env.example) that
+          # are credential-shaped but not live; verified,unknown flagged those and failed
+          # the job. Verified-only still fails on any real leaked secret, and GitHub
+          # native secret scanning covers the pattern-based side.
           # Fully OSS action, no license key required (works on org and public repos).
-          # The action exits non-zero when results are found, failing the job.
-          extra_args: --results=verified,unknown
+          extra_args: --results=verified

@@ -25,7 +25,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22 # pnpm 11 needs Node >= 22.13 (uses node:sqlite)
           cache: pnpm
 
       # Some packages run their tests with `bun test`, so Bun is required too.
@@ -57,7 +57,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22 # pnpm 11 needs Node >= 22.13 (uses node:sqlite)
           cache: pnpm
 
       - name: Install dependencies

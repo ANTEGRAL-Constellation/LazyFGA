@@ -1,6 +1,7 @@
 {
   "name": "lazyfga",
   "private": true,
+  "license": "Apache-2.0",
   "type": "module",
   "packageManager": "pnpm@11.0.9",
   "engines": {

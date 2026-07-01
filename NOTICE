@@ -1,0 +1,11 @@
+lazyFGA
+Copyright 2026 Seonguk Moon
+
+This product includes software developed as part of the lazyFGA project.
+
+Licensed under the Apache License, Version 2.0. See the LICENSE file for
+the full license text.
+
+lazyFGA is a developer-experience layer on top of OpenFGA
+(https://openfga.dev, Apache-2.0). OpenFGA and other third-party
+dependencies are distributed under their own respective licenses.

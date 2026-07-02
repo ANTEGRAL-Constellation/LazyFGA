@@ -33,6 +33,7 @@ func Mount(r chi.Router, deps Deps) {
 	h := &handlers{deps: deps}
 	r.Route("/grants", func(r chi.Router) {
 		r.Use(httpx.RequireRole(deps.Auth, httpx.RoleAdmin))
+		r.Use(httpx.TrailingSlash404)
 		r.Post("/", h.grant)
 		r.Delete("/", h.revoke)
 		r.Get("/", h.list)

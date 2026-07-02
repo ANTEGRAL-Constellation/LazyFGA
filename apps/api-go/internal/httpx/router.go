@@ -10,29 +10,34 @@ import (
 )
 
 // NewRouter는 공통 미들웨어(요청 로깅 → 패닉 복구)와 /healthz를 붙인 chi 라우터를 만든다.
-// 비즈니스 모듈 마운트(/model, /tokens 등)는 LFGA-25/26이 추가한다.
+// 비즈니스 모듈 마운트(/model, /tokens 등)는 mounts 콜백으로 주입한다(app.go가 각 모듈의
+// Mount(r, deps)를 감싼 클로저를 넘긴다). 미들웨어는 라우트 등록 전에 걸려 있어야 하므로
+// 모든 mounts는 healthz 등록 이후·미들웨어 등록 이후 순서로 적용된다.
 // 미매칭 라우트/메서드는 Hono 기본과 동일한 본문("404 Not Found", text/plain)을 돌려준다 —
 // LFGA-27 이중 백엔드 contract replay에서 프레임워크 기본값 차이를 없애기 위함.
-func NewRouter(logger *slog.Logger, health Health) *chi.Mux {
+func NewRouter(logger *slog.Logger, health Health, mounts ...func(chi.Router)) *chi.Mux {
 	r := chi.NewRouter()
 	r.Use(RequestLogger(logger))
 	r.Use(Recoverer(logger))
-	r.Use(strictSlash404)
 	r.NotFound(WriteHonoNotFound)
 	r.MethodNotAllowed(WriteHonoNotFound)
 	r.Get("/healthz", health.Handler())
+	for _, mount := range mounts {
+		mount(r)
+	}
 	return r
 }
 
-// strictSlash404는 Hono strict 모드(기본값)를 재현한다: chi는 등록 경로+"/"도 매칭하지만
-// Hono는 /model/ ≠ /model 이므로 트레일링 슬래시 경로를 404로 돌린다.
-func strictSlash404(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		if p := req.URL.Path; len(p) > 1 && strings.HasSuffix(p, "/") {
-			WriteHonoNotFound(w, req)
+// TrailingSlash404는 chi의 그룹 루트 별칭(/model/도 서브라우터 "/"로 매칭돼 핸들러가
+// 실행됨)을 Hono strict 동작(트레일링 슬래시 = 미매칭 → 404)으로 되돌린다. 반드시
+// 인증 가드 **뒤에** 걸어 미인증 401 우선순위를 보존한다(실측 Hono: 미인증 401, 인증 404).
+func TrailingSlash404(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "/") {
+			WriteHonoNotFound(w, r)
 			return
 		}
-		next.ServeHTTP(w, req)
+		next.ServeHTTP(w, r)
 	})
 }
 

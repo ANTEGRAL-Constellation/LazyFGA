@@ -73,19 +73,32 @@ func Mount(r chi.Router, d Deps) {
 	}
 	h := &handlers{d: d}
 	r.Route("/idp", func(r chi.Router) {
+		// TS 가드는 경로 스코프다: use("/connections")·use("/connections/*")·use("/rules/*").
+		// 실측(Hono): /idp/connections[/**]와 /idp/rules[/**]는 미매칭 포함 401 우선,
+		// 그 외 /idp/*는 무가드 404. Hono의 "/x/*"는 base "/x"도 커버한다.
+		guard := httpx.RequireRole(d.Auth, httpx.RoleAdmin)
+		r.Use(func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, rq *http.Request) {
+				p := strings.TrimPrefix(rq.URL.Path, "/idp")
+				if p == "/connections" || strings.HasPrefix(p, "/connections/") ||
+					p == "/rules" || strings.HasPrefix(p, "/rules/") {
+					guard(next).ServeHTTP(w, rq)
+					return
+				}
+				next.ServeHTTP(w, rq)
+			})
+		})
+		r.Use(httpx.TrailingSlash404)
 		// 웹훅은 서명 검증 전 raw body를 전부 버퍼링하므로 크기를 제한한다.
 		r.With(httpx.BodyLimit(maxWebhookBody)).Post("/webhook/{provider}", h.webhook)
-		r.Group(func(r chi.Router) {
-			r.Use(httpx.RequireRole(d.Auth, httpx.RoleAdmin))
-			r.Post("/connections", h.createConnection)
-			r.Get("/connections", h.listConnections)
-			r.Put("/connections/{id}", h.updateConnection)
-			r.Delete("/connections/{id}", h.deleteConnection)
-			r.Get("/connections/{id}/rules", h.listRules)
-			r.Post("/connections/{id}/rules", h.createRule)
-			r.Put("/rules/{ruleId}", h.updateRule)
-			r.Delete("/rules/{ruleId}", h.deleteRule)
-		})
+		r.Post("/connections", h.createConnection)
+		r.Get("/connections", h.listConnections)
+		r.Put("/connections/{id}", h.updateConnection)
+		r.Delete("/connections/{id}", h.deleteConnection)
+		r.Get("/connections/{id}/rules", h.listRules)
+		r.Post("/connections/{id}/rules", h.createRule)
+		r.Put("/rules/{ruleId}", h.updateRule)
+		r.Delete("/rules/{ruleId}", h.deleteRule)
 	})
 }
 

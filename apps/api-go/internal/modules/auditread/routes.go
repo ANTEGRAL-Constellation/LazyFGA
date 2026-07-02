@@ -29,9 +29,11 @@ type Deps struct {
 
 // Mount는 감사 조회 라우트(admin 전용)를 마운트한다.
 func Mount(r chi.Router, d Deps) {
-	r.Group(func(gr chi.Router) {
-		gr.Use(httpx.RequireRole(d.Auth, httpx.RoleAdmin))
-		gr.Get("/audit", d.handleQuery)
+	// TS auditRoutes.use("*", admin): /audit 이하 전 경로 가드(미매칭 포함).
+	r.Route("/audit", func(ar chi.Router) {
+		ar.Use(httpx.RequireRole(d.Auth, httpx.RoleAdmin))
+		ar.Use(httpx.TrailingSlash404)
+		ar.Get("/", d.handleQuery)
 	})
 }
 

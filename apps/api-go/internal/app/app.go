@@ -15,10 +15,19 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/antegral-constellation/lazyfga/api/internal/audit"
 	"github.com/antegral-constellation/lazyfga/api/internal/config"
 	"github.com/antegral-constellation/lazyfga/api/internal/db"
 	"github.com/antegral-constellation/lazyfga/api/internal/httpx"
+	"github.com/antegral-constellation/lazyfga/api/internal/modules/auditread"
+	"github.com/antegral-constellation/lazyfga/api/internal/modules/auth"
+	"github.com/antegral-constellation/lazyfga/api/internal/modules/idp"
+	"github.com/antegral-constellation/lazyfga/api/internal/modules/model"
+	"github.com/antegral-constellation/lazyfga/api/internal/modules/pdp"
+	"github.com/antegral-constellation/lazyfga/api/internal/modules/permission"
+	"github.com/antegral-constellation/lazyfga/api/internal/modules/policy"
 	"github.com/antegral-constellation/lazyfga/api/internal/openfga"
+	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -150,7 +159,9 @@ func (a *App) Serve(ctx context.Context) error {
 	return retErr
 }
 
-// handler는 공통 미들웨어 + /healthz를 붙인 라우터를 만든다.
+// handler는 공통 미들웨어 + /healthz + 전 모듈 라우트를 붙인 라우터를 만든다.
+// 마운트 구성/가드는 TS src/index.ts와 동일하다: /model·/tokens·/policies·/grants·/audit·
+// idp CRUD = admin, /access/v1 = service|admin, /idp/webhook/* = 서명 전용(256KiB BodyLimit).
 func (a *App) handler() http.Handler {
 	health := httpx.Health{
 		Version:    Version,
@@ -158,7 +169,74 @@ func (a *App) handler() http.Handler {
 		FGAPing:    func(r *http.Request) bool { return a.Gateway.Ping(r.Context()) },
 		StoreReady: a.storeReady.Load,
 	}
-	return httpx.NewRouter(a.Logger, health)
+	return httpx.NewRouter(a.Logger, health, a.moduleMounts()...)
+}
+
+// moduleMounts는 각 비즈니스 모듈의 Mount(r, deps)를 감싼 클로저 목록을 만든다.
+// 저장소/게이트웨이/감사기록기/인증기는 여기서 한 번 구성해 공유한다(model/policy 리더는
+// pdp·permission이 재사용). Deps 구성은 pool을 역참조하지 않으므로 nil pool(부트스트랩 전·
+// degraded 테스트)에서도 안전하며, 실제 DB 접근은 각 라우트가 요청 시점에 수행한다.
+func (a *App) moduleMounts() []func(chi.Router) {
+	recorder := audit.NewDBRecorder(a.Pool, a.Logger)
+	authenticator := httpx.NewTokenAuthenticator(a.Config.AdminToken, auth.NewRepo(a.Pool))
+	requireAdmin := httpx.RequireRole(authenticator, httpx.RoleAdmin)
+	actor := func(ctx context.Context) string {
+		p, _ := httpx.PrincipalFromContext(ctx)
+		return audit.PrincipalActor(p)
+	}
+
+	// 발행 모델/정책 리더는 여러 모듈이 공유한다(같은 pool, 같은 읽기 의미).
+	modelRepo := model.NewRepo(a.Pool)
+	policyRepo := policy.NewRepo(a.Pool)
+
+	return []func(chi.Router){
+		func(r chi.Router) {
+			model.Mount(r, model.Deps{
+				Store:    modelRepo,
+				Gateway:  a.Gateway,
+				Compiler: model.DefaultCompiler(),
+				Recorder: recorder,
+				Auth:     authenticator,
+			})
+		},
+		func(r chi.Router) {
+			auth.Mount(r, auth.Deps{
+				Repo:         auth.NewRepo(a.Pool),
+				Recorder:     recorder,
+				RequireAdmin: requireAdmin,
+				Actor:        actor,
+			})
+		},
+		func(r chi.Router) {
+			policy.Mount(r, policy.Deps{
+				Store:    policyRepo,
+				Model:    modelRepo,
+				Recorder: recorder,
+				Auth:     authenticator,
+			})
+		},
+		func(r chi.Router) {
+			pdp.Mount(r, pdp.New(modelRepo, policyRepo, a.Gateway, recorder, authenticator))
+		},
+		func(r chi.Router) {
+			permission.Mount(r, permission.New(modelRepo, a.Gateway, recorder, authenticator))
+		},
+		func(r chi.Router) {
+			idp.Mount(r, idp.Deps{
+				Repo:     idp.NewRepo(a.Pool),
+				Gateway:  a.Gateway,
+				Recorder: recorder,
+				Auth:     authenticator,
+				Logger:   a.Logger,
+			})
+		},
+		func(r chi.Router) {
+			auditread.Mount(r, auditread.Deps{
+				Repo: auditread.NewRepo(a.Pool),
+				Auth: authenticator,
+			})
+		},
+	}
 }
 
 // bootstrap는 migrate → FGA bootstrap를 일시적 오류 재시도와 함께 수행한다.

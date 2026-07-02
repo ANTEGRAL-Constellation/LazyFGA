@@ -7,6 +7,11 @@ Base URL defaults to `http://localhost:8787`. Auth is a bearer token:
 
 The IdP webhook is **not** token-authed; it is verified by the provider's signature.
 
+The backend is Go (`apps/api-go`, renamed to `apps/api` at the cutover swap). The HTTP contract is
+unchanged from the former TS backend. Run it with `go run ./cmd/lazyfga-api` from `apps/api-go`
+(same `PORT`/`DATABASE_URL`/`OPENFGA_API_URL`/`ADMIN_TOKEN`/`LAZYFGA_STORE_ID` env vars), or via
+`docker compose up --build` (which requires `ADMIN_TOKEN`).
+
 ## Health
 
 | Method | Path       | Auth   | Notes                                                                         |
@@ -65,3 +70,9 @@ Templates use `{{path}}` (e.g. `{{subject.id}}`, `{{attributes.projectId}}`); th
 | Method | Path     | Notes                                                                                                                                                     |
 | ------ | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | GET    | `/audit` | `?action=&actor=&from=&to=&limit=&cursor=`. `action` supports a trailing `*` for prefix match. Newest first, keyset paginated → `{entries, nextCursor?}`. |
+
+`from`/`to` accept **RFC3339** (with or without fractional seconds, truncated to milliseconds) or
+**`YYYY-MM-DD`** (interpreted as UTC midnight); anything else is a 400. `cursor` values are
+server-issued and round-trip as-is (hand-crafted cursors must be canonical unpadded base64url
+containing an RFC3339 timestamp). This is the one accepted-format tightening versus the former TS
+backend (LFGA-22 §4.4-3); server-issued cursors and all real inputs behave identically.

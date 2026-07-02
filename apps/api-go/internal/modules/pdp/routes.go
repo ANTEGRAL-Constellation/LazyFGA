@@ -32,6 +32,7 @@ func Mount(r chi.Router, deps Deps) {
 	h := &handlers{deps: deps}
 	r.Route("/access/v1", func(r chi.Router) {
 		r.Use(httpx.RequireRole(deps.Auth, httpx.RoleService, httpx.RoleAdmin))
+		r.Use(httpx.TrailingSlash404)
 		r.Post("/evaluation", h.evaluate)
 	})
 }

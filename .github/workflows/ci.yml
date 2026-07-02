@@ -11,8 +11,59 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-test:
-    name: Lint, typecheck, build, test
+  go:
+    name: Go build, vet, lint, coverage gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+          cache-dependency-path: apps/api-go/go.sum
+
+      # GitHub Actions `services:` cannot sequence OpenFGA migrate-then-run, so reuse the repo
+      # compose file (it encodes the init SQL, the openfga-migrate one-shot, and healthchecks).
+      # ADMIN_TOKEN must be set because compose interpolates the whole file (the api service now
+      # requires it via ${ADMIN_TOKEN:?...}); the api service itself is not started here.
+      - name: Start dependencies (postgres + openfga)
+        env:
+          ADMIN_TOKEN: ci-dummy
+          OPENFGA_HTTP_PORT: "8080"
+        run: docker compose up -d --wait postgres openfga
+
+      - name: go mod verify
+        working-directory: apps/api-go
+        run: go mod verify
+
+      - name: go vet
+        working-directory: apps/api-go
+        run: go vet ./...
+
+      - name: go build
+        working-directory: apps/api-go
+        run: go build ./...
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v7
+        with:
+          version: v2.6.0
+          working-directory: apps/api-go
+
+      # Hard coverage gate (>=95% total statements). LAZYFGA_TEST_INTEGRATION=1 turns dependency
+      # skips into failures so the gate can never pass on unit tests alone.
+      - name: Coverage gate
+        working-directory: apps/api-go
+        env:
+          DATABASE_URL: postgres://lazyfga:lazyfga@localhost:5432/lazyfga
+          OPENFGA_API_URL: http://localhost:8080
+          LAZYFGA_TEST_INTEGRATION: "1"
+        run: bash scripts/coverage-gate.sh
+
+  node:
+    name: Web + packages (lint, typecheck, build, test)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -44,6 +95,50 @@ jobs:
       - name: Prettier check
         run: pnpm exec prettier --check "**/*.{ts,tsx,json,md}"
 
+  parity:
+    name: Compiler parity (TS + Go on shared corpus)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Both sides run against the identical corpus in packages/shared/src/__fixtures__/parity/.
+      # A dedicated job makes drift failures legible even when the unit jobs are green.
+      - name: TS parity corpus (shared)
+        working-directory: packages/shared
+        run: bun test src/parity.test.ts
+
+      - name: TS parity corpus (compiler)
+        working-directory: packages/compiler
+        run: bun test src/parity.test.ts
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+          cache-dependency-path: apps/api-go/go.sum
+
+      - name: Go parity corpus
+        working-directory: apps/api-go
+        run: go test ./internal/contract/... ./internal/compiler/...
+
   license-audit:
     name: Dependency license audit
     runs-on: ubuntu-latest
@@ -57,7 +152,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v6
         with:
-          node-version: 22 # pnpm 11 needs Node >= 22.13 (uses node:sqlite)
+          node-version: 22
           cache: pnpm
 
       - name: Install dependencies
@@ -65,5 +160,21 @@ jobs:
 
       # Report production dependency licenses. Informational for now; tighten
       # into a fail-on-disallowed gate once an allowlist policy is agreed.
-      - name: List production dependency licenses
+      - name: List production dependency licenses (node)
         run: pnpm licenses list --prod
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+          cache-dependency-path: apps/api-go/go.sum
+
+      # Verify the Go module cache matches go.sum (supply-chain integrity).
+      - name: go mod verify
+        working-directory: apps/api-go
+        run: go mod verify
+
+      # Informational Go module inventory (dependency provenance).
+      - name: Go module inventory
+        working-directory: apps/api-go
+        run: go list -m all

@@ -41,6 +41,7 @@ func Mount(r chi.Router, deps Deps) {
 	h := &handlers{deps: deps}
 	r.Route("/model", func(r chi.Router) {
 		r.Use(httpx.RequireRole(deps.Auth, httpx.RoleAdmin))
+		r.Use(httpx.TrailingSlash404)
 		r.Post("/", h.publish)
 		r.Get("/current", h.current)
 		r.Get("/versions", h.listVersions)

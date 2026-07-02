@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/antegral-constellation/lazyfga/api/internal/jsontime"
 	"github.com/antegral-constellation/lazyfga/api/internal/jsutil"
@@ -38,11 +39,28 @@ type Deps struct {
 
 // Mount는 토큰 라우트(admin 전용)를 마운트한다.
 func Mount(r chi.Router, d Deps) {
-	r.Group(func(gr chi.Router) {
-		gr.Use(d.RequireAdmin)
-		gr.Post("/tokens", d.postToken)
-		gr.Get("/tokens", d.listTokens)
-		gr.Delete("/tokens/{id}", d.deleteToken)
+	// TS는 tokenRoutes.use("*", admin)이라 /tokens 이하 전 경로(미매칭 포함)가 가드된다 —
+	// Route 마운트로 서브트리 전체에 가드를 적용하고, 트레일링 슬래시 별칭은 가드 뒤 404.
+	r.Route("/tokens", func(tr chi.Router) {
+		tr.Use(d.RequireAdmin)
+		tr.Use(trailingSlash404)
+		tr.Post("/", d.postToken)
+		tr.Get("/", d.listTokens)
+		tr.Delete("/{id}", d.deleteToken)
+	})
+}
+
+// trailingSlash404는 httpx.TrailingSlash404의 로컬 복제다(순환 import 회피).
+// Hono 실측: 트레일링 슬래시 = 미매칭 → 가드 통과 후 404 "404 Not Found"(text/plain).
+func trailingSlash404(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasSuffix(r.URL.Path, "/") {
+			w.Header().Set("Content-Type", "text/plain; charset=UTF-8")
+			w.WriteHeader(http.StatusNotFound)
+			_, _ = w.Write([]byte("404 Not Found"))
+			return
+		}
+		next.ServeHTTP(w, r)
 	})
 }
 

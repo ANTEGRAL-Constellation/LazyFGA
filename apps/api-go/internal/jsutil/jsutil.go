@@ -5,10 +5,91 @@
 package jsutil
 
 import (
+	"bytes"
+	"encoding/json"
 	"math"
 	"strconv"
 	"strings"
 )
+
+// MarshalJSON은 JS `JSON.stringify`와 이스케이프 규칙을 맞춘 마샬이다:
+//   - `< > &`를 이스케이프하지 않는다(SetEscapeHTML(false)).
+//   - U+2028/U+2029를 raw로 출력한다 — Go encoding/json은 SetEscapeHTML(false)여도
+//     이 둘은 항상  / 로 이스케이프하므로 후처리로 되돌린다.
+//
+// 커스텀 MarshalJSON 구현과 응답 직렬화 경로(httpx)가 전부 이 헬퍼를 공유해
+// 바이트 parity의 단일 원본이 된다(LFGA-24 §4.3).
+func MarshalJSON(v any) ([]byte, error) {
+	var buf bytes.Buffer
+	enc := json.NewEncoder(&buf)
+	enc.SetEscapeHTML(false)
+	if err := enc.Encode(v); err != nil {
+		return nil, err
+	}
+	b := bytes.TrimSuffix(buf.Bytes(), []byte("\n"))
+	return unescapeLineSeps(b), nil
+}
+
+// unescapeLineSeps는 JSON 텍스트 안의  /  이스케이프를 raw 문자로 되돌린다.
+// 인코더가 만든 이스케이프만 바꾸도록 백슬래시 run의 짝수/홀수(=이스케이프 시작 여부)를
+// 추적한다 — 원문에 있던 리터럴 `\\u2028`(이스케이프된 백슬래시 + 텍스트)은 건드리지 않는다.
+func unescapeLineSeps(b []byte) []byte {
+	if !bytes.Contains(b, []byte(`\u202`)) {
+		return b
+	}
+	var out bytes.Buffer
+	out.Grow(len(b))
+	for i := 0; i < len(b); {
+		c := b[i]
+		if c != '\\' {
+			out.WriteByte(c)
+			i++
+			continue
+		}
+		// 백슬래시 run 시작: 홀수 번째 백슬래시 뒤의 u2028/u2029만 인코더 산출 이스케이프다.
+		run := 0
+		for i+run < len(b) && b[i+run] == '\\' {
+			run++
+		}
+		pairs := run / 2
+		for j := 0; j < pairs*2; j++ {
+			out.WriteByte('\\')
+		}
+		i += pairs * 2
+		if run%2 == 1 {
+			rest := b[i:]
+			switch {
+			case bytes.HasPrefix(rest, []byte(`\u2028`)):
+				out.WriteString(" ")
+				i += 6
+			case bytes.HasPrefix(rest, []byte(`\u2029`)):
+				out.WriteString(" ")
+				i += 6
+			default:
+				// 그 외 이스케이프(\n, \", \u00XX 등)는 그대로 통과.
+				out.WriteByte('\\')
+				i++
+			}
+		}
+	}
+	return out.Bytes()
+}
+
+// TrimJS는 JS `String.prototype.trim`과 동일한 문자 집합(ES WhiteSpace ∪ LineTerminator)을
+// 양끝에서 제거한다. Go strings.TrimSpace와의 차이: U+FEFF(ZWNBSP)를 제거하고,
+// U+0085(NEL)는 제거하지 않는다.
+func TrimJS(s string) string {
+	return strings.TrimFunc(s, isJSWhitespace)
+}
+
+func isJSWhitespace(r rune) bool {
+	switch r {
+	case '\t', '\v', '\f', ' ', '\n', '\r', 0x00a0, 0xfeff, 0x2028, 0x2029:
+		return true
+	}
+	// Unicode Zs(공백 분리자) 카테고리.
+	return r == 0x1680 || (r >= 0x2000 && r <= 0x200a) || r == 0x202f || r == 0x205f || r == 0x3000
+}
 
 // JSONString은 JS `JSON.stringify(s)`(문자열 인자)와 바이트 단위로 동일한 큰따옴표 감싼
 // 리터럴을 반환한다. Go 표준 encoding/json과 다른 점:

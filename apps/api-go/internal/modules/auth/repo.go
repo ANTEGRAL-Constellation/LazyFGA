@@ -14,6 +14,7 @@ import (
 	"io"
 	"time"
 
+	"github.com/antegral-constellation/lazyfga/api/internal/db"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
@@ -103,6 +104,10 @@ func (r *Repo) Revoke(ctx context.Context, id string) (bool, error) {
 		`UPDATE service_token SET revoked_at = now() WHERE id = $1 AND revoked_at IS NULL RETURNING id`, id).
 		Scan(&revokedID)
 	if errors.Is(err, pgx.ErrNoRows) {
+		return false, nil
+	}
+	// malformed uuid는 PG 파서(22P02)를 신뢰해 not-found로 매핑한다(§4.4-2).
+	if db.IsSQLState(err, "22P02") {
 		return false, nil
 	}
 	if err != nil {

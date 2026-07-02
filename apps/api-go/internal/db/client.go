@@ -5,6 +5,7 @@ package db
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -36,4 +37,11 @@ func Ping(ctx context.Context, pool *pgxpool.Pool) bool {
 		return false
 	}
 	return true
+}
+
+// IsSQLState는 err가 주어진 SQLSTATE 코드의 Postgres 오류인지 판정한다.
+// 예: "22P02"(invalid_text_representation — malformed uuid 등), "23505"(unique_violation).
+func IsSQLState(err error, code string) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == code
 }

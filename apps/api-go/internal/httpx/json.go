@@ -3,21 +3,15 @@
 package httpx
 
 import (
-	"bytes"
-	"encoding/json"
 	"net/http"
+
+	"github.com/antegral-constellation/lazyfga/api/internal/jsutil"
 )
 
-// marshalJS는 JS JSON.stringify와 이스케이프 규칙을 맞춘 마샬이다(<>&·U+2028/29 raw —
-// SetEscapeHTML(false)). 응답 바이트 parity의 기본 경로(LFGA-24 §4.3).
+// marshalJS는 JS JSON.stringify와 이스케이프 규칙을 맞춘 마샬이다(<>& raw + U+2028/29 raw).
+// 단일 원본은 jsutil.MarshalJSON — 응답 바이트 parity의 기본 경로(LFGA-24 §4.3).
 func marshalJS(v any) ([]byte, error) {
-	var buf bytes.Buffer
-	enc := json.NewEncoder(&buf)
-	enc.SetEscapeHTML(false)
-	if err := enc.Encode(v); err != nil {
-		return nil, err
-	}
-	return bytes.TrimSuffix(buf.Bytes(), []byte("\n")), nil
+	return jsutil.MarshalJSON(v)
 }
 
 // WriteJSON은 상태코드와 JSON 본문을 쓴다(후행 개행 없음).

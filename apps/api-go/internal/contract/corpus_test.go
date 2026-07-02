@@ -1,13 +1,12 @@
 package contract_test
 
 import (
-	"bytes"
 	"encoding/json"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/antegral-constellation/lazyfga/api/internal/contract"
+	"github.com/antegral-constellation/lazyfga/api/internal/jsutil"
 	"github.com/antegral-constellation/lazyfga/api/internal/testutil"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -266,14 +265,12 @@ func runMarshalCases(t *testing.T, cases []marshalCase) {
 func roundTrip(t *testing.T, typ, canonical string) string {
 	t.Helper()
 	raw := []byte(canonical)
-	// 프로덕션 응답 경로(httpx.WriteJSON)와 동일하게 HTML 이스케이프를 끈 인코더를 쓴다.
+	// 프로덕션 응답 경로(httpx.WriteJSON)와 동일한 JS 호환 마샬(jsutil.MarshalJSON)을 쓴다.
 	// json.Marshal은 커스텀 MarshalJSON 출력의 <>&·U+2028/29까지 재이스케이프해 TS와 어긋난다.
 	marshal := func(v any) string {
-		var buf bytes.Buffer
-		enc := json.NewEncoder(&buf)
-		enc.SetEscapeHTML(false)
-		require.NoError(t, enc.Encode(v))
-		return strings.TrimSuffix(buf.String(), "\n")
+		b, err := jsutil.MarshalJSON(v)
+		require.NoError(t, err)
+		return string(b)
 	}
 	unmarshal := func(v any) { require.NoError(t, json.Unmarshal(raw, v), "unmarshal %s", typ) }
 	switch typ {

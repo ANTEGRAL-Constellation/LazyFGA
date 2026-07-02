@@ -307,3 +307,22 @@ func (g *gatewayImpl) storeExists(ctx context.Context, id string) bool {
 	_, err := g.mgmt.GetStore(ctx).Options(fgaclient.ClientGetStoreOptions{StoreId: &id}).Execute()
 	return err == nil
 }
+
+// ResolveCheckAuthorizationModelID는 옵션 적용 결과의 모델 핀을 돌려준다(테스트 fake의
+// 핀 검증용 — 모듈 테스트가 비공개 옵션 구조체를 볼 수 없으므로 여기서 해석해 준다).
+func ResolveCheckAuthorizationModelID(opts ...CheckOption) string {
+	var o checkOptions
+	for _, fn := range opts {
+		fn(&o)
+	}
+	return o.authorizationModelID
+}
+
+// ResolveWriteAuthorizationModelID는 Write 옵션의 모델 핀을 돌려준다(테스트 fake용).
+func ResolveWriteAuthorizationModelID(opts ...WriteOption) string {
+	var o writeOptions
+	for _, fn := range opts {
+		fn(&o)
+	}
+	return o.authorizationModelID
+}

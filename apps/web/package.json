@@ -14,12 +14,12 @@
     "@lazyfga/compiler": "workspace:*",
     "@lazyfga/shared": "workspace:*",
     "@xyflow/react": "^12.3.6",
-    "react": "^18.3.1",
+    "react": "^19.2.7",
     "react-dom": "^18.3.1",
     "zustand": "^5.0.2"
   },
   "devDependencies": {
-    "@types/react": "^18.3.18",
+    "@types/react": "^19.2.17",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
     "typescript": "^5.7.2",

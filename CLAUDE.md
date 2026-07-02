@@ -10,38 +10,47 @@
 
 # File Structure
 
-> Updated through M8 (LFGA-0~21). Extend this tree as later work lands.
+> Updated through M9 (LFGA-0~27). Extend this tree as later work lands.
 
 ```
 lazyfga/
 ├─ CONCEPT.md · ARCHITECTURE.md · ROADMAP.md · README.md   # 컨셉 / 구조 / 로드맵 / 진입
-├─ package.json · pnpm-workspace.yaml · turbo.json
+├─ package.json · pnpm-workspace.yaml · turbo.json         # node 워크스페이스(web + packages)
 ├─ tsconfig.base.json · eslint.config.js · .prettierrc.json
-├─ docker-compose.yml · .env.example · .dockerignore
+├─ docker-compose.yml · .env.example · .dockerignore       # ADMIN_TOKEN은 필수(:?)
 ├─ proposals/                 # LFGA-N 구현 명세
 ├─ docs/                      # getting-started.md · api.md (LFGA-19)
 ├─ scripts/
 │  └─ init-openfga-db.sql     # 단일 postgres 내 openfga DB 분리 생성
 ├─ apps/
-│  ├─ web/                    # Vite + React + @xyflow/react + zustand
+│  ├─ web/                    # Vite + React + @xyflow/react + zustand (TS 유지)
 │  │  └─ src/
 │  │     ├─ main.tsx · App.tsx · index.css
 │  │     ├─ store/            # modelStore · explainStore (zustand)
 │  │     └─ features/         # model-canvas · permission-matrix · explain
 │  │                          #   · condition-builder · playground · grants(LFGA-20) · audit
-│  └─ api/                    # Hono on Bun (모듈러 모놀리스)
-│     ├─ Dockerfile · drizzle.config.ts
-│     ├─ scripts/             # lib/zitadel-sign · seed-zitadel-rules.ts · demo/{run,reset}.ts
-│     └─ src/
-│        ├─ index.ts          # 부트스트랩 · 라우트 마운트 · /healthz
-│        ├─ config.ts · middleware/auth.ts
-│        ├─ db/               # Drizzle client · schema · migrations(0000~0006) · migrate
-│        ├─ openfga/          # OpenFgaGateway(SDK 래퍼) · write-error(분류, idp+permission 공유)
-│        └─ modules/          # model · policy · pdp · permission(LFGA-20) · auth · audit
-│                             #   · idp = signature · extraction · presets · mapping(설정형, LFGA-21)
-└─ packages/
-   ├─ shared/                 # 계약: model · ident · condition · authzen · policy · reason · audit · edit · grant(LFGA-20) · fixtures
-   └─ compiler/               # ★ 심장: ir-to-dsl · dsl-to-ir · coverage · condition-to-cel (isomorphic)
+│  └─ api/                    # ★ Go 백엔드(LFGA-22~27에서 TS(Hono/Bun) 전체 대체; chi + pgx)
+│     ├─ Dockerfile           # golang:1.25 → distroless static (+`healthcheck` 바이너리 모드)
+│     ├─ go.mod · go.sum      # module github.com/antegral-constellation/lazyfga/api
+│     ├─ scripts/coverage-gate.sh   # 커버리지 하드 게이트(≥95%, -count=1·-race·-coverpkg)
+│     ├─ cmd/                 # lazyfga-api(서버) · demo(run|reset) · seed-zitadel-rules
+│     └─ internal/
+│        ├─ app/              # 부트스트랩 · 전 모듈 마운트 · degraded/graceful shutdown
+│        ├─ httpx/            # chi 라우터 · 인증 미들웨어 · BodyLimit · Hono 호환 404/500
+│        ├─ config/ · jsontime/ · jsutil/  # env · JS toISOString · JS 문자열/숫자 직렬화
+│        ├─ db/               # pgx pool · drizzle 호환 마이그레이터(내장 migrations 0000~0006)
+│        ├─ openfga/          # Gateway(go-sdk) · writeerror(분류, idp+permission 공유)
+│        ├─ audit/            # fire-and-forget 감사 기록기(쓰기 측)
+│        ├─ contract/         # shared 계약 포트: IR·조건·grant 검증기 + 바이트 호환 마샬러
+│        ├─ compiler/         # ir-to-dsl(공식 openfga/language transformer) · condition-to-cel
+│        ├─ democli/ · zitadelsign/ · testutil/
+│        └─ modules/          # model · policy · pdp(+reason) · permission · auth · auditread
+│                             #   · idp = signature · extraction · presets · mapping(설정형)
+└─ packages/                  # TS 계약/컴파일러는 web 소비용으로 유지(백엔드는 Go 포트 사용)
+   ├─ shared/                 # 계약: model · ident · condition · authzen · policy · reason · audit · edit · grant · fixtures
+   │                          #   └ __fixtures__/parity/ = TS↔Go 크로스 언어 parity corpus(LFGA-24)
+   └─ compiler/               # ir-to-dsl · dsl-to-ir · coverage · condition-to-cel (웹 미리보기용;
+                              #   발행 시 권위 검증은 Go internal/compiler — drift는 parity corpus가 방지)
 ```
 
 # Proposal Generation

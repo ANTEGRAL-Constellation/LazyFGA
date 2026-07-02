@@ -18,34 +18,53 @@
 
 ## 마일스톤 → 기능단위 → 명세 인덱스
 
-| MS            | 기능단위                                           | 명세 파일                          | 의존                  |
-| ------------- | -------------------------------------------------- | ---------------------------------- | --------------------- |
-| **M0** 기반   | 모노레포 골격                                      | `lazyfga-0-monorepo-foundation`    | —                     |
-|               | self-host compose (openfga+postgres)               | `lazyfga-1-selfhost-compose`       | 0                     |
-| **M1** 심장   | 모델 IR (5-primitive)                              | `lazyfga-2-model-ir`               | 0                     |
-|               | IR → OpenFGA DSL 컴파일                            | `lazyfga-3-ir-to-dsl-compiler`     | 2                     |
-|               | DSL → IR 역변환 + coverage 경계                    | `lazyfga-4-dsl-to-ir-and-coverage` | 2,3                   |
-| **M2** 비주얼 | model-canvas (React Flow) + 실시간 미리보기        | `lazyfga-5-model-canvas`           | 3,4                   |
-|               | permission-matrix UI                               | `lazyfga-6-permission-matrix`      | 5                     |
-|               | 모델 발행 API (OpenFGA WriteAuthModel + 버전/diff) | `lazyfga-7-model-publish`          | 3 (auth 가드는 10/M3) |
-| **M3** 결정   | service token + admin auth (가드 미들웨어)         | `lazyfga-10-service-token-auth`    | 1                     |
-|               | named policy 저장/관리                             | `lazyfga-8-named-policy-store`     | 1,7,10                |
-|               | PDP evaluate (AuthZEN 1.0, Check 1회)              | `lazyfga-9-pdp-evaluate-authzen`   | 8,10                  |
-| **M4** 설명   | reason 엔진 (Expand → allow path / deny 진단)      | `lazyfga-11-reason-engine`         | 9                     |
-|               | explain 시각화 (web)                               | `lazyfga-12-explain-ui`            | 5,9,11                |
-| **M5** 조건   | condition-builder UI (And/Or 블록)                 | `lazyfga-13-condition-builder-ui`  | 5                     |
-|               | condition → CEL 컴파일 + 모델/정책 통합            | `lazyfga-14-condition-to-cel`      | 3,13                  |
-| **M6** 연동   | IdP webhook 수신기 + adapter 인터페이스            | `lazyfga-15-idp-webhook-core`      | 1                     |
-|               | ZITADEL adapter (flagship: 이벤트→tuple)           | `lazyfga-16-zitadel-adapter`       | 15                    |
-| **M7** 마감   | audit log                                          | `lazyfga-17-audit-log`             | 1                     |
-|               | playground (inline 테스트)                         | `lazyfga-18-playground`            | 9                     |
-|               | 데모 시나리오 + 문서 마감                          | `lazyfga-19-demo-and-docs`         | 전부                  |
+| MS            | 기능단위                                           | 명세 파일                             | 의존                  |
+| ------------- | -------------------------------------------------- | ------------------------------------- | --------------------- |
+| **M0** 기반   | 모노레포 골격                                      | `lazyfga-0-monorepo-foundation`       | —                     |
+|               | self-host compose (openfga+postgres)               | `lazyfga-1-selfhost-compose`          | 0                     |
+| **M1** 심장   | 모델 IR (5-primitive)                              | `lazyfga-2-model-ir`                  | 0                     |
+|               | IR → OpenFGA DSL 컴파일                            | `lazyfga-3-ir-to-dsl-compiler`        | 2                     |
+|               | DSL → IR 역변환 + coverage 경계                    | `lazyfga-4-dsl-to-ir-and-coverage`    | 2,3                   |
+| **M2** 비주얼 | model-canvas (React Flow) + 실시간 미리보기        | `lazyfga-5-model-canvas`              | 3,4                   |
+|               | permission-matrix UI                               | `lazyfga-6-permission-matrix`         | 5                     |
+|               | 모델 발행 API (OpenFGA WriteAuthModel + 버전/diff) | `lazyfga-7-model-publish`             | 3 (auth 가드는 10/M3) |
+| **M3** 결정   | service token + admin auth (가드 미들웨어)         | `lazyfga-10-service-token-auth`       | 1                     |
+|               | named policy 저장/관리                             | `lazyfga-8-named-policy-store`        | 1,7,10                |
+|               | PDP evaluate (AuthZEN 1.0, Check 1회)              | `lazyfga-9-pdp-evaluate-authzen`      | 8,10                  |
+| **M4** 설명   | reason 엔진 (Expand → allow path / deny 진단)      | `lazyfga-11-reason-engine`            | 9                     |
+|               | explain 시각화 (web)                               | `lazyfga-12-explain-ui`               | 5,9,11                |
+| **M5** 조건   | condition-builder UI (And/Or 블록)                 | `lazyfga-13-condition-builder-ui`     | 5                     |
+|               | condition → CEL 컴파일 + 모델/정책 통합            | `lazyfga-14-condition-to-cel`         | 3,13                  |
+| **M6** 연동   | IdP webhook 수신기 + adapter 인터페이스            | `lazyfga-15-idp-webhook-core`         | 1                     |
+|               | ZITADEL adapter (flagship: 이벤트→tuple)           | `lazyfga-16-zitadel-adapter`          | 15                    |
+| **M7** 마감   | audit log                                          | `lazyfga-17-audit-log`                | 1                     |
+|               | playground (inline 테스트)                         | `lazyfga-18-playground`               | 9                     |
+|               | 데모 시나리오 + 문서 마감                          | `lazyfga-19-demo-and-docs`            | 전부                  |
+| **M8** 권한   | 구조적 grant/revoke/list                           | `lazyfga-20-permission-management`    | 7,9,10                |
+|               | IdP webhook 설정형 프레임워크                      | `lazyfga-21-idp-webhook-framework`    | 15,16                 |
+| **M9** Go     | Go 마이그레이션 마스터 플랜                        | `lazyfga-22-go-migration-master-plan` | 전부                  |
+|               | Go foundation (runtime·db·gateway)                 | `lazyfga-23-go-foundation`            | 22                    |
+|               | contracts + compiler 포트 (parity corpus)          | `lazyfga-24-go-contracts-compiler`    | 22 (∥23)              |
+|               | core 모듈 (model·policy·pdp·grants)                | `lazyfga-25-go-core-modules`          | 23,24                 |
+|               | platform 모듈 (tokens·audit·idp)                   | `lazyfga-26-go-platform-modules`      | 23,24 (∥25)           |
+|               | 컷오버 (CLI·Docker·CI·docs·TS 제거)                | `lazyfga-27-go-cutover-ci`            | 23~26                 |
 
-## 구현 현황 (2026-06-29)
+## 구현 현황 (2026-07-03)
 
-**M0~M7 전부 구현 완료** — lazyfga-0~19 모든 proposal Status=Implemented. 각 단위는 사전검수 →
-TDD → 교차리뷰(Claude) → 수정 → E2E → conventional commit 절차로 랜딩. 데모는
-`apps/api/scripts/demo/run.ts`로 한 번에 시연(서명 webhook → membership → 상속 → ALLOW+reason).
+**M0~M9 전부 구현 완료** — lazyfga-0~27 모든 proposal Status=Implemented. 각 단위는 사전검수 →
+TDD → 교차리뷰(Claude/Codex 병렬) → 수정 → E2E → conventional commit 절차로 랜딩.
+
+**M9 Go 마이그레이션 완료 (LFGA-22~27).** 백엔드를 100% Go(`apps/api`, chi + pgx +
+openfga/go-sdk + cel-go)로 재작성하고 TS 백엔드를 제거했다. TS↔Go drift는 `packages/shared`의
+parity corpus가 방지하고, 승인 편차는 LFGA-22 §4.4(11개)에 문서화했다. 컷오버 전 dual-backend
+parity rehearsal(75-step contract replay 0 diff + TS 볼륨 채택 + demo 양측 동일)로 검증했다.
+테스트 커버리지 하드 게이트 ≥95%(실측 96.9%, `-count=1 -race -coverpkg=./...`). 데모는
+`go run ./cmd/demo run`으로 한 번에 시연(서명 webhook → membership → 상속 → ALLOW+reason).
+
+**배포 가능성 E2E 검증(LFGA-27 acceptance).** `docker compose up --build` → 스택 healthy,
+`/healthz` 200 `ok`(db·openfga·store ready). 데모 ALLOW+reason. Web UI E2E(Chrome DevTools MCP,
+Go 백엔드 대상): canvas → playground ALLOW → explain reason 체인 → grant/list → audit view, 그리고
+publish-validation-error(§4.4-1: 422 `issues[]`)까지 전부 통과.
 
 ## 출품 우선순위 (원안)
 

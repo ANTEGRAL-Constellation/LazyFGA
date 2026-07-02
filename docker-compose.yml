@@ -62,9 +62,18 @@ services:
       OPENFGA_API_URL: http://openfga:8080
       # 컨테이너 간 통신은 서비스명:8080(호스트 포트 매핑과 무관).
       LAZYFGA_STORE_ID: ${LAZYFGA_STORE_ID:-}
-      ADMIN_TOKEN: ${ADMIN_TOKEN:-changeme-admin-token}
+      # ADMIN_TOKEN은 필수(LFGA-22 §4.4-4): 알려진 자리표시자를 암묵적으로 배포하지 않도록
+      # 명시적 설정을 요구한다. .env에 ADMIN_TOKEN을 지정하지 않으면 compose가 기동을 거부한다.
+      ADMIN_TOKEN: ${ADMIN_TOKEN:?set ADMIN_TOKEN in .env}
     ports:
       - "8787:8787"
+    # distroless에는 셸/curl이 없으므로 바이너리 self-GET(/healthz) 모드로 헬스체크한다.
+    healthcheck:
+      test: ["CMD", "/lazyfga-api", "healthcheck"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
     depends_on:
       postgres:
         condition: service_healthy

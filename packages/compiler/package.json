@@ -19,7 +19,8 @@
   },
   "dependencies": {
     "@lazyfga/shared": "workspace:*",
-    "@openfga/syntax-transformer": "^0.2.1"
+    "@openfga/syntax-transformer": "^0.2.1",
+    "@openfga/sdk": "^0.9.6"
   },
   "devDependencies": {
     "bun-types": "^1.3.6",

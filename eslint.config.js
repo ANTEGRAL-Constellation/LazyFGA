@@ -60,7 +60,7 @@ export default tseslint.config(
     },
   },
   {
-    // apps 끼리는 직접 import 금지(계약은 shared 경유).
+    // apps 끼리는 직접 import 금지(계약은 shared 경유). api는 Go로 이관됐지만 방어 규칙은 유지.
     files: ["apps/web/**/*.{ts,tsx}"],
     rules: {
       "@typescript-eslint/no-restricted-imports": [
@@ -69,22 +69,6 @@ export default tseslint.config(
           patterns: [
             {
               group: ["@lazyfga/api", "**/apps/api/**"],
-              message: "apps must not import each other; share contracts via @lazyfga/shared.",
-            },
-          ],
-        },
-      ],
-    },
-  },
-  {
-    files: ["apps/api/**/*.ts"],
-    rules: {
-      "@typescript-eslint/no-restricted-imports": [
-        "error",
-        {
-          patterns: [
-            {
-              group: ["@lazyfga/web", "**/apps/web/**"],
               message: "apps must not import each other; share contracts via @lazyfga/shared.",
             },
           ],

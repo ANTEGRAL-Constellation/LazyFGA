@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "1.1",
+  "groups": [
+    {
+      "name": "team",
+      "memberTypes": [
+        { "kind": "user" },
+        { "kind": "group", "group": "team", "relation": "member" }
+      ]
+    }
+  ],
+  "resources": [
+    {
+      "name": "folder",
+      "parents": [],
+      "roles": [
+        {
+          "name": "owner",
+          "assignableBy": [
+            { "kind": "user" },
+            { "kind": "group", "group": "team", "relation": "member" }
+          ]
+        },
+        {
+          "name": "editor",
+          "assignableBy": [
+            { "kind": "user" },
+            { "kind": "group", "group": "team", "relation": "member" }
+          ]
+        },
+        {
+          "name": "viewer",
+          "assignableBy": [
+            { "kind": "user" },
+            { "kind": "group", "group": "team", "relation": "member" }
+          ]
+        }
+      ],
+      "permissions": [
+        {
+          "name": "read",
+          "grantedByRoles": ["viewer", "editor", "owner"],
+          "inheritFromParents": []
+        }
+      ]
+    },
+    {
+      "name": "document",
+      "parents": [{ "relationName": "parent", "parentTypes": ["folder"] }],
+      "roles": [
+        {
+          "name": "owner",
+          "assignableBy": [
+            { "kind": "user" },
+            { "kind": "group", "group": "team", "relation": "member" }
+          ]
+        },
+        {
+          "name": "editor",
+          "assignableBy": [
+            { "kind": "user" },
+            { "kind": "group", "group": "team", "relation": "member" }
+          ]
+        },
+        {
+          "name": "viewer",
+          "assignableBy": [
+            { "kind": "user" },
+            { "kind": "group", "group": "team", "relation": "member" }
+          ]
+        }
+      ],
+      "permissions": [
+        {
+          "name": "read",
+          "grantedByRoles": ["viewer", "editor", "owner"],
+          "inheritFromParents": ["parent"]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,3229 @@
+{
+  "validate": [
+    {
+      "name": "valid-reference",
+      "ir": {
+        "schemaVersion": "1.1",
+        "groups": [
+          {
+            "name": "team",
+            "memberTypes": [
+              {
+                "kind": "user"
+              },
+              {
+                "kind": "group",
+                "group": "team",
+                "relation": "member"
+              }
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "name": "folder",
+            "parents": [],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": []
+              }
+            ]
+          },
+          {
+            "name": "document",
+            "parents": [
+              {
+                "relationName": "parent",
+                "parentTypes": ["folder"]
+              }
+            ],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": ["parent"]
+              }
+            ]
+          }
+        ]
+      },
+      "errors": []
+    },
+    {
+      "name": "bad-name",
+      "ir": {
+        "schemaVersion": "1.1",
+        "groups": [
+          {
+            "name": "team",
+            "memberTypes": [
+              {
+                "kind": "user"
+              },
+              {
+                "kind": "group",
+                "group": "team",
+                "relation": "member"
+              }
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "name": "folder",
+            "parents": [],
+            "roles": [
+              {
+                "name": "has space",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": []
+              }
+            ]
+          },
+          {
+            "name": "document",
+            "parents": [
+              {
+                "relationName": "parent",
+                "parentTypes": ["folder"]
+              }
+            ],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": ["parent"]
+              }
+            ]
+          }
+        ]
+      },
+      "errors": [
+        {
+          "code": "BAD_NAME",
+          "path": "resources[0].roles[0].name",
+          "message": "invalid identifier: \"has space\""
+        },
+        {
+          "code": "UNKNOWN_ROLE",
+          "path": "resources[0].permissions[0].grantedByRoles[2]",
+          "message": "unknown role: \"owner\""
+        }
+      ]
+    },
+    {
+      "name": "dup-type",
+      "ir": {
+        "schemaVersion": "1.1",
+        "groups": [
+          {
+            "name": "team",
+            "memberTypes": [
+              {
+                "kind": "user"
+              },
+              {
+                "kind": "group",
+                "group": "team",
+                "relation": "member"
+              }
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "name": "folder",
+            "parents": [],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": []
+              }
+            ]
+          },
+          {
+            "name": "folder",
+            "parents": [
+              {
+                "relationName": "parent",
+                "parentTypes": ["folder"]
+              }
+            ],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": ["parent"]
+              }
+            ]
+          }
+        ]
+      },
+      "errors": [
+        {
+          "code": "DUP_TYPE",
+          "path": "resources[1].name",
+          "message": "duplicate type name: \"folder\""
+        }
+      ]
+    },
+    {
+      "name": "reserved-user",
+      "ir": {
+        "schemaVersion": "1.1",
+        "groups": [
+          {
+            "name": "team",
+            "memberTypes": [
+              {
+                "kind": "user"
+              },
+              {
+                "kind": "group",
+                "group": "team",
+                "relation": "member"
+              }
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "name": "user",
+            "parents": [],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": []
+              }
+            ]
+          },
+          {
+            "name": "document",
+            "parents": [
+              {
+                "relationName": "parent",
+                "parentTypes": ["folder"]
+              }
+            ],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": ["parent"]
+              }
+            ]
+          }
+        ]
+      },
+      "errors": [
+        {
+          "code": "RESERVED_USER",
+          "path": "resources[0].name",
+          "message": "\"user\" is a reserved base type and cannot be redefined"
+        },
+        {
+          "code": "UNKNOWN_PARENT",
+          "path": "resources[1].parents[0].parentTypes[0]",
+          "message": "unknown parent type: \"folder\""
+        }
+      ]
+    },
+    {
+      "name": "dup-relation",
+      "ir": {
+        "schemaVersion": "1.1",
+        "groups": [
+          {
+            "name": "team",
+            "memberTypes": [
+              {
+                "kind": "user"
+              },
+              {
+                "kind": "group",
+                "group": "team",
+                "relation": "member"
+              }
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "name": "folder",
+            "parents": [],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "can_read",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": []
+              }
+            ]
+          },
+          {
+            "name": "document",
+            "parents": [
+              {
+                "relationName": "parent",
+                "parentTypes": ["folder"]
+              }
+            ],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": ["parent"]
+              }
+            ]
+          }
+        ]
+      },
+      "errors": [
+        {
+          "code": "DUP_RELATION",
+          "path": "resources[0].permissions[0].name",
+          "message": "relation name \"can_read\" collides with resources[0].roles[3].name"
+        }
+      ]
+    },
+    {
+      "name": "unknown-parent-type",
+      "ir": {
+        "schemaVersion": "1.1",
+        "groups": [
+          {
+            "name": "team",
+            "memberTypes": [
+              {
+                "kind": "user"
+              },
+              {
+                "kind": "group",
+                "group": "team",
+                "relation": "member"
+              }
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "name": "folder",
+            "parents": [],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": []
+              }
+            ]
+          },
+          {
+            "name": "document",
+            "parents": [
+              {
+                "relationName": "parent",
+                "parentTypes": ["ghost"]
+              }
+            ],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": ["parent"]
+              }
+            ]
+          }
+        ]
+      },
+      "errors": [
+        {
+          "code": "UNKNOWN_PARENT",
+          "path": "resources[1].parents[0].parentTypes[0]",
+          "message": "unknown parent type: \"ghost\""
+        }
+      ]
+    },
+    {
+      "name": "empty-parent-types",
+      "ir": {
+        "schemaVersion": "1.1",
+        "groups": [
+          {
+            "name": "team",
+            "memberTypes": [
+              {
+                "kind": "user"
+              },
+              {
+                "kind": "group",
+                "group": "team",
+                "relation": "member"
+              }
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "name": "folder",
+            "parents": [],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": []
+              }
+            ]
+          },
+          {
+            "name": "document",
+            "parents": [
+              {
+                "relationName": "parent",
+                "parentTypes": []
+              }
+            ],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": ["parent"]
+              }
+            ]
+          }
+        ]
+      },
+      "errors": [
+        {
+          "code": "UNKNOWN_PARENT",
+          "path": "resources[1].parents[0].parentTypes",
+          "message": "parentTypes must be non-empty"
+        }
+      ]
+    },
+    {
+      "name": "unknown-inherit-relation",
+      "ir": {
+        "schemaVersion": "1.1",
+        "groups": [
+          {
+            "name": "team",
+            "memberTypes": [
+              {
+                "kind": "user"
+              },
+              {
+                "kind": "group",
+                "group": "team",
+                "relation": "member"
+              }
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "name": "folder",
+            "parents": [],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": []
+              }
+            ]
+          },
+          {
+            "name": "document",
+            "parents": [
+              {
+                "relationName": "parent",
+                "parentTypes": ["folder"]
+              }
+            ],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": ["ghostrel"]
+              }
+            ]
+          }
+        ]
+      },
+      "errors": [
+        {
+          "code": "UNKNOWN_PARENT",
+          "path": "resources[1].permissions[0].inheritFromParents[0]",
+          "message": "unknown parent relation: \"ghostrel\""
+        }
+      ]
+    },
+    {
+      "name": "unknown-role",
+      "ir": {
+        "schemaVersion": "1.1",
+        "groups": [
+          {
+            "name": "team",
+            "memberTypes": [
+              {
+                "kind": "user"
+              },
+              {
+                "kind": "group",
+                "group": "team",
+                "relation": "member"
+              }
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "name": "folder",
+            "parents": [],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["ghost"],
+                "inheritFromParents": []
+              }
+            ]
+          },
+          {
+            "name": "document",
+            "parents": [
+              {
+                "relationName": "parent",
+                "parentTypes": ["folder"]
+              }
+            ],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": ["parent"]
+              }
+            ]
+          }
+        ]
+      },
+      "errors": [
+        {
+          "code": "UNKNOWN_ROLE",
+          "path": "resources[0].permissions[0].grantedByRoles[0]",
+          "message": "unknown role: \"ghost\""
+        }
+      ]
+    },
+    {
+      "name": "unknown-group",
+      "ir": {
+        "schemaVersion": "1.1",
+        "groups": [
+          {
+            "name": "team",
+            "memberTypes": [
+              {
+                "kind": "user"
+              },
+              {
+                "kind": "group",
+                "group": "team",
+                "relation": "member"
+              }
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "name": "folder",
+            "parents": [],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "group",
+                    "group": "nope",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": []
+              }
+            ]
+          },
+          {
+            "name": "document",
+            "parents": [
+              {
+                "relationName": "parent",
+                "parentTypes": ["folder"]
+              }
+            ],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": ["parent"]
+              }
+            ]
+          }
+        ]
+      },
+      "errors": [
+        {
+          "code": "UNKNOWN_GROUP",
+          "path": "resources[0].roles[0].assignableBy[0].group",
+          "message": "unknown group: \"nope\""
+        }
+      ]
+    },
+    {
+      "name": "empty-grant",
+      "ir": {
+        "schemaVersion": "1.1",
+        "groups": [
+          {
+            "name": "team",
+            "memberTypes": [
+              {
+                "kind": "user"
+              },
+              {
+                "kind": "group",
+                "group": "team",
+                "relation": "member"
+              }
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "name": "folder",
+            "parents": [],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": [],
+                "inheritFromParents": []
+              }
+            ]
+          },
+          {
+            "name": "document",
+            "parents": [
+              {
+                "relationName": "parent",
+                "parentTypes": ["folder"]
+              }
+            ],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": ["parent"]
+              }
+            ]
+          }
+        ]
+      },
+      "errors": [
+        {
+          "code": "EMPTY_GRANT",
+          "path": "resources[0].permissions[0].grantedByRoles",
+          "message": "permission must be granted by >= 1 role"
+        }
+      ]
+    },
+    {
+      "name": "parent-missing-permission",
+      "ir": {
+        "schemaVersion": "1.1",
+        "groups": [
+          {
+            "name": "team",
+            "memberTypes": [
+              {
+                "kind": "user"
+              },
+              {
+                "kind": "group",
+                "group": "team",
+                "relation": "member"
+              }
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "name": "folder",
+            "parents": [],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": []
+          },
+          {
+            "name": "document",
+            "parents": [
+              {
+                "relationName": "parent",
+                "parentTypes": ["folder"]
+              }
+            ],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": ["parent"]
+              }
+            ]
+          }
+        ]
+      },
+      "errors": [
+        {
+          "code": "PARENT_MISSING_PERMISSION",
+          "path": "resources[1].permissions[0].inheritFromParents[0]",
+          "message": "parent type \"folder\" (via \"parent\") has no permission \"read\"; \"can_read from parent\" would be invalid in OpenFGA"
+        }
+      ]
+    },
+    {
+      "name": "dup-parent-relation",
+      "ir": {
+        "schemaVersion": "1.1",
+        "groups": [
+          {
+            "name": "team",
+            "memberTypes": [
+              {
+                "kind": "user"
+              },
+              {
+                "kind": "group",
+                "group": "team",
+                "relation": "member"
+              }
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "name": "folder",
+            "parents": [],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": []
+              }
+            ]
+          },
+          {
+            "name": "document",
+            "parents": [
+              {
+                "relationName": "parent",
+                "parentTypes": ["folder"]
+              },
+              {
+                "relationName": "parent",
+                "parentTypes": ["folder"]
+              }
+            ],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": ["parent"]
+              }
+            ]
+          }
+        ]
+      },
+      "errors": [
+        {
+          "code": "DUP_PARENT_RELATION",
+          "path": "resources[1].parents[1].relationName",
+          "message": "duplicate parent relation: \"parent\" (merge into one ParentRef)"
+        }
+      ]
+    },
+    {
+      "name": "dup-parent-type",
+      "ir": {
+        "schemaVersion": "1.1",
+        "groups": [
+          {
+            "name": "team",
+            "memberTypes": [
+              {
+                "kind": "user"
+              },
+              {
+                "kind": "group",
+                "group": "team",
+                "relation": "member"
+              }
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "name": "folder",
+            "parents": [],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": []
+              }
+            ]
+          },
+          {
+            "name": "document",
+            "parents": [
+              {
+                "relationName": "parent",
+                "parentTypes": ["folder", "folder"]
+              }
+            ],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": ["parent"]
+              }
+            ]
+          }
+        ]
+      },
+      "errors": [
+        {
+          "code": "DUP_PARENT_RELATION",
+          "path": "resources[1].parents[0].parentTypes[1]",
+          "message": "duplicate parent type \"folder\" in relation \"parent\""
+        }
+      ]
+    },
+    {
+      "name": "empty-assignable-by",
+      "ir": {
+        "schemaVersion": "1.1",
+        "groups": [
+          {
+            "name": "team",
+            "memberTypes": [
+              {
+                "kind": "user"
+              },
+              {
+                "kind": "group",
+                "group": "team",
+                "relation": "member"
+              }
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "name": "folder",
+            "parents": [],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": []
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": []
+              }
+            ]
+          },
+          {
+            "name": "document",
+            "parents": [
+              {
+                "relationName": "parent",
+                "parentTypes": ["folder"]
+              }
+            ],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": ["parent"]
+              }
+            ]
+          }
+        ]
+      },
+      "errors": [
+        {
+          "code": "EMPTY_SUBJECTS",
+          "path": "resources[0].roles[0].assignableBy",
+          "message": "role \"owner\" must be assignable by >= 1 subject"
+        }
+      ]
+    },
+    {
+      "name": "empty-member-types",
+      "ir": {
+        "schemaVersion": "1.1",
+        "groups": [
+          {
+            "name": "team",
+            "memberTypes": []
+          }
+        ],
+        "resources": [
+          {
+            "name": "folder",
+            "parents": [],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": []
+              }
+            ]
+          },
+          {
+            "name": "document",
+            "parents": [
+              {
+                "relationName": "parent",
+                "parentTypes": ["folder"]
+              }
+            ],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": ["parent"]
+              }
+            ]
+          }
+        ]
+      },
+      "errors": [
+        {
+          "code": "EMPTY_SUBJECTS",
+          "path": "groups[0].memberTypes",
+          "message": "group member list must be non-empty"
+        }
+      ]
+    },
+    {
+      "name": "condition-unknown",
+      "ir": {
+        "schemaVersion": "1.1",
+        "groups": [
+          {
+            "name": "team",
+            "memberTypes": [
+              {
+                "kind": "user"
+              },
+              {
+                "kind": "group",
+                "group": "team",
+                "relation": "member"
+              }
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "name": "folder",
+            "parents": [],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user",
+                    "condition": "ghost"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": []
+              }
+            ]
+          },
+          {
+            "name": "document",
+            "parents": [
+              {
+                "relationName": "parent",
+                "parentTypes": ["folder"]
+              }
+            ],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": ["parent"]
+              }
+            ]
+          }
+        ]
+      },
+      "errors": [
+        {
+          "code": "CONDITION_UNKNOWN",
+          "path": "resources[0].roles[0].assignableBy[0].condition",
+          "message": "unknown condition: \"ghost\""
+        }
+      ]
+    },
+    {
+      "name": "dup-condition",
+      "ir": {
+        "schemaVersion": "1.1",
+        "groups": [
+          {
+            "name": "team",
+            "memberTypes": [
+              {
+                "kind": "user"
+              },
+              {
+                "kind": "group",
+                "group": "team",
+                "relation": "member"
+              }
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "name": "folder",
+            "parents": [],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": []
+              }
+            ]
+          },
+          {
+            "name": "document",
+            "parents": [
+              {
+                "relationName": "parent",
+                "parentTypes": ["folder"]
+              }
+            ],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": ["parent"]
+              }
+            ]
+          }
+        ],
+        "conditions": [
+          {
+            "name": "non_expired",
+            "params": [
+              {
+                "name": "t",
+                "type": "timestamp"
+              }
+            ],
+            "tree": {
+              "kind": "time",
+              "param": "t",
+              "op": "lt",
+              "rhs": {
+                "kind": "literal",
+                "rfc3339": "2026-01-01T00:00:00Z"
+              }
+            }
+          },
+          {
+            "name": "non_expired",
+            "params": [
+              {
+                "name": "t",
+                "type": "timestamp"
+              }
+            ],
+            "tree": {
+              "kind": "time",
+              "param": "t",
+              "op": "lt",
+              "rhs": {
+                "kind": "literal",
+                "rfc3339": "2026-01-01T00:00:00Z"
+              }
+            }
+          }
+        ]
+      },
+      "errors": [
+        {
+          "code": "DUP_CONDITION",
+          "path": "conditions[1].name",
+          "message": "duplicate condition: \"non_expired\""
+        }
+      ]
+    },
+    {
+      "name": "promoted-bad-timestamp",
+      "ir": {
+        "schemaVersion": "1.1",
+        "groups": [
+          {
+            "name": "team",
+            "memberTypes": [
+              {
+                "kind": "user"
+              },
+              {
+                "kind": "group",
+                "group": "team",
+                "relation": "member"
+              }
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "name": "folder",
+            "parents": [],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": []
+              }
+            ]
+          },
+          {
+            "name": "document",
+            "parents": [
+              {
+                "relationName": "parent",
+                "parentTypes": ["folder"]
+              }
+            ],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": ["parent"]
+              }
+            ]
+          }
+        ],
+        "conditions": [
+          {
+            "name": "c",
+            "params": [
+              {
+                "name": "t",
+                "type": "timestamp"
+              }
+            ],
+            "tree": {
+              "kind": "time",
+              "param": "t",
+              "op": "lt",
+              "rhs": {
+                "kind": "literal",
+                "rfc3339": "nope"
+              }
+            }
+          }
+        ]
+      },
+      "errors": [
+        {
+          "code": "BAD_TIMESTAMP",
+          "path": "conditions[0].tree.rhs.rfc3339",
+          "message": "invalid RFC3339: \"nope\""
+        }
+      ]
+    },
+    {
+      "name": "valid-with-condition",
+      "ir": {
+        "schemaVersion": "1.1",
+        "groups": [
+          {
+            "name": "team",
+            "memberTypes": [
+              {
+                "kind": "user"
+              },
+              {
+                "kind": "group",
+                "group": "team",
+                "relation": "member"
+              }
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "name": "folder",
+            "parents": [],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user",
+                    "condition": "non_expired"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": []
+              }
+            ]
+          },
+          {
+            "name": "document",
+            "parents": [
+              {
+                "relationName": "parent",
+                "parentTypes": ["folder"]
+              }
+            ],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": ["parent"]
+              }
+            ]
+          }
+        ],
+        "conditions": [
+          {
+            "name": "non_expired",
+            "params": [
+              {
+                "name": "current_time",
+                "type": "timestamp"
+              },
+              {
+                "name": "expiry",
+                "type": "timestamp"
+              }
+            ],
+            "tree": {
+              "kind": "time",
+              "param": "current_time",
+              "op": "lt",
+              "rhs": {
+                "kind": "param",
+                "param": "expiry"
+              }
+            }
+          }
+        ]
+      },
+      "errors": []
+    }
+  ],
+  "shape": [
+    {
+      "name": "valid-reference",
+      "json": {
+        "schemaVersion": "1.1",
+        "groups": [
+          {
+            "name": "team",
+            "memberTypes": [
+              {
+                "kind": "user"
+              },
+              {
+                "kind": "group",
+                "group": "team",
+                "relation": "member"
+              }
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "name": "folder",
+            "parents": [],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": []
+              }
+            ]
+          },
+          {
+            "name": "document",
+            "parents": [
+              {
+                "relationName": "parent",
+                "parentTypes": ["folder"]
+              }
+            ],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": ["parent"]
+              }
+            ]
+          }
+        ]
+      },
+      "valid": true
+    },
+    {
+      "name": "empty-valid",
+      "json": {
+        "schemaVersion": "1.1",
+        "groups": [],
+        "resources": []
+      },
+      "valid": true
+    },
+    {
+      "name": "unknown-key-stripped",
+      "json": {
+        "schemaVersion": "1.1",
+        "groups": [],
+        "resources": [],
+        "bogus": 123
+      },
+      "valid": true
+    },
+    {
+      "name": "missing-schema-version",
+      "json": {
+        "groups": [],
+        "resources": []
+      },
+      "valid": false
+    },
+    {
+      "name": "wrong-schema-version",
+      "json": {
+        "schemaVersion": "2.0",
+        "groups": [],
+        "resources": []
+      },
+      "valid": false
+    },
+    {
+      "name": "groups-not-array",
+      "json": {
+        "schemaVersion": "1.1",
+        "groups": "x",
+        "resources": []
+      },
+      "valid": false
+    },
+    {
+      "name": "group-name-not-string",
+      "json": {
+        "schemaVersion": "1.1",
+        "groups": [
+          {
+            "name": 123,
+            "memberTypes": []
+          }
+        ],
+        "resources": []
+      },
+      "valid": false
+    },
+    {
+      "name": "unknown-subject-kind",
+      "json": {
+        "schemaVersion": "1.1",
+        "groups": [
+          {
+            "name": "g",
+            "memberTypes": [
+              {
+                "kind": "regex"
+              }
+            ]
+          }
+        ],
+        "resources": []
+      },
+      "valid": false
+    },
+    {
+      "name": "resource-missing-name",
+      "json": {
+        "schemaVersion": "1.1",
+        "groups": [],
+        "resources": [
+          {
+            "parents": [],
+            "roles": [],
+            "permissions": []
+          }
+        ]
+      },
+      "valid": false
+    },
+    {
+      "name": "condition-leaf-missing-kind",
+      "json": {
+        "schemaVersion": "1.1",
+        "groups": [],
+        "resources": [],
+        "conditions": [
+          {
+            "name": "c",
+            "params": [],
+            "tree": {
+              "param": "p",
+              "op": "eq",
+              "value": 1
+            }
+          }
+        ]
+      },
+      "valid": false
+    },
+    {
+      "name": "valid-nested-condition",
+      "json": {
+        "schemaVersion": "1.1",
+        "groups": [],
+        "resources": [],
+        "conditions": [
+          {
+            "name": "n",
+            "params": [
+              {
+                "name": "t",
+                "type": "timestamp"
+              }
+            ],
+            "tree": {
+              "op": "or",
+              "children": [
+                {
+                  "op": "and",
+                  "children": [
+                    {
+                      "kind": "time",
+                      "param": "t",
+                      "op": "gt",
+                      "rhs": {
+                        "kind": "literal",
+                        "rfc3339": "2026-01-01T00:00:00Z"
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "valid": true
+    },
+    {
+      "name": "not-object",
+      "json": 42,
+      "valid": false
+    }
+  ],
+  "marshal": [
+    {
+      "name": "subjectref-user",
+      "type": "SubjectRef",
+      "json": "{\"kind\":\"user\"}"
+    },
+    {
+      "name": "subjectref-user-cond",
+      "type": "SubjectRef",
+      "json": "{\"kind\":\"user\",\"condition\":\"c\"}"
+    },
+    {
+      "name": "subjectref-group",
+      "type": "SubjectRef",
+      "json": "{\"kind\":\"group\",\"group\":\"team\",\"relation\":\"member\"}"
+    },
+    {
+      "name": "subjectref-group-cond",
+      "type": "SubjectRef",
+      "json": "{\"kind\":\"group\",\"group\":\"team\",\"relation\":\"member\",\"condition\":\"c\"}"
+    },
+    {
+      "name": "model-ir",
+      "type": "ModelIR",
+      "json": "{\"schemaVersion\":\"1.1\",\"groups\":[{\"name\":\"team\",\"memberTypes\":[{\"kind\":\"user\"},{\"kind\":\"group\",\"group\":\"team\",\"relation\":\"member\"}]}],\"resources\":[{\"name\":\"folder\",\"parents\":[],\"roles\":[{\"name\":\"owner\",\"assignableBy\":[{\"kind\":\"user\"},{\"kind\":\"group\",\"group\":\"team\",\"relation\":\"member\"}]},{\"name\":\"editor\",\"assignableBy\":[{\"kind\":\"user\"},{\"kind\":\"group\",\"group\":\"team\",\"relation\":\"member\"}]},{\"name\":\"viewer\",\"assignableBy\":[{\"kind\":\"user\"},{\"kind\":\"group\",\"group\":\"team\",\"relation\":\"member\"}]}],\"permissions\":[{\"name\":\"read\",\"grantedByRoles\":[\"viewer\",\"editor\",\"owner\"],\"inheritFromParents\":[]}]},{\"name\":\"document\",\"parents\":[{\"relationName\":\"parent\",\"parentTypes\":[\"folder\"]}],\"roles\":[{\"name\":\"owner\",\"assignableBy\":[{\"kind\":\"user\"},{\"kind\":\"group\",\"group\":\"team\",\"relation\":\"member\"}]},{\"name\":\"editor\",\"assignableBy\":[{\"kind\":\"user\"},{\"kind\":\"group\",\"group\":\"team\",\"relation\":\"member\"}]},{\"name\":\"viewer\",\"assignableBy\":[{\"kind\":\"user\"},{\"kind\":\"group\",\"group\":\"team\",\"relation\":\"member\"}]}],\"permissions\":[{\"name\":\"read\",\"grantedByRoles\":[\"viewer\",\"editor\",\"owner\"],\"inheritFromParents\":[\"parent\"]}]}]}"
+    },
+    {
+      "name": "reasonstep-role-min",
+      "type": "ReasonStep",
+      "json": "{\"via\":\"role\",\"role\":\"editor\",\"on\":\"document:readme\",\"direct\":false}"
+    },
+    {
+      "name": "reasonstep-role-direct",
+      "type": "ReasonStep",
+      "json": "{\"via\":\"role\",\"role\":\"owner\",\"on\":\"document:readme\",\"direct\":true}"
+    },
+    {
+      "name": "reasonstep-role-group",
+      "type": "ReasonStep",
+      "json": "{\"via\":\"role\",\"role\":\"viewer\",\"on\":\"document:readme\",\"direct\":false,\"group\":\"team\",\"groupObject\":\"team:eng\"}"
+    },
+    {
+      "name": "reasonstep-parent",
+      "type": "ReasonStep",
+      "json": "{\"via\":\"parent\",\"relation\":\"parent\",\"parent\":\"folder\"}"
+    },
+    {
+      "name": "reasonstep-parent-object",
+      "type": "ReasonStep",
+      "json": "{\"via\":\"parent\",\"relation\":\"parent\",\"parent\":\"folder\",\"parentObject\":\"folder:1\"}"
+    },
+    {
+      "name": "missinglink-role",
+      "type": "MissingLink",
+      "json": "{\"kind\":\"role\",\"anyOf\":[\"editor\",\"owner\"],\"on\":\"document:readme\"}"
+    },
+    {
+      "name": "missinglink-parent",
+      "type": "MissingLink",
+      "json": "{\"kind\":\"parent\",\"relation\":\"parent\",\"needs\":\"folder:1\"}"
+    },
+    {
+      "name": "reasonresult-allow",
+      "type": "ReasonResult",
+      "json": "{\"decision\":true,\"path\":[{\"via\":\"role\",\"role\":\"editor\",\"on\":\"document:readme\",\"direct\":true}],\"text\":\"user:alice is editor on document:readme\"}"
+    },
+    {
+      "name": "reasonresult-deny",
+      "type": "ReasonResult",
+      "json": "{\"decision\":false,\"missingLinks\":[{\"kind\":\"role\",\"anyOf\":[\"editor\"],\"on\":\"document:readme\"}],\"truncated\":true,\"text\":\"no path\"}"
+    },
+    {
+      "name": "policy-min",
+      "type": "Policy",
+      "json": "{\"id\":\"can-read-document\",\"permission\":\"read\",\"resourceType\":\"document\"}"
+    },
+    {
+      "name": "policy-full",
+      "type": "Policy",
+      "json": "{\"id\":\"p\",\"permission\":\"read\",\"resourceType\":\"document\",\"description\":\"d\",\"conditionRef\":\"c\"}"
+    },
+    {
+      "name": "audit-entry",
+      "type": "AuditEntry",
+      "json": "{\"id\":\"1\",\"occurredAt\":\"2026-07-02T00:00:00.000Z\",\"actor\":\"admin\",\"action\":\"model.publish\",\"data\":{\"versionId\":\"v1\"}}"
+    }
+  ]
+}

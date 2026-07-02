@@ -1,0 +1,1709 @@
+{
+  "validate": [
+    {
+      "name": "valid-business-hours",
+      "def": {
+        "name": "business_hours_internal",
+        "params": [
+          {
+            "name": "current_time",
+            "type": "timestamp"
+          },
+          {
+            "name": "expiry",
+            "type": "timestamp"
+          },
+          {
+            "name": "user_ip",
+            "type": "ipaddress"
+          }
+        ],
+        "tree": {
+          "op": "and",
+          "children": [
+            {
+              "kind": "time",
+              "param": "current_time",
+              "op": "lt",
+              "rhs": {
+                "kind": "param",
+                "param": "expiry"
+              }
+            },
+            {
+              "kind": "ip",
+              "param": "user_ip",
+              "op": "in_cidr",
+              "cidr": "10.0.0.0/8"
+            }
+          ]
+        }
+      },
+      "errors": []
+    },
+    {
+      "name": "bad-name",
+      "def": {
+        "name": "with",
+        "params": [
+          {
+            "name": "bad-name",
+            "type": "string"
+          }
+        ],
+        "tree": {
+          "kind": "value",
+          "param": "bad-name",
+          "op": "eq",
+          "value": "x"
+        }
+      },
+      "errors": [
+        {
+          "code": "BAD_NAME",
+          "path": "name",
+          "message": "invalid condition name: \"with\""
+        },
+        {
+          "code": "BAD_NAME",
+          "path": "params[0].name",
+          "message": "invalid param name: \"bad-name\""
+        }
+      ]
+    },
+    {
+      "name": "dup-param",
+      "def": {
+        "name": "c",
+        "params": [
+          {
+            "name": "p",
+            "type": "string"
+          },
+          {
+            "name": "p",
+            "type": "int"
+          }
+        ],
+        "tree": {
+          "kind": "value",
+          "param": "p",
+          "op": "eq",
+          "value": "x"
+        }
+      },
+      "errors": [
+        {
+          "code": "DUP_PARAM",
+          "path": "params[1].name",
+          "message": "duplicate param: \"p\""
+        },
+        {
+          "code": "TYPE_MISMATCH",
+          "path": "tree.value",
+          "message": "value \"x\" does not match param type int"
+        }
+      ]
+    },
+    {
+      "name": "unknown-param",
+      "def": {
+        "name": "c",
+        "params": [],
+        "tree": {
+          "kind": "value",
+          "param": "ghost",
+          "op": "eq",
+          "value": "x"
+        }
+      },
+      "errors": [
+        {
+          "code": "UNKNOWN_PARAM",
+          "path": "tree.param",
+          "message": "unknown param: \"ghost\""
+        }
+      ]
+    },
+    {
+      "name": "type-mismatch-time-nontimestamp",
+      "def": {
+        "name": "c",
+        "params": [
+          {
+            "name": "p",
+            "type": "string"
+          }
+        ],
+        "tree": {
+          "kind": "time",
+          "param": "p",
+          "op": "lt",
+          "rhs": {
+            "kind": "literal",
+            "rfc3339": "2026-01-01T00:00:00Z"
+          }
+        }
+      },
+      "errors": [
+        {
+          "code": "TYPE_MISMATCH",
+          "path": "tree.param",
+          "message": "param \"p\" is string, expected timestamp"
+        }
+      ]
+    },
+    {
+      "name": "type-mismatch-value-int",
+      "def": {
+        "name": "c",
+        "params": [
+          {
+            "name": "n",
+            "type": "int"
+          }
+        ],
+        "tree": {
+          "kind": "value",
+          "param": "n",
+          "op": "eq",
+          "value": "not-a-number"
+        }
+      },
+      "errors": [
+        {
+          "code": "TYPE_MISMATCH",
+          "path": "tree.value",
+          "message": "value \"not-a-number\" does not match param type int"
+        }
+      ]
+    },
+    {
+      "name": "type-mismatch-bool-order-op",
+      "def": {
+        "name": "c",
+        "params": [
+          {
+            "name": "b",
+            "type": "bool"
+          }
+        ],
+        "tree": {
+          "kind": "value",
+          "param": "b",
+          "op": "gt",
+          "value": true
+        }
+      },
+      "errors": [
+        {
+          "code": "TYPE_MISMATCH",
+          "path": "tree.op",
+          "message": "ordering op \"gt\" not allowed on bool param"
+        }
+      ]
+    },
+    {
+      "name": "type-mismatch-time-rhs-param",
+      "def": {
+        "name": "c",
+        "params": [
+          {
+            "name": "t",
+            "type": "timestamp"
+          },
+          {
+            "name": "s",
+            "type": "string"
+          }
+        ],
+        "tree": {
+          "kind": "time",
+          "param": "t",
+          "op": "lt",
+          "rhs": {
+            "kind": "param",
+            "param": "s"
+          }
+        }
+      },
+      "errors": [
+        {
+          "code": "TYPE_MISMATCH",
+          "path": "tree.rhs.param",
+          "message": "param \"s\" must be timestamp"
+        }
+      ]
+    },
+    {
+      "name": "unknown-param-time-rhs",
+      "def": {
+        "name": "c",
+        "params": [
+          {
+            "name": "t",
+            "type": "timestamp"
+          }
+        ],
+        "tree": {
+          "kind": "time",
+          "param": "t",
+          "op": "lt",
+          "rhs": {
+            "kind": "param",
+            "param": "ghost"
+          }
+        }
+      },
+      "errors": [
+        {
+          "code": "UNKNOWN_PARAM",
+          "path": "tree.rhs.param",
+          "message": "unknown param: \"ghost\""
+        }
+      ]
+    },
+    {
+      "name": "bad-cidr",
+      "def": {
+        "name": "c",
+        "params": [
+          {
+            "name": "ip",
+            "type": "ipaddress"
+          }
+        ],
+        "tree": {
+          "kind": "ip",
+          "param": "ip",
+          "op": "in_cidr",
+          "cidr": "999.0.0.0/8"
+        }
+      },
+      "errors": [
+        {
+          "code": "BAD_CIDR",
+          "path": "tree.cidr",
+          "message": "invalid CIDR: \"999.0.0.0/8\""
+        }
+      ]
+    },
+    {
+      "name": "bad-timestamp",
+      "def": {
+        "name": "c",
+        "params": [
+          {
+            "name": "t",
+            "type": "timestamp"
+          }
+        ],
+        "tree": {
+          "kind": "time",
+          "param": "t",
+          "op": "lt",
+          "rhs": {
+            "kind": "literal",
+            "rfc3339": "yesterday"
+          }
+        }
+      },
+      "errors": [
+        {
+          "code": "BAD_TIMESTAMP",
+          "path": "tree.rhs.rfc3339",
+          "message": "invalid RFC3339: \"yesterday\""
+        }
+      ]
+    },
+    {
+      "name": "empty-group",
+      "def": {
+        "name": "c",
+        "params": [],
+        "tree": {
+          "op": "and",
+          "children": []
+        }
+      },
+      "errors": [
+        {
+          "code": "EMPTY_GROUP",
+          "path": "tree",
+          "message": "group must have >= 1 child"
+        }
+      ]
+    },
+    {
+      "name": "cel-reserved-true",
+      "def": {
+        "name": "c",
+        "params": [
+          {
+            "name": "true",
+            "type": "bool"
+          }
+        ],
+        "tree": {
+          "kind": "value",
+          "param": "true",
+          "op": "eq",
+          "value": true
+        }
+      },
+      "errors": [
+        {
+          "code": "BAD_NAME",
+          "path": "params[0].name",
+          "message": "invalid param name: \"true\""
+        }
+      ]
+    },
+    {
+      "name": "cel-reserved-int-token",
+      "def": {
+        "name": "c",
+        "params": [
+          {
+            "name": "int",
+            "type": "int"
+          }
+        ],
+        "tree": {
+          "kind": "value",
+          "param": "int",
+          "op": "eq",
+          "value": 1
+        }
+      },
+      "errors": [
+        {
+          "code": "BAD_NAME",
+          "path": "params[0].name",
+          "message": "invalid param name: \"int\""
+        }
+      ]
+    },
+    {
+      "name": "cel-reserved-condition-name",
+      "def": {
+        "name": "timestamp",
+        "params": [
+          {
+            "name": "t",
+            "type": "timestamp"
+          }
+        ],
+        "tree": {
+          "kind": "time",
+          "param": "t",
+          "op": "lt",
+          "rhs": {
+            "kind": "literal",
+            "rfc3339": "2026-01-01T00:00:00Z"
+          }
+        }
+      },
+      "errors": [
+        {
+          "code": "BAD_NAME",
+          "path": "name",
+          "message": "invalid condition name: \"timestamp\""
+        }
+      ]
+    },
+    {
+      "name": "int-out-of-safe-range",
+      "def": {
+        "name": "c",
+        "params": [
+          {
+            "name": "n",
+            "type": "int"
+          }
+        ],
+        "tree": {
+          "kind": "value",
+          "param": "n",
+          "op": "eq",
+          "value": 1e21
+        }
+      },
+      "errors": [
+        {
+          "code": "TYPE_MISMATCH",
+          "path": "tree.value",
+          "message": "value 1e+21 does not match param type int"
+        }
+      ]
+    },
+    {
+      "name": "valid-ipv4-cidr",
+      "def": {
+        "name": "c",
+        "params": [
+          {
+            "name": "ip",
+            "type": "ipaddress"
+          }
+        ],
+        "tree": {
+          "kind": "ip",
+          "param": "ip",
+          "op": "in_cidr",
+          "cidr": "192.168.1.0/24"
+        }
+      },
+      "errors": []
+    },
+    {
+      "name": "valid-ipv6-cidr",
+      "def": {
+        "name": "c",
+        "params": [
+          {
+            "name": "ip",
+            "type": "ipaddress"
+          }
+        ],
+        "tree": {
+          "kind": "ip",
+          "param": "ip",
+          "op": "in_cidr",
+          "cidr": "2001:db8::/32"
+        }
+      },
+      "errors": []
+    },
+    {
+      "name": "valid-ipv4-mapped-ipv6",
+      "def": {
+        "name": "c",
+        "params": [
+          {
+            "name": "ip",
+            "type": "ipaddress"
+          }
+        ],
+        "tree": {
+          "kind": "ip",
+          "param": "ip",
+          "op": "in_cidr",
+          "cidr": "::ffff:192.168.0.0/96"
+        }
+      },
+      "errors": []
+    }
+  ],
+  "cel": [
+    {
+      "name": "flat-and",
+      "def": {
+        "name": "rule",
+        "params": [
+          {
+            "name": "current_time",
+            "type": "timestamp"
+          },
+          {
+            "name": "expiry",
+            "type": "timestamp"
+          },
+          {
+            "name": "user_ip",
+            "type": "ipaddress"
+          },
+          {
+            "name": "tier",
+            "type": "string"
+          },
+          {
+            "name": "n",
+            "type": "int"
+          },
+          {
+            "name": "d",
+            "type": "double"
+          },
+          {
+            "name": "flag",
+            "type": "bool"
+          }
+        ],
+        "tree": {
+          "op": "and",
+          "children": [
+            {
+              "kind": "time",
+              "param": "current_time",
+              "op": "lt",
+              "rhs": {
+                "kind": "param",
+                "param": "expiry"
+              }
+            },
+            {
+              "kind": "ip",
+              "param": "user_ip",
+              "op": "in_cidr",
+              "cidr": "10.0.0.0/8"
+            }
+          ]
+        }
+      },
+      "decl": "condition rule(current_time: timestamp, expiry: timestamp, user_ip: ipaddress, tier: string, n: int, d: double, flag: bool)",
+      "cel": "current_time < expiry && user_ip.in_cidr(\"10.0.0.0/8\")"
+    },
+    {
+      "name": "value-string-quoted",
+      "def": {
+        "name": "r",
+        "params": [
+          {
+            "name": "current_time",
+            "type": "timestamp"
+          },
+          {
+            "name": "expiry",
+            "type": "timestamp"
+          },
+          {
+            "name": "user_ip",
+            "type": "ipaddress"
+          },
+          {
+            "name": "tier",
+            "type": "string"
+          },
+          {
+            "name": "n",
+            "type": "int"
+          },
+          {
+            "name": "d",
+            "type": "double"
+          },
+          {
+            "name": "flag",
+            "type": "bool"
+          }
+        ],
+        "tree": {
+          "kind": "value",
+          "param": "tier",
+          "op": "eq",
+          "value": "gold"
+        }
+      },
+      "decl": "condition r(current_time: timestamp, expiry: timestamp, user_ip: ipaddress, tier: string, n: int, d: double, flag: bool)",
+      "cel": "tier == \"gold\""
+    },
+    {
+      "name": "literal-timestamp-rhs",
+      "def": {
+        "name": "r",
+        "params": [
+          {
+            "name": "current_time",
+            "type": "timestamp"
+          },
+          {
+            "name": "expiry",
+            "type": "timestamp"
+          },
+          {
+            "name": "user_ip",
+            "type": "ipaddress"
+          },
+          {
+            "name": "tier",
+            "type": "string"
+          },
+          {
+            "name": "n",
+            "type": "int"
+          },
+          {
+            "name": "d",
+            "type": "double"
+          },
+          {
+            "name": "flag",
+            "type": "bool"
+          }
+        ],
+        "tree": {
+          "kind": "time",
+          "param": "current_time",
+          "op": "gte",
+          "rhs": {
+            "kind": "literal",
+            "rfc3339": "2026-01-01T09:00:00Z"
+          }
+        }
+      },
+      "decl": "condition r(current_time: timestamp, expiry: timestamp, user_ip: ipaddress, tier: string, n: int, d: double, flag: bool)",
+      "cel": "current_time >= timestamp(\"2026-01-01T09:00:00Z\")"
+    },
+    {
+      "name": "or-group",
+      "def": {
+        "name": "r",
+        "params": [
+          {
+            "name": "current_time",
+            "type": "timestamp"
+          },
+          {
+            "name": "expiry",
+            "type": "timestamp"
+          },
+          {
+            "name": "user_ip",
+            "type": "ipaddress"
+          },
+          {
+            "name": "tier",
+            "type": "string"
+          },
+          {
+            "name": "n",
+            "type": "int"
+          },
+          {
+            "name": "d",
+            "type": "double"
+          },
+          {
+            "name": "flag",
+            "type": "bool"
+          }
+        ],
+        "tree": {
+          "op": "or",
+          "children": [
+            {
+              "kind": "value",
+              "param": "tier",
+              "op": "eq",
+              "value": "gold"
+            },
+            {
+              "kind": "value",
+              "param": "tier",
+              "op": "eq",
+              "value": "silver"
+            }
+          ]
+        }
+      },
+      "decl": "condition r(current_time: timestamp, expiry: timestamp, user_ip: ipaddress, tier: string, n: int, d: double, flag: bool)",
+      "cel": "tier == \"gold\" || tier == \"silver\""
+    },
+    {
+      "name": "nested-groups",
+      "def": {
+        "name": "r",
+        "params": [
+          {
+            "name": "current_time",
+            "type": "timestamp"
+          },
+          {
+            "name": "expiry",
+            "type": "timestamp"
+          },
+          {
+            "name": "user_ip",
+            "type": "ipaddress"
+          },
+          {
+            "name": "tier",
+            "type": "string"
+          },
+          {
+            "name": "n",
+            "type": "int"
+          },
+          {
+            "name": "d",
+            "type": "double"
+          },
+          {
+            "name": "flag",
+            "type": "bool"
+          }
+        ],
+        "tree": {
+          "op": "or",
+          "children": [
+            {
+              "kind": "value",
+              "param": "tier",
+              "op": "eq",
+              "value": "gold"
+            },
+            {
+              "op": "and",
+              "children": [
+                {
+                  "kind": "value",
+                  "param": "n",
+                  "op": "gt",
+                  "value": 2
+                },
+                {
+                  "kind": "value",
+                  "param": "n",
+                  "op": "lt",
+                  "value": 10
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "decl": "condition r(current_time: timestamp, expiry: timestamp, user_ip: ipaddress, tier: string, n: int, d: double, flag: bool)",
+      "cel": "tier == \"gold\" || (n > 2 && n < 10)"
+    },
+    {
+      "name": "single-child-group-unwrap",
+      "def": {
+        "name": "r",
+        "params": [
+          {
+            "name": "current_time",
+            "type": "timestamp"
+          },
+          {
+            "name": "expiry",
+            "type": "timestamp"
+          },
+          {
+            "name": "user_ip",
+            "type": "ipaddress"
+          },
+          {
+            "name": "tier",
+            "type": "string"
+          },
+          {
+            "name": "n",
+            "type": "int"
+          },
+          {
+            "name": "d",
+            "type": "double"
+          },
+          {
+            "name": "flag",
+            "type": "bool"
+          }
+        ],
+        "tree": {
+          "op": "and",
+          "children": [
+            {
+              "kind": "value",
+              "param": "tier",
+              "op": "eq",
+              "value": "gold"
+            }
+          ]
+        }
+      },
+      "decl": "condition r(current_time: timestamp, expiry: timestamp, user_ip: ipaddress, tier: string, n: int, d: double, flag: bool)",
+      "cel": "tier == \"gold\""
+    },
+    {
+      "name": "all-ops",
+      "def": {
+        "name": "r",
+        "params": [
+          {
+            "name": "current_time",
+            "type": "timestamp"
+          },
+          {
+            "name": "expiry",
+            "type": "timestamp"
+          },
+          {
+            "name": "user_ip",
+            "type": "ipaddress"
+          },
+          {
+            "name": "tier",
+            "type": "string"
+          },
+          {
+            "name": "n",
+            "type": "int"
+          },
+          {
+            "name": "d",
+            "type": "double"
+          },
+          {
+            "name": "flag",
+            "type": "bool"
+          }
+        ],
+        "tree": {
+          "op": "and",
+          "children": [
+            {
+              "kind": "value",
+              "param": "tier",
+              "op": "neq",
+              "value": "free"
+            },
+            {
+              "kind": "value",
+              "param": "n",
+              "op": "gte",
+              "value": 1
+            },
+            {
+              "kind": "value",
+              "param": "n",
+              "op": "lte",
+              "value": 100
+            },
+            {
+              "kind": "value",
+              "param": "flag",
+              "op": "eq",
+              "value": false
+            }
+          ]
+        }
+      },
+      "decl": "condition r(current_time: timestamp, expiry: timestamp, user_ip: ipaddress, tier: string, n: int, d: double, flag: bool)",
+      "cel": "tier != \"free\" && n >= 1 && n <= 100 && flag == false"
+    },
+    {
+      "name": "bool-values",
+      "def": {
+        "name": "r",
+        "params": [
+          {
+            "name": "current_time",
+            "type": "timestamp"
+          },
+          {
+            "name": "expiry",
+            "type": "timestamp"
+          },
+          {
+            "name": "user_ip",
+            "type": "ipaddress"
+          },
+          {
+            "name": "tier",
+            "type": "string"
+          },
+          {
+            "name": "n",
+            "type": "int"
+          },
+          {
+            "name": "d",
+            "type": "double"
+          },
+          {
+            "name": "flag",
+            "type": "bool"
+          }
+        ],
+        "tree": {
+          "op": "or",
+          "children": [
+            {
+              "kind": "value",
+              "param": "flag",
+              "op": "eq",
+              "value": true
+            },
+            {
+              "kind": "value",
+              "param": "flag",
+              "op": "neq",
+              "value": false
+            }
+          ]
+        }
+      },
+      "decl": "condition r(current_time: timestamp, expiry: timestamp, user_ip: ipaddress, tier: string, n: int, d: double, flag: bool)",
+      "cel": "flag == true || flag != false"
+    },
+    {
+      "name": "escape-html-chars",
+      "def": {
+        "name": "r",
+        "params": [
+          {
+            "name": "current_time",
+            "type": "timestamp"
+          },
+          {
+            "name": "expiry",
+            "type": "timestamp"
+          },
+          {
+            "name": "user_ip",
+            "type": "ipaddress"
+          },
+          {
+            "name": "tier",
+            "type": "string"
+          },
+          {
+            "name": "n",
+            "type": "int"
+          },
+          {
+            "name": "d",
+            "type": "double"
+          },
+          {
+            "name": "flag",
+            "type": "bool"
+          }
+        ],
+        "tree": {
+          "kind": "value",
+          "param": "tier",
+          "op": "eq",
+          "value": "a<b>c&d"
+        }
+      },
+      "decl": "condition r(current_time: timestamp, expiry: timestamp, user_ip: ipaddress, tier: string, n: int, d: double, flag: bool)",
+      "cel": "tier == \"a<b>c&d\""
+    },
+    {
+      "name": "escape-quote-backslash",
+      "def": {
+        "name": "r",
+        "params": [
+          {
+            "name": "current_time",
+            "type": "timestamp"
+          },
+          {
+            "name": "expiry",
+            "type": "timestamp"
+          },
+          {
+            "name": "user_ip",
+            "type": "ipaddress"
+          },
+          {
+            "name": "tier",
+            "type": "string"
+          },
+          {
+            "name": "n",
+            "type": "int"
+          },
+          {
+            "name": "d",
+            "type": "double"
+          },
+          {
+            "name": "flag",
+            "type": "bool"
+          }
+        ],
+        "tree": {
+          "kind": "value",
+          "param": "tier",
+          "op": "eq",
+          "value": "q\"b\\z"
+        }
+      },
+      "decl": "condition r(current_time: timestamp, expiry: timestamp, user_ip: ipaddress, tier: string, n: int, d: double, flag: bool)",
+      "cel": "tier == \"q\\\"b\\\\z\""
+    },
+    {
+      "name": "escape-newline-tab",
+      "def": {
+        "name": "r",
+        "params": [
+          {
+            "name": "current_time",
+            "type": "timestamp"
+          },
+          {
+            "name": "expiry",
+            "type": "timestamp"
+          },
+          {
+            "name": "user_ip",
+            "type": "ipaddress"
+          },
+          {
+            "name": "tier",
+            "type": "string"
+          },
+          {
+            "name": "n",
+            "type": "int"
+          },
+          {
+            "name": "d",
+            "type": "double"
+          },
+          {
+            "name": "flag",
+            "type": "bool"
+          }
+        ],
+        "tree": {
+          "kind": "value",
+          "param": "tier",
+          "op": "eq",
+          "value": "line\n\ttab"
+        }
+      },
+      "decl": "condition r(current_time: timestamp, expiry: timestamp, user_ip: ipaddress, tier: string, n: int, d: double, flag: bool)",
+      "cel": "tier == \"line\\n\\ttab\""
+    },
+    {
+      "name": "unicode-value",
+      "def": {
+        "name": "r",
+        "params": [
+          {
+            "name": "current_time",
+            "type": "timestamp"
+          },
+          {
+            "name": "expiry",
+            "type": "timestamp"
+          },
+          {
+            "name": "user_ip",
+            "type": "ipaddress"
+          },
+          {
+            "name": "tier",
+            "type": "string"
+          },
+          {
+            "name": "n",
+            "type": "int"
+          },
+          {
+            "name": "d",
+            "type": "double"
+          },
+          {
+            "name": "flag",
+            "type": "bool"
+          }
+        ],
+        "tree": {
+          "kind": "value",
+          "param": "tier",
+          "op": "eq",
+          "value": "café😀"
+        }
+      },
+      "decl": "condition r(current_time: timestamp, expiry: timestamp, user_ip: ipaddress, tier: string, n: int, d: double, flag: bool)",
+      "cel": "tier == \"café😀\""
+    },
+    {
+      "name": "number-negative-int",
+      "def": {
+        "name": "r",
+        "params": [
+          {
+            "name": "current_time",
+            "type": "timestamp"
+          },
+          {
+            "name": "expiry",
+            "type": "timestamp"
+          },
+          {
+            "name": "user_ip",
+            "type": "ipaddress"
+          },
+          {
+            "name": "tier",
+            "type": "string"
+          },
+          {
+            "name": "n",
+            "type": "int"
+          },
+          {
+            "name": "d",
+            "type": "double"
+          },
+          {
+            "name": "flag",
+            "type": "bool"
+          }
+        ],
+        "tree": {
+          "kind": "value",
+          "param": "n",
+          "op": "eq",
+          "value": -100
+        }
+      },
+      "decl": "condition r(current_time: timestamp, expiry: timestamp, user_ip: ipaddress, tier: string, n: int, d: double, flag: bool)",
+      "cel": "n == -100"
+    },
+    {
+      "name": "number-small-exp-double",
+      "def": {
+        "name": "r",
+        "params": [
+          {
+            "name": "current_time",
+            "type": "timestamp"
+          },
+          {
+            "name": "expiry",
+            "type": "timestamp"
+          },
+          {
+            "name": "user_ip",
+            "type": "ipaddress"
+          },
+          {
+            "name": "tier",
+            "type": "string"
+          },
+          {
+            "name": "n",
+            "type": "int"
+          },
+          {
+            "name": "d",
+            "type": "double"
+          },
+          {
+            "name": "flag",
+            "type": "bool"
+          }
+        ],
+        "tree": {
+          "kind": "value",
+          "param": "d",
+          "op": "lt",
+          "value": 1e-7
+        }
+      },
+      "decl": "condition r(current_time: timestamp, expiry: timestamp, user_ip: ipaddress, tier: string, n: int, d: double, flag: bool)",
+      "cel": "d < 1e-7"
+    },
+    {
+      "name": "number-large-exp-double",
+      "def": {
+        "name": "r",
+        "params": [
+          {
+            "name": "current_time",
+            "type": "timestamp"
+          },
+          {
+            "name": "expiry",
+            "type": "timestamp"
+          },
+          {
+            "name": "user_ip",
+            "type": "ipaddress"
+          },
+          {
+            "name": "tier",
+            "type": "string"
+          },
+          {
+            "name": "n",
+            "type": "int"
+          },
+          {
+            "name": "d",
+            "type": "double"
+          },
+          {
+            "name": "flag",
+            "type": "bool"
+          }
+        ],
+        "tree": {
+          "kind": "value",
+          "param": "d",
+          "op": "gt",
+          "value": 1e21
+        }
+      },
+      "decl": "condition r(current_time: timestamp, expiry: timestamp, user_ip: ipaddress, tier: string, n: int, d: double, flag: bool)",
+      "cel": "d > 1e+21"
+    },
+    {
+      "name": "number-large-decimal-double",
+      "def": {
+        "name": "r",
+        "params": [
+          {
+            "name": "current_time",
+            "type": "timestamp"
+          },
+          {
+            "name": "expiry",
+            "type": "timestamp"
+          },
+          {
+            "name": "user_ip",
+            "type": "ipaddress"
+          },
+          {
+            "name": "tier",
+            "type": "string"
+          },
+          {
+            "name": "n",
+            "type": "int"
+          },
+          {
+            "name": "d",
+            "type": "double"
+          },
+          {
+            "name": "flag",
+            "type": "bool"
+          }
+        ],
+        "tree": {
+          "kind": "value",
+          "param": "d",
+          "op": "gt",
+          "value": 100000000000000000000
+        }
+      },
+      "decl": "condition r(current_time: timestamp, expiry: timestamp, user_ip: ipaddress, tier: string, n: int, d: double, flag: bool)",
+      "cel": "d > 100000000000000000000"
+    },
+    {
+      "name": "number-2pow53-double",
+      "def": {
+        "name": "r",
+        "params": [
+          {
+            "name": "current_time",
+            "type": "timestamp"
+          },
+          {
+            "name": "expiry",
+            "type": "timestamp"
+          },
+          {
+            "name": "user_ip",
+            "type": "ipaddress"
+          },
+          {
+            "name": "tier",
+            "type": "string"
+          },
+          {
+            "name": "n",
+            "type": "int"
+          },
+          {
+            "name": "d",
+            "type": "double"
+          },
+          {
+            "name": "flag",
+            "type": "bool"
+          }
+        ],
+        "tree": {
+          "kind": "value",
+          "param": "d",
+          "op": "eq",
+          "value": 9007199254740992
+        }
+      },
+      "decl": "condition r(current_time: timestamp, expiry: timestamp, user_ip: ipaddress, tier: string, n: int, d: double, flag: bool)",
+      "cel": "d == 9007199254740992"
+    },
+    {
+      "name": "number-fraction-double",
+      "def": {
+        "name": "r",
+        "params": [
+          {
+            "name": "current_time",
+            "type": "timestamp"
+          },
+          {
+            "name": "expiry",
+            "type": "timestamp"
+          },
+          {
+            "name": "user_ip",
+            "type": "ipaddress"
+          },
+          {
+            "name": "tier",
+            "type": "string"
+          },
+          {
+            "name": "n",
+            "type": "int"
+          },
+          {
+            "name": "d",
+            "type": "double"
+          },
+          {
+            "name": "flag",
+            "type": "bool"
+          }
+        ],
+        "tree": {
+          "kind": "value",
+          "param": "d",
+          "op": "eq",
+          "value": 0.30000000000000004
+        }
+      },
+      "decl": "condition r(current_time: timestamp, expiry: timestamp, user_ip: ipaddress, tier: string, n: int, d: double, flag: bool)",
+      "cel": "d == 0.30000000000000004"
+    },
+    {
+      "name": "number-negative-zero",
+      "def": {
+        "name": "r_negzero",
+        "params": [
+          {
+            "name": "d",
+            "type": "double"
+          },
+          {
+            "name": "s",
+            "type": "string"
+          },
+          {
+            "name": "n",
+            "type": "int"
+          }
+        ],
+        "tree": {
+          "kind": "value",
+          "param": "d",
+          "op": "eq",
+          "value": 0
+        }
+      },
+      "decl": "condition r_negzero(d: double, s: string, n: int)",
+      "cel": "d == 0"
+    },
+    {
+      "name": "number-1e-6-decimal-boundary",
+      "def": {
+        "name": "r_boundary",
+        "params": [
+          {
+            "name": "d",
+            "type": "double"
+          },
+          {
+            "name": "s",
+            "type": "string"
+          },
+          {
+            "name": "n",
+            "type": "int"
+          }
+        ],
+        "tree": {
+          "kind": "value",
+          "param": "d",
+          "op": "eq",
+          "value": 0.000001
+        }
+      },
+      "decl": "condition r_boundary(d: double, s: string, n: int)",
+      "cel": "d == 0.000001"
+    },
+    {
+      "name": "number-2pow53-minus-1",
+      "def": {
+        "name": "r_maxsafe",
+        "params": [
+          {
+            "name": "d",
+            "type": "double"
+          },
+          {
+            "name": "s",
+            "type": "string"
+          },
+          {
+            "name": "n",
+            "type": "int"
+          }
+        ],
+        "tree": {
+          "kind": "value",
+          "param": "n",
+          "op": "eq",
+          "value": 9007199254740991
+        }
+      },
+      "decl": "condition r_maxsafe(d: double, s: string, n: int)",
+      "cel": "n == 9007199254740991"
+    },
+    {
+      "name": "number-2pow53-plus-1",
+      "def": {
+        "name": "r_unsafe",
+        "params": [
+          {
+            "name": "d",
+            "type": "double"
+          },
+          {
+            "name": "s",
+            "type": "string"
+          },
+          {
+            "name": "n",
+            "type": "int"
+          }
+        ],
+        "tree": {
+          "kind": "value",
+          "param": "d",
+          "op": "eq",
+          "value": 9007199254740992
+        }
+      },
+      "decl": "condition r_unsafe(d: double, s: string, n: int)",
+      "cel": "d == 9007199254740992"
+    },
+    {
+      "name": "string-line-separators",
+      "def": {
+        "name": "r_lineseps",
+        "params": [
+          {
+            "name": "d",
+            "type": "double"
+          },
+          {
+            "name": "s",
+            "type": "string"
+          },
+          {
+            "name": "n",
+            "type": "int"
+          }
+        ],
+        "tree": {
+          "kind": "value",
+          "param": "s",
+          "op": "eq",
+          "value": "l p e"
+        }
+      },
+      "decl": "condition r_lineseps(d: double, s: string, n: int)",
+      "cel": "s == \"l p e\""
+    },
+    {
+      "name": "string-control-chars",
+      "def": {
+        "name": "r_ctrl",
+        "params": [
+          {
+            "name": "d",
+            "type": "double"
+          },
+          {
+            "name": "s",
+            "type": "string"
+          },
+          {
+            "name": "n",
+            "type": "int"
+          }
+        ],
+        "tree": {
+          "kind": "value",
+          "param": "s",
+          "op": "eq",
+          "value": "\u0001\u000b"
+        }
+      },
+      "decl": "condition r_ctrl(d: double, s: string, n: int)",
+      "cel": "s == \"\\u0001\\u000b\""
+    },
+    {
+      "name": "string-backspace-formfeed",
+      "def": {
+        "name": "r_bf",
+        "params": [
+          {
+            "name": "d",
+            "type": "double"
+          },
+          {
+            "name": "s",
+            "type": "string"
+          },
+          {
+            "name": "n",
+            "type": "int"
+          }
+        ],
+        "tree": {
+          "kind": "value",
+          "param": "s",
+          "op": "eq",
+          "value": "a\bb\fc"
+        }
+      },
+      "decl": "condition r_bf(d: double, s: string, n: int)",
+      "cel": "s == \"a\\bb\\fc\""
+    }
+  ],
+  "marshal": [
+    {
+      "name": "timerhs-literal",
+      "type": "TimeRhs",
+      "json": "{\"kind\":\"literal\",\"rfc3339\":\"2026-01-01T00:00:00Z\"}"
+    },
+    {
+      "name": "timerhs-param",
+      "type": "TimeRhs",
+      "json": "{\"kind\":\"param\",\"param\":\"expiry\"}"
+    },
+    {
+      "name": "leaf-time",
+      "type": "ConditionLeaf",
+      "json": "{\"kind\":\"time\",\"param\":\"current_time\",\"op\":\"lt\",\"rhs\":{\"kind\":\"param\",\"param\":\"expiry\"}}"
+    },
+    {
+      "name": "leaf-ip",
+      "type": "ConditionLeaf",
+      "json": "{\"kind\":\"ip\",\"param\":\"user_ip\",\"op\":\"in_cidr\",\"cidr\":\"10.0.0.0/8\"}"
+    },
+    {
+      "name": "leaf-value-string",
+      "type": "ConditionLeaf",
+      "json": "{\"kind\":\"value\",\"param\":\"tier\",\"op\":\"eq\",\"value\":\"gold\"}"
+    },
+    {
+      "name": "leaf-value-int",
+      "type": "ConditionLeaf",
+      "json": "{\"kind\":\"value\",\"param\":\"n\",\"op\":\"gte\",\"value\":3}"
+    },
+    {
+      "name": "leaf-value-bool",
+      "type": "ConditionLeaf",
+      "json": "{\"kind\":\"value\",\"param\":\"flag\",\"op\":\"eq\",\"value\":true}"
+    },
+    {
+      "name": "value-string",
+      "type": "ConditionValue",
+      "json": "\"gold\""
+    },
+    {
+      "name": "value-number",
+      "type": "ConditionValue",
+      "json": "42"
+    },
+    {
+      "name": "value-number-exp",
+      "type": "ConditionValue",
+      "json": "1e+21"
+    },
+    {
+      "name": "value-bool",
+      "type": "ConditionValue",
+      "json": "false"
+    },
+    {
+      "name": "node-leaf",
+      "type": "ConditionNode",
+      "json": "{\"kind\":\"value\",\"param\":\"tier\",\"op\":\"eq\",\"value\":\"gold\"}"
+    },
+    {
+      "name": "node-group",
+      "type": "ConditionNode",
+      "json": "{\"op\":\"and\",\"children\":[{\"kind\":\"value\",\"param\":\"tier\",\"op\":\"eq\",\"value\":\"gold\"}]}"
+    },
+    {
+      "name": "condition-def",
+      "type": "ConditionDef",
+      "json": "{\"name\":\"non_expired\",\"params\":[{\"name\":\"current_time\",\"type\":\"timestamp\"},{\"name\":\"expiry\",\"type\":\"timestamp\"}],\"tree\":{\"kind\":\"time\",\"param\":\"current_time\",\"op\":\"lt\",\"rhs\":{\"kind\":\"param\",\"param\":\"expiry\"}}}"
+    },
+    {
+      "name": "value-number-max-safe-int",
+      "type": "ConditionValue",
+      "json": "9007199254740991"
+    },
+    {
+      "name": "value-number-1e-6",
+      "type": "ConditionValue",
+      "json": "0.000001"
+    },
+    {
+      "name": "value-number-1e-7-exp",
+      "type": "ConditionValue",
+      "json": "1e-7"
+    },
+    {
+      "name": "value-number-1e21-exp",
+      "type": "ConditionValue",
+      "json": "1e+21"
+    },
+    {
+      "name": "value-number-shortest-fraction",
+      "type": "ConditionValue",
+      "json": "0.30000000000000004"
+    },
+    {
+      "name": "value-string-html-raw",
+      "type": "ConditionValue",
+      "json": "\"a<b>&c\""
+    },
+    {
+      "name": "value-string-line-separators",
+      "type": "ConditionValue",
+      "json": "\"l p e\""
+    },
+    {
+      "name": "value-string-control-chars",
+      "type": "ConditionValue",
+      "json": "\"\\u0001\\u000b\""
+    },
+    {
+      "name": "value-string-backspace-formfeed",
+      "type": "ConditionValue",
+      "json": "\"a\\bb\\fc\""
+    },
+    {
+      "name": "leaf-value-html-string",
+      "type": "ConditionLeaf",
+      "json": "{\"kind\":\"value\",\"param\":\"s\",\"op\":\"eq\",\"value\":\"x<y>&z\"}"
+    },
+    {
+      "name": "reason-result-deny-empty-links",
+      "type": "ReasonResult",
+      "json": "{\"decision\":false,\"missingLinks\":[],\"text\":\"denied: needs a grant that does not exist in the model\"}"
+    },
+    {
+      "name": "reason-result-allow-truncated-order",
+      "type": "ReasonResult",
+      "json": "{\"decision\":true,\"path\":[{\"via\":\"role\",\"role\":\"viewer\",\"on\":\"document\",\"direct\":false}],\"truncated\":true,\"text\":\"user:a can read document:1: role viewer (partial)\"}"
+    }
+  ]
+}

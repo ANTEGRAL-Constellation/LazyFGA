@@ -80,5 +80,23 @@ services:
       openfga:
         condition: service_healthy
 
+  # 웹 스튜디오(SPA). nginx가 정적 파일 + 같은 출처 /api 프록시(→ lazyfga-api:8787)를 담당한다.
+  # 호스트 포트는 WEB_PORT로 재정의(기본 5173). 브라우저에서 http://<host>:5173 접속.
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    ports:
+      - "${WEB_PORT:-5173}:80"
+    # nginx는 IPv4(listen 80)만 듣고 컨테이너 localhost는 ::1 우선 → 127.0.0.1로 헬스체크한다.
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1/"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    depends_on:
+      lazyfga-api:
+        condition: service_healthy
+
 volumes:
   pgdata:

@@ -17,13 +17,15 @@ lazyfga/
 ├─ CONCEPT.md · ARCHITECTURE.md · ROADMAP.md · README.md   # 컨셉 / 구조 / 로드맵 / 진입
 ├─ package.json · pnpm-workspace.yaml · turbo.json         # node 워크스페이스(web + packages)
 ├─ tsconfig.base.json · eslint.config.js · .prettierrc.json
-├─ docker-compose.yml · .env.example · .dockerignore       # ADMIN_TOKEN은 필수(:?)
+├─ docker-compose.yml · .env.example · .dockerignore       # 4서비스: postgres·openfga·lazyfga-api·web(SPA/nginx); ADMIN_TOKEN 필수(:?), WEB_PORT 기본 5173
 ├─ proposals/                 # LFGA-N 구현 명세
 ├─ docs/                      # getting-started.md · api.md (LFGA-19)
 ├─ scripts/
 │  └─ init-openfga-db.sql     # 단일 postgres 내 openfga DB 분리 생성
 ├─ apps/
 │  ├─ web/                    # Vite + React + @xyflow/react + zustand (TS 유지)
+│  │  ├─ Dockerfile           # multi-stage: node22+pnpm 빌드 → nginx:alpine 정적 서빙
+│  │  ├─ nginx.conf           # SPA + 같은 출처 /api 프록시(→ lazyfga-api:8787, /api prefix strip)
 │  │  └─ src/
 │  │     ├─ main.tsx · App.tsx · index.css
 │  │     ├─ store/            # modelStore · explainStore (zustand)

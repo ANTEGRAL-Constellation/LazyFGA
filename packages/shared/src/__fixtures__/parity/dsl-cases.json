@@ -1,0 +1,569 @@
+{
+  "cases": [
+    {
+      "name": "doc-folder-team",
+      "ir": {
+        "schemaVersion": "1.1",
+        "groups": [
+          {
+            "name": "team",
+            "memberTypes": [
+              {
+                "kind": "user"
+              },
+              {
+                "kind": "group",
+                "group": "team",
+                "relation": "member"
+              }
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "name": "folder",
+            "parents": [],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": []
+              }
+            ]
+          },
+          {
+            "name": "document",
+            "parents": [
+              {
+                "relationName": "parent",
+                "parentTypes": ["folder"]
+              }
+            ],
+            "roles": [
+              {
+                "name": "owner",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              },
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer", "editor", "owner"],
+                "inheritFromParents": ["parent"]
+              }
+            ]
+          }
+        ]
+      },
+      "dsl": "model\n  schema 1.1\ntype user\ntype team\n  relations\n    define member: [user, team#member]\ntype folder\n  relations\n    define owner: [user, team#member]\n    define editor: [user, team#member]\n    define viewer: [user, team#member]\n    define can_read: viewer or editor or owner\ntype document\n  relations\n    define parent: [folder]\n    define owner: [user, team#member]\n    define editor: [user, team#member]\n    define viewer: [user, team#member]\n    define can_read: viewer or editor or owner or can_read from parent"
+    },
+    {
+      "name": "conditioned-role",
+      "ir": {
+        "schemaVersion": "1.1",
+        "groups": [],
+        "resources": [
+          {
+            "name": "document",
+            "parents": [],
+            "roles": [
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user",
+                    "condition": "non_expired"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer"],
+                "inheritFromParents": []
+              }
+            ]
+          }
+        ],
+        "conditions": [
+          {
+            "name": "non_expired",
+            "params": [
+              {
+                "name": "current_time",
+                "type": "timestamp"
+              },
+              {
+                "name": "expiry",
+                "type": "timestamp"
+              }
+            ],
+            "tree": {
+              "kind": "time",
+              "param": "current_time",
+              "op": "lt",
+              "rhs": {
+                "kind": "param",
+                "param": "expiry"
+              }
+            }
+          }
+        ]
+      },
+      "dsl": "model\n  schema 1.1\ntype user\ntype document\n  relations\n    define viewer: [user with non_expired]\n    define can_read: viewer\ncondition non_expired(current_time: timestamp, expiry: timestamp) {\n  current_time < expiry\n}"
+    },
+    {
+      "name": "multi-parent-inherit",
+      "ir": {
+        "schemaVersion": "1.1",
+        "groups": [],
+        "resources": [
+          {
+            "name": "org",
+            "parents": [],
+            "roles": [
+              {
+                "name": "admin",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["admin"],
+                "inheritFromParents": []
+              }
+            ]
+          },
+          {
+            "name": "folder",
+            "parents": [],
+            "roles": [
+              {
+                "name": "admin",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["admin"],
+                "inheritFromParents": []
+              }
+            ]
+          },
+          {
+            "name": "doc",
+            "parents": [
+              {
+                "relationName": "in_org",
+                "parentTypes": ["org"]
+              },
+              {
+                "relationName": "in_folder",
+                "parentTypes": ["folder"]
+              }
+            ],
+            "roles": [
+              {
+                "name": "editor",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["editor"],
+                "inheritFromParents": ["in_org", "in_folder"]
+              }
+            ]
+          }
+        ]
+      },
+      "dsl": "model\n  schema 1.1\ntype user\ntype org\n  relations\n    define admin: [user]\n    define can_read: admin\ntype folder\n  relations\n    define admin: [user]\n    define can_read: admin\ntype doc\n  relations\n    define in_org: [org]\n    define in_folder: [folder]\n    define editor: [user]\n    define can_read: editor or can_read from in_org or can_read from in_folder"
+    },
+    {
+      "name": "group-conditioned-member",
+      "ir": {
+        "schemaVersion": "1.1",
+        "groups": [
+          {
+            "name": "team",
+            "memberTypes": [
+              {
+                "kind": "user",
+                "condition": "non_expired"
+              },
+              {
+                "kind": "group",
+                "group": "team",
+                "relation": "member"
+              }
+            ]
+          }
+        ],
+        "resources": [
+          {
+            "name": "doc",
+            "parents": [],
+            "roles": [
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  },
+                  {
+                    "kind": "group",
+                    "group": "team",
+                    "relation": "member"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer"],
+                "inheritFromParents": []
+              }
+            ]
+          }
+        ],
+        "conditions": [
+          {
+            "name": "non_expired",
+            "params": [
+              {
+                "name": "current_time",
+                "type": "timestamp"
+              },
+              {
+                "name": "expiry",
+                "type": "timestamp"
+              }
+            ],
+            "tree": {
+              "kind": "time",
+              "param": "current_time",
+              "op": "lt",
+              "rhs": {
+                "kind": "param",
+                "param": "expiry"
+              }
+            }
+          }
+        ]
+      },
+      "dsl": "model\n  schema 1.1\ntype user\ntype team\n  relations\n    define member: [user with non_expired, team#member]\ntype doc\n  relations\n    define viewer: [user, team#member]\n    define can_read: viewer\ncondition non_expired(current_time: timestamp, expiry: timestamp) {\n  current_time < expiry\n}"
+    },
+    {
+      "name": "all-types-condition",
+      "ir": {
+        "schemaVersion": "1.1",
+        "groups": [],
+        "resources": [
+          {
+            "name": "doc",
+            "parents": [],
+            "roles": [
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user",
+                    "condition": "gate"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer"],
+                "inheritFromParents": []
+              }
+            ]
+          }
+        ],
+        "conditions": [
+          {
+            "name": "gate",
+            "params": [
+              {
+                "name": "current_time",
+                "type": "timestamp"
+              },
+              {
+                "name": "user_ip",
+                "type": "ipaddress"
+              },
+              {
+                "name": "tier",
+                "type": "string"
+              },
+              {
+                "name": "level",
+                "type": "int"
+              },
+              {
+                "name": "score",
+                "type": "double"
+              },
+              {
+                "name": "flag",
+                "type": "bool"
+              }
+            ],
+            "tree": {
+              "op": "and",
+              "children": [
+                {
+                  "kind": "time",
+                  "param": "current_time",
+                  "op": "lt",
+                  "rhs": {
+                    "kind": "literal",
+                    "rfc3339": "2030-01-01T00:00:00Z"
+                  }
+                },
+                {
+                  "kind": "ip",
+                  "param": "user_ip",
+                  "op": "in_cidr",
+                  "cidr": "10.0.0.0/8"
+                },
+                {
+                  "kind": "value",
+                  "param": "tier",
+                  "op": "eq",
+                  "value": "gold"
+                },
+                {
+                  "kind": "value",
+                  "param": "level",
+                  "op": "gte",
+                  "value": 3
+                },
+                {
+                  "kind": "value",
+                  "param": "score",
+                  "op": "gt",
+                  "value": 1.5
+                },
+                {
+                  "kind": "value",
+                  "param": "flag",
+                  "op": "eq",
+                  "value": true
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "dsl": "model\n  schema 1.1\ntype user\ntype doc\n  relations\n    define viewer: [user with gate]\n    define can_read: viewer\ncondition gate(current_time: timestamp, user_ip: ipaddress, tier: string, level: int, score: double, flag: bool) {\n  current_time < timestamp(\"2030-01-01T00:00:00Z\") && user_ip.in_cidr(\"10.0.0.0/8\") && tier == \"gold\" && level >= 3 && score > 1.5 && flag == true\n}"
+    },
+    {
+      "name": "nested-condition",
+      "ir": {
+        "schemaVersion": "1.1",
+        "groups": [],
+        "resources": [
+          {
+            "name": "doc",
+            "parents": [],
+            "roles": [
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user",
+                    "condition": "nested"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer"],
+                "inheritFromParents": []
+              }
+            ]
+          }
+        ],
+        "conditions": [
+          {
+            "name": "nested",
+            "params": [
+              {
+                "name": "tier",
+                "type": "string"
+              },
+              {
+                "name": "n",
+                "type": "int"
+              }
+            ],
+            "tree": {
+              "op": "or",
+              "children": [
+                {
+                  "kind": "value",
+                  "param": "tier",
+                  "op": "eq",
+                  "value": "gold"
+                },
+                {
+                  "op": "and",
+                  "children": [
+                    {
+                      "kind": "value",
+                      "param": "n",
+                      "op": "gt",
+                      "value": 2
+                    },
+                    {
+                      "kind": "value",
+                      "param": "n",
+                      "op": "lt",
+                      "value": 10
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "dsl": "model\n  schema 1.1\ntype user\ntype doc\n  relations\n    define viewer: [user with nested]\n    define can_read: viewer\ncondition nested(tier: string, n: int) {\n  tier == \"gold\" || (n > 2 && n < 10)\n}"
+    },
+    {
+      "name": "resource-no-relations",
+      "ir": {
+        "schemaVersion": "1.1",
+        "groups": [],
+        "resources": [
+          {
+            "name": "ping",
+            "parents": [],
+            "roles": [],
+            "permissions": []
+          },
+          {
+            "name": "doc",
+            "parents": [],
+            "roles": [
+              {
+                "name": "viewer",
+                "assignableBy": [
+                  {
+                    "kind": "user"
+                  }
+                ]
+              }
+            ],
+            "permissions": [
+              {
+                "name": "read",
+                "grantedByRoles": ["viewer"],
+                "inheritFromParents": []
+              }
+            ]
+          }
+        ]
+      },
+      "dsl": "model\n  schema 1.1\ntype user\ntype ping\ntype doc\n  relations\n    define viewer: [user]\n    define can_read: viewer"
+    }
+  ]
+}

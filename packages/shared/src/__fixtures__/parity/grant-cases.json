@@ -1,0 +1,967 @@
+{
+  "models": {
+    "docFolderTeam": {
+      "schemaVersion": "1.1",
+      "groups": [
+        {
+          "name": "team",
+          "memberTypes": [
+            {
+              "kind": "user"
+            },
+            {
+              "kind": "group",
+              "group": "team",
+              "relation": "member"
+            }
+          ]
+        }
+      ],
+      "resources": [
+        {
+          "name": "folder",
+          "parents": [],
+          "roles": [
+            {
+              "name": "owner",
+              "assignableBy": [
+                {
+                  "kind": "user"
+                },
+                {
+                  "kind": "group",
+                  "group": "team",
+                  "relation": "member"
+                }
+              ]
+            },
+            {
+              "name": "editor",
+              "assignableBy": [
+                {
+                  "kind": "user"
+                },
+                {
+                  "kind": "group",
+                  "group": "team",
+                  "relation": "member"
+                }
+              ]
+            },
+            {
+              "name": "viewer",
+              "assignableBy": [
+                {
+                  "kind": "user"
+                },
+                {
+                  "kind": "group",
+                  "group": "team",
+                  "relation": "member"
+                }
+              ]
+            }
+          ],
+          "permissions": [
+            {
+              "name": "read",
+              "grantedByRoles": ["viewer", "editor", "owner"],
+              "inheritFromParents": []
+            }
+          ]
+        },
+        {
+          "name": "document",
+          "parents": [
+            {
+              "relationName": "parent",
+              "parentTypes": ["folder"]
+            }
+          ],
+          "roles": [
+            {
+              "name": "owner",
+              "assignableBy": [
+                {
+                  "kind": "user"
+                },
+                {
+                  "kind": "group",
+                  "group": "team",
+                  "relation": "member"
+                }
+              ]
+            },
+            {
+              "name": "editor",
+              "assignableBy": [
+                {
+                  "kind": "user"
+                },
+                {
+                  "kind": "group",
+                  "group": "team",
+                  "relation": "member"
+                }
+              ]
+            },
+            {
+              "name": "viewer",
+              "assignableBy": [
+                {
+                  "kind": "user"
+                },
+                {
+                  "kind": "group",
+                  "group": "team",
+                  "relation": "member"
+                }
+              ]
+            }
+          ],
+          "permissions": [
+            {
+              "name": "read",
+              "grantedByRoles": ["viewer", "editor", "owner"],
+              "inheritFromParents": ["parent"]
+            }
+          ]
+        }
+      ]
+    },
+    "conditioned": {
+      "schemaVersion": "1.1",
+      "groups": [
+        {
+          "name": "team",
+          "memberTypes": [
+            {
+              "kind": "user"
+            }
+          ]
+        }
+      ],
+      "resources": [
+        {
+          "name": "document",
+          "parents": [],
+          "roles": [
+            {
+              "name": "editor",
+              "assignableBy": [
+                {
+                  "kind": "user",
+                  "condition": "expiry"
+                },
+                {
+                  "kind": "group",
+                  "group": "team",
+                  "relation": "member"
+                }
+              ]
+            },
+            {
+              "name": "viewer",
+              "assignableBy": [
+                {
+                  "kind": "user"
+                },
+                {
+                  "kind": "user",
+                  "condition": "expiry"
+                }
+              ]
+            }
+          ],
+          "permissions": [
+            {
+              "name": "read",
+              "grantedByRoles": ["editor", "viewer"],
+              "inheritFromParents": []
+            }
+          ]
+        }
+      ],
+      "conditions": [
+        {
+          "name": "expiry",
+          "params": [
+            {
+              "name": "now",
+              "type": "timestamp"
+            }
+          ],
+          "tree": {
+            "kind": "time",
+            "param": "now",
+            "op": "lt",
+            "rhs": {
+              "kind": "literal",
+              "rfc3339": "2030-01-01T00:00:00Z"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "validateGrant": [
+    {
+      "name": "user-role-ok",
+      "model": "docFolderTeam",
+      "req": {
+        "subject": {
+          "type": "user",
+          "id": "alice"
+        },
+        "relation": "editor",
+        "resource": {
+          "type": "document",
+          "id": "readme"
+        }
+      },
+      "ok": true,
+      "code": "",
+      "message": ""
+    },
+    {
+      "name": "userset-role-ok",
+      "model": "docFolderTeam",
+      "req": {
+        "subject": {
+          "type": "team",
+          "id": "eng",
+          "relation": "member"
+        },
+        "relation": "editor",
+        "resource": {
+          "type": "document",
+          "id": "readme"
+        }
+      },
+      "ok": true,
+      "code": "",
+      "message": ""
+    },
+    {
+      "name": "user-group-member-ok",
+      "model": "docFolderTeam",
+      "req": {
+        "subject": {
+          "type": "user",
+          "id": "alice"
+        },
+        "relation": "member",
+        "resource": {
+          "type": "team",
+          "id": "eng"
+        }
+      },
+      "ok": true,
+      "code": "",
+      "message": ""
+    },
+    {
+      "name": "permission-relation-not-assignable",
+      "model": "docFolderTeam",
+      "req": {
+        "subject": {
+          "type": "user",
+          "id": "alice"
+        },
+        "relation": "read",
+        "resource": {
+          "type": "document",
+          "id": "readme"
+        }
+      },
+      "ok": false,
+      "code": "relation_not_assignable",
+      "message": "relation \"read\" is not a directly-assignable role/membership on type \"document\""
+    },
+    {
+      "name": "parent-relation-not-assignable",
+      "model": "docFolderTeam",
+      "req": {
+        "subject": {
+          "type": "folder",
+          "id": "f1"
+        },
+        "relation": "parent",
+        "resource": {
+          "type": "document",
+          "id": "readme"
+        }
+      },
+      "ok": false,
+      "code": "relation_not_assignable",
+      "message": "relation \"parent\" is not a directly-assignable role/membership on type \"document\""
+    },
+    {
+      "name": "unknown-resource-type",
+      "model": "docFolderTeam",
+      "req": {
+        "subject": {
+          "type": "user",
+          "id": "alice"
+        },
+        "relation": "editor",
+        "resource": {
+          "type": "widget",
+          "id": "x"
+        }
+      },
+      "ok": false,
+      "code": "relation_not_assignable",
+      "message": "relation \"editor\" is not a directly-assignable role/membership on type \"widget\""
+    },
+    {
+      "name": "bare-non-user-subject",
+      "model": "docFolderTeam",
+      "req": {
+        "subject": {
+          "type": "team",
+          "id": "eng"
+        },
+        "relation": "editor",
+        "resource": {
+          "type": "document",
+          "id": "readme"
+        }
+      },
+      "ok": false,
+      "code": "subject_type_not_allowed",
+      "message": "subject \"team:eng\" type is not allowed for relation \"editor\" on \"document\""
+    },
+    {
+      "name": "userset-non-member-relation",
+      "model": "docFolderTeam",
+      "req": {
+        "subject": {
+          "type": "team",
+          "id": "eng",
+          "relation": "owner"
+        },
+        "relation": "editor",
+        "resource": {
+          "type": "document",
+          "id": "readme"
+        }
+      },
+      "ok": false,
+      "code": "subject_type_not_allowed",
+      "message": "subject \"team:eng#owner\" type is not allowed for relation \"editor\" on \"document\""
+    },
+    {
+      "name": "malformed-empty-id",
+      "model": "docFolderTeam",
+      "req": {
+        "subject": {
+          "type": "user",
+          "id": ""
+        },
+        "relation": "editor",
+        "resource": {
+          "type": "document",
+          "id": "readme"
+        }
+      },
+      "ok": false,
+      "code": "malformed_request",
+      "message": "invalid subject.id \"\""
+    },
+    {
+      "name": "malformed-forbidden-char",
+      "model": "docFolderTeam",
+      "req": {
+        "subject": {
+          "type": "user",
+          "id": "a#b"
+        },
+        "relation": "editor",
+        "resource": {
+          "type": "document",
+          "id": "readme"
+        }
+      },
+      "ok": false,
+      "code": "malformed_request",
+      "message": "invalid subject.id \"a#b\""
+    },
+    {
+      "name": "malformed-whitespace-resource-id",
+      "model": "docFolderTeam",
+      "req": {
+        "subject": {
+          "type": "user",
+          "id": "alice"
+        },
+        "relation": "editor",
+        "resource": {
+          "type": "document",
+          "id": "a b"
+        }
+      },
+      "ok": false,
+      "code": "malformed_request",
+      "message": "invalid resource.id \"a b\""
+    },
+    {
+      "name": "malformed-non-ident-relation",
+      "model": "docFolderTeam",
+      "req": {
+        "subject": {
+          "type": "user",
+          "id": "alice"
+        },
+        "relation": "can-read",
+        "resource": {
+          "type": "document",
+          "id": "readme"
+        }
+      },
+      "ok": false,
+      "code": "malformed_request",
+      "message": "invalid relation \"can-read\""
+    },
+    {
+      "name": "condition-required",
+      "model": "conditioned",
+      "req": {
+        "subject": {
+          "type": "user",
+          "id": "a"
+        },
+        "relation": "editor",
+        "resource": {
+          "type": "document",
+          "id": "readme"
+        }
+      },
+      "ok": false,
+      "code": "condition_required",
+      "message": "relation \"editor\" requires a condition for this subject type"
+    },
+    {
+      "name": "conditionless-userset-ok",
+      "model": "conditioned",
+      "req": {
+        "subject": {
+          "type": "team",
+          "id": "eng",
+          "relation": "member"
+        },
+        "relation": "editor",
+        "resource": {
+          "type": "document",
+          "id": "readme"
+        }
+      },
+      "ok": true,
+      "code": "",
+      "message": ""
+    },
+    {
+      "name": "permitted-condition-ok",
+      "model": "conditioned",
+      "req": {
+        "subject": {
+          "type": "user",
+          "id": "a"
+        },
+        "relation": "editor",
+        "resource": {
+          "type": "document",
+          "id": "readme"
+        },
+        "condition": {
+          "name": "expiry"
+        }
+      },
+      "ok": true,
+      "code": "",
+      "message": ""
+    },
+    {
+      "name": "unknown-condition",
+      "model": "conditioned",
+      "req": {
+        "subject": {
+          "type": "user",
+          "id": "a"
+        },
+        "relation": "editor",
+        "resource": {
+          "type": "document",
+          "id": "readme"
+        },
+        "condition": {
+          "name": "nope"
+        }
+      },
+      "ok": false,
+      "code": "unknown_condition",
+      "message": "unknown condition \"nope\""
+    },
+    {
+      "name": "condition-not-permitted",
+      "model": "conditioned",
+      "req": {
+        "subject": {
+          "type": "team",
+          "id": "eng",
+          "relation": "member"
+        },
+        "relation": "editor",
+        "resource": {
+          "type": "document",
+          "id": "readme"
+        },
+        "condition": {
+          "name": "expiry"
+        }
+      },
+      "ok": false,
+      "code": "condition_not_permitted",
+      "message": "condition \"expiry\" is not attached to relation \"editor\" for this subject type"
+    },
+    {
+      "name": "viewer-conditionless-ok",
+      "model": "conditioned",
+      "req": {
+        "subject": {
+          "type": "user",
+          "id": "a"
+        },
+        "relation": "viewer",
+        "resource": {
+          "type": "document",
+          "id": "readme"
+        }
+      },
+      "ok": true,
+      "code": "",
+      "message": ""
+    },
+    {
+      "name": "viewer-conditioned-ok",
+      "model": "conditioned",
+      "req": {
+        "subject": {
+          "type": "user",
+          "id": "a"
+        },
+        "relation": "viewer",
+        "resource": {
+          "type": "document",
+          "id": "readme"
+        },
+        "condition": {
+          "name": "expiry"
+        }
+      },
+      "ok": true,
+      "code": "",
+      "message": ""
+    },
+    {
+      "name": "malformed-condition-name",
+      "model": "conditioned",
+      "req": {
+        "subject": {
+          "type": "user",
+          "id": "a"
+        },
+        "relation": "editor",
+        "resource": {
+          "type": "document",
+          "id": "readme"
+        },
+        "condition": {
+          "name": "bad-name"
+        }
+      },
+      "ok": false,
+      "code": "malformed_request",
+      "message": "invalid condition name \"bad-name\""
+    }
+  ],
+  "validateRevoke": [
+    {
+      "name": "revoke-condition-only-ok",
+      "model": "conditioned",
+      "req": {
+        "subject": {
+          "type": "user",
+          "id": "a"
+        },
+        "relation": "editor",
+        "resource": {
+          "type": "document",
+          "id": "r"
+        }
+      },
+      "ok": true,
+      "code": "",
+      "message": ""
+    },
+    {
+      "name": "revoke-non-assignable",
+      "model": "docFolderTeam",
+      "req": {
+        "subject": {
+          "type": "user",
+          "id": "a"
+        },
+        "relation": "read",
+        "resource": {
+          "type": "document",
+          "id": "r"
+        }
+      },
+      "ok": false,
+      "code": "relation_not_assignable",
+      "message": "relation \"read\" is not a directly-assignable role/membership on type \"document\""
+    },
+    {
+      "name": "revoke-userset-ok",
+      "model": "docFolderTeam",
+      "req": {
+        "subject": {
+          "type": "team",
+          "id": "eng",
+          "relation": "member"
+        },
+        "relation": "viewer",
+        "resource": {
+          "type": "folder",
+          "id": "f"
+        }
+      },
+      "ok": true,
+      "code": "",
+      "message": ""
+    }
+  ],
+  "isAssignable": [
+    {
+      "name": "role",
+      "model": "docFolderTeam",
+      "type": "document",
+      "relation": "editor",
+      "expect": true
+    },
+    {
+      "name": "group-member",
+      "model": "docFolderTeam",
+      "type": "team",
+      "relation": "member",
+      "expect": true
+    },
+    {
+      "name": "permission-not",
+      "model": "docFolderTeam",
+      "type": "document",
+      "relation": "read",
+      "expect": false
+    },
+    {
+      "name": "parent-not",
+      "model": "docFolderTeam",
+      "type": "document",
+      "relation": "parent",
+      "expect": false
+    },
+    {
+      "name": "group-non-member",
+      "model": "docFolderTeam",
+      "type": "team",
+      "relation": "owner",
+      "expect": false
+    },
+    {
+      "name": "unknown-type",
+      "model": "docFolderTeam",
+      "type": "widget",
+      "relation": "x",
+      "expect": false
+    }
+  ],
+  "subjectToUser": [
+    {
+      "name": "user",
+      "subject": {
+        "type": "user",
+        "id": "alice"
+      },
+      "expect": "user:alice"
+    },
+    {
+      "name": "userset",
+      "subject": {
+        "type": "team",
+        "id": "eng",
+        "relation": "member"
+      },
+      "expect": "team:eng#member"
+    }
+  ],
+  "grantTupleKey": [
+    {
+      "name": "no-condition",
+      "req": {
+        "subject": {
+          "type": "user",
+          "id": "alice"
+        },
+        "relation": "editor",
+        "resource": {
+          "type": "document",
+          "id": "readme"
+        }
+      },
+      "expect": {
+        "user": "user:alice",
+        "relation": "editor",
+        "object": "document:readme"
+      }
+    },
+    {
+      "name": "with-condition-context",
+      "req": {
+        "subject": {
+          "type": "user",
+          "id": "alice"
+        },
+        "relation": "editor",
+        "resource": {
+          "type": "document",
+          "id": "readme"
+        },
+        "condition": {
+          "name": "expiry",
+          "context": {
+            "now": "2025-01-01T00:00:00Z"
+          }
+        }
+      },
+      "expect": {
+        "user": "user:alice",
+        "relation": "editor",
+        "object": "document:readme",
+        "condition": {
+          "name": "expiry",
+          "context": {
+            "now": "2025-01-01T00:00:00Z"
+          }
+        }
+      }
+    },
+    {
+      "name": "with-condition-no-context",
+      "req": {
+        "subject": {
+          "type": "user",
+          "id": "alice"
+        },
+        "relation": "editor",
+        "resource": {
+          "type": "document",
+          "id": "readme"
+        },
+        "condition": {
+          "name": "expiry"
+        }
+      },
+      "expect": {
+        "user": "user:alice",
+        "relation": "editor",
+        "object": "document:readme",
+        "condition": {
+          "name": "expiry"
+        }
+      }
+    },
+    {
+      "name": "userset",
+      "req": {
+        "subject": {
+          "type": "team",
+          "id": "eng",
+          "relation": "member"
+        },
+        "relation": "viewer",
+        "resource": {
+          "type": "document",
+          "id": "readme"
+        }
+      },
+      "expect": {
+        "user": "team:eng#member",
+        "relation": "viewer",
+        "object": "document:readme"
+      }
+    }
+  ],
+  "revokeTupleKey": [
+    {
+      "name": "userset",
+      "req": {
+        "subject": {
+          "type": "team",
+          "id": "eng",
+          "relation": "member"
+        },
+        "relation": "viewer",
+        "resource": {
+          "type": "folder",
+          "id": "f"
+        }
+      },
+      "expect": {
+        "user": "team:eng#member",
+        "relation": "viewer",
+        "object": "folder:f"
+      }
+    },
+    {
+      "name": "user",
+      "req": {
+        "subject": {
+          "type": "user",
+          "id": "alice"
+        },
+        "relation": "editor",
+        "resource": {
+          "type": "document",
+          "id": "readme"
+        }
+      },
+      "expect": {
+        "user": "user:alice",
+        "relation": "editor",
+        "object": "document:readme"
+      }
+    }
+  ],
+  "parseResourceRef": [
+    {
+      "name": "valid",
+      "input": "document:readme",
+      "expect": {
+        "type": "document",
+        "id": "readme"
+      }
+    },
+    {
+      "name": "no-colon",
+      "input": "document",
+      "expect": null
+    },
+    {
+      "name": "colon-at-start",
+      "input": ":x",
+      "expect": null
+    },
+    {
+      "name": "bad-type",
+      "input": "do-c:readme",
+      "expect": null
+    },
+    {
+      "name": "empty-id",
+      "input": "document:",
+      "expect": null
+    },
+    {
+      "name": "forbidden-char-id",
+      "input": "document:a b",
+      "expect": null
+    },
+    {
+      "name": "hash-in-id-forbidden",
+      "input": "document:a#b",
+      "expect": null
+    }
+  ],
+  "parseGrantSubject": [
+    {
+      "name": "user",
+      "input": "user:alice",
+      "expect": {
+        "type": "user",
+        "id": "alice"
+      }
+    },
+    {
+      "name": "userset",
+      "input": "team:eng#member",
+      "expect": {
+        "type": "team",
+        "id": "eng",
+        "relation": "member"
+      }
+    },
+    {
+      "name": "userset-bad-relation",
+      "input": "team:eng#has space",
+      "expect": null
+    },
+    {
+      "name": "invalid-object",
+      "input": "nope",
+      "expect": null
+    },
+    {
+      "name": "userset-empty-relation",
+      "input": "team:eng#",
+      "expect": null
+    }
+  ],
+  "marshal": [
+    {
+      "name": "grantsubject-user",
+      "type": "GrantSubject",
+      "json": "{\"type\":\"user\",\"id\":\"alice\"}"
+    },
+    {
+      "name": "grantsubject-userset",
+      "type": "GrantSubject",
+      "json": "{\"type\":\"team\",\"id\":\"eng\",\"relation\":\"member\"}"
+    },
+    {
+      "name": "grantcondition-min",
+      "type": "GrantCondition",
+      "json": "{\"name\":\"expiry\"}"
+    },
+    {
+      "name": "grantcondition-context",
+      "type": "GrantCondition",
+      "json": "{\"name\":\"expiry\",\"context\":{\"now\":\"2025-01-01T00:00:00Z\"}}"
+    },
+    {
+      "name": "grantentry-min",
+      "type": "GrantEntry",
+      "json": "{\"subject\":{\"type\":\"user\",\"id\":\"alice\"},\"relation\":\"editor\",\"resource\":{\"type\":\"document\",\"id\":\"readme\"}}"
+    },
+    {
+      "name": "grantentry-cond",
+      "type": "GrantEntry",
+      "json": "{\"subject\":{\"type\":\"team\",\"id\":\"eng\",\"relation\":\"member\"},\"relation\":\"editor\",\"resource\":{\"type\":\"document\",\"id\":\"readme\"},\"condition\":{\"name\":\"expiry\"}}"
+    },
+    {
+      "name": "granttuplekey-min",
+      "type": "GrantTupleKey",
+      "json": "{\"user\":\"user:alice\",\"relation\":\"editor\",\"object\":\"document:readme\"}"
+    },
+    {
+      "name": "granttuplekey-cond",
+      "type": "GrantTupleKey",
+      "json": "{\"user\":\"user:alice\",\"relation\":\"editor\",\"object\":\"document:readme\",\"condition\":{\"name\":\"expiry\",\"context\":{\"now\":\"2025-01-01T00:00:00Z\"}}}"
+    },
+    {
+      "name": "tupleref",
+      "type": "TupleRef",
+      "json": "{\"user\":\"team:eng#member\",\"relation\":\"viewer\",\"object\":\"folder:f\"}"
+    }
+  ]
+}

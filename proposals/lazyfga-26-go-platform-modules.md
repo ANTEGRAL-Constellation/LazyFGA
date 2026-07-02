@@ -1,10 +1,10 @@
 # Go Platform Modules: tokens, audit, idp - Spec Proposal
 
-| Item      | Detail       |
-| --------- | ------------ |
-| Author    | Seonguk Moon |
-| Created   | 2026-07-02   |
-| Status    | **Implemented** |
+| Item      | Detail                                 |
+| --------- | -------------------------------------- |
+| Author    | Seonguk Moon                           |
+| Created   | 2026-07-02                             |
+| Status    | **Implemented**                        |
 | Reviewers | Claude (review agent), Codex (gpt-5.5) |
 
 ---
@@ -132,12 +132,12 @@ As enumerated per route above, byte-compatible bodies (`{"error": ...}`, webhook
 
 ### 6-1. Milestones
 
-| Phase   | Task                                                                                       | Estimated Duration | Owner        |
+| Phase   | Task                                                                                         | Estimated Duration | Owner        |
 | ------- | -------------------------------------------------------------------------------------------- | ------------------ | ------------ |
-| Phase 1 | tokens routes/repo + audit recorder/repo/route/cursor + tests                                 | 0.3 day            | Seonguk Moon |
-| Phase 2 | idp signature + extraction + presets engines + exhaustive table tests (ported TS test cases)  | 0.3 day            | Seonguk Moon |
-| Phase 3 | idp mapping engine + repo + tests                                                             | 0.2 day            | Seonguk Moon |
-| Phase 4 | idp routes (webhook + CRUD) + httptest matrices                                               | 0.2 day            | Seonguk Moon |
+| Phase 1 | tokens routes/repo + audit recorder/repo/route/cursor + tests                                | 0.3 day            | Seonguk Moon |
+| Phase 2 | idp signature + extraction + presets engines + exhaustive table tests (ported TS test cases) | 0.3 day            | Seonguk Moon |
+| Phase 3 | idp mapping engine + repo + tests                                                            | 0.2 day            | Seonguk Moon |
+| Phase 4 | idp routes (webhook + CRUD) + httptest matrices                                              | 0.2 day            | Seonguk Moon |
 
 One SSH-signed conventional commit at the end, Claude+Codex parallel review before commit.
 

@@ -1,10 +1,10 @@
 # Go Core Modules: model, policy, pdp, grants - Spec Proposal
 
-| Item      | Detail       |
-| --------- | ------------ |
-| Author    | Seonguk Moon |
-| Created   | 2026-07-02   |
-| Status    | **Implemented** |
+| Item      | Detail                                 |
+| --------- | -------------------------------------- |
+| Author    | Seonguk Moon                           |
+| Created   | 2026-07-02                             |
+| Status    | **Implemented**                        |
 | Reviewers | Claude (review agent), Codex (gpt-5.5) |
 
 ---
@@ -33,7 +33,7 @@ Governed by LFGA-22. Depends on LFGA-23 + LFGA-24. Runs in parallel with LFGA-26
 
 ### 3.2 Non-Goals
 
-- [ ] No `/tokens`, `/audit`, `/idp` (LFGA-26) — but this proposal *consumes* `audit.Record` (fire-and-forget) via a narrow interface defined in the foundation so the two proposals stay parallel-implementable (see 4.3 "audit seam").
+- [ ] No `/tokens`, `/audit`, `/idp` (LFGA-26) — but this proposal _consumes_ `audit.Record` (fire-and-forget) via a narrow interface defined in the foundation so the two proposals stay parallel-implementable (see 4.3 "audit seam").
 - [ ] No behavior changes, no new routes, no schema changes.
 
 ## 4. Technical Design
@@ -127,12 +127,12 @@ As enumerated per route above; identical bodies to TS (`{"error": ...}` with opt
 
 ### 6-1. Milestones
 
-| Phase   | Task                                                                                  | Estimated Duration | Owner        |
-| ------- | -------------------------------------------------------------------------------------- | ------------------ | ------------ |
-| Phase 1 | model: repo + diff + service + routes + tests                                          | 0.3 day            | Seonguk Moon |
-| Phase 2 | policy: repo + service + routes + tests                                                | 0.2 day            | Seonguk Moon |
-| Phase 3 | pdp: evaluator + reason engine + route + tests (fake deps, every truncation branch)    | 0.3 day            | Seonguk Moon |
-| Phase 4 | permission: service + routes + tests (idempotency/transient matrices, list fan-out)    | 0.2 day            | Seonguk Moon |
+| Phase   | Task                                                                                | Estimated Duration | Owner        |
+| ------- | ----------------------------------------------------------------------------------- | ------------------ | ------------ |
+| Phase 1 | model: repo + diff + service + routes + tests                                       | 0.3 day            | Seonguk Moon |
+| Phase 2 | policy: repo + service + routes + tests                                             | 0.2 day            | Seonguk Moon |
+| Phase 3 | pdp: evaluator + reason engine + route + tests (fake deps, every truncation branch) | 0.3 day            | Seonguk Moon |
+| Phase 4 | permission: service + routes + tests (idempotency/transient matrices, list fan-out) | 0.2 day            | Seonguk Moon |
 
 One SSH-signed conventional commit at the end, Claude+Codex parallel review before commit.
 

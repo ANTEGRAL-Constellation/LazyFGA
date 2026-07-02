@@ -1,10 +1,10 @@
 # Go Backend Migration — Master Plan - Spec Proposal
 
-| Item      | Detail       |
-| --------- | ------------ |
-| Author    | Seonguk Moon |
-| Created   | 2026-07-02   |
-| Status    | **Implemented** |
+| Item      | Detail                                 |
+| --------- | -------------------------------------- |
+| Author    | Seonguk Moon                           |
+| Created   | 2026-07-02                             |
+| Status    | **Implemented**                        |
 | Reviewers | Claude (review agent), Codex (gpt-5.5) |
 
 ---
@@ -141,16 +141,16 @@ Everything not listed here must be byte/status-identical to the TS backend. Each
 
 **No externally visible API changes.** The complete route surface below is ported verbatim (method, path, auth role, request/response JSON, status codes). The normative behavior spec for each route is the current TS implementation plus its proposal (LFGA-7/8/9/10/11/14/15/17/20/21); each sub-proposal carries the exact route list it owns.
 
-| Mount        | Routes (summary)                                                             | Auth              | Sub-proposal |
-| ------------ | ---------------------------------------------------------------------------- | ----------------- | ------------ |
-| `/healthz`   | GET liveness/readiness (db, openfga, storeReady)                              | public            | LFGA-23      |
-| `/model`     | validate, publish, versions list/get, diff, current                           | admin             | LFGA-25      |
-| `/policies`  | CRUD for named policies                                                       | admin             | LFGA-25      |
-| `/access/v1` | AuthZEN evaluation (decision + reason context)                                | service \| admin  | LFGA-25      |
-| `/grants`    | structural grant/revoke/list                                                  | admin             | LFGA-25      |
-| `/tokens`    | service token issue/list/revoke                                               | admin             | LFGA-26      |
-| `/audit`     | audit log query (keyset pagination)                                           | admin             | LFGA-26      |
-| `/idp`       | webhook receive (HMAC signature auth) + connection/mapping-rule CRUD          | signature / admin | LFGA-26      |
+| Mount        | Routes (summary)                                                     | Auth              | Sub-proposal |
+| ------------ | -------------------------------------------------------------------- | ----------------- | ------------ |
+| `/healthz`   | GET liveness/readiness (db, openfga, storeReady)                     | public            | LFGA-23      |
+| `/model`     | validate, publish, versions list/get, diff, current                  | admin             | LFGA-25      |
+| `/policies`  | CRUD for named policies                                              | admin             | LFGA-25      |
+| `/access/v1` | AuthZEN evaluation (decision + reason context)                       | service \| admin  | LFGA-25      |
+| `/grants`    | structural grant/revoke/list                                         | admin             | LFGA-25      |
+| `/tokens`    | service token issue/list/revoke                                      | admin             | LFGA-26      |
+| `/audit`     | audit log query (keyset pagination)                                  | admin             | LFGA-26      |
+| `/idp`       | webhook receive (HMAC signature auth) + connection/mapping-rule CRUD | signature / admin | LFGA-26      |
 
 Internal (non-HTTP) surfaces ported: compiler API (`compileIrToDsl`/`conditionToCel` — Go: `compiler.CompileIRToDSL`/`compiler.ConditionToCel`; `dsl-to-ir`/`coverage` stay TS/web-only), contract validation functions, idp signature/extraction/mapping engines, demo/seed CLIs.
 
@@ -158,17 +158,17 @@ Internal (non-HTTP) surfaces ported: compiler API (`compileIrToDsl`/`conditionTo
 
 Unchanged from the current backend, now guaranteed by handler tests per branch:
 
-| Status Code | Description                                                                    |
-| ----------- | ------------------------------------------------------------------------------ |
-| 400         | validation failure (contract violation, unsupported IR/DSL, bad condition)     |
-| 401         | missing/invalid bearer token; invalid webhook signature                        |
-| 403         | authenticated but role not allowed                                             |
-| 404         | unknown resource (policy, version, connection, rule…)                          |
-| 409         | conflict (duplicate policy key, …) where the TS backend returns it today       |
-| 422         | semantically invalid but well-formed input where the TS backend returns it     |
-| 502         | transient OpenFGA failure (after classification), surfaced as upstream error   |
-| 503         | `/healthz` degraded (dependency down or store not ready)                       |
-| 500         | unexpected internal error (infrastructure failures are never masked as 401)    |
+| Status Code | Description                                                                  |
+| ----------- | ---------------------------------------------------------------------------- |
+| 400         | validation failure (contract violation, unsupported IR/DSL, bad condition)   |
+| 401         | missing/invalid bearer token; invalid webhook signature                      |
+| 403         | authenticated but role not allowed                                           |
+| 404         | unknown resource (policy, version, connection, rule…)                        |
+| 409         | conflict (duplicate policy key, …) where the TS backend returns it today     |
+| 422         | semantically invalid but well-formed input where the TS backend returns it   |
+| 502         | transient OpenFGA failure (after classification), surfaced as upstream error |
+| 503         | `/healthz` degraded (dependency down or store not ready)                     |
+| 500         | unexpected internal error (infrastructure failures are never masked as 401)  |
 
 (The authoritative per-route matrix is enumerated in each sub-proposal; parity is verified by porting the existing route tests and extending them.)
 
@@ -178,13 +178,13 @@ Unchanged from the current backend, now guaranteed by handler tests per branch:
 
 Each phase = one sub-proposal, implemented under Proposal-Driven Development with mandatory Claude+Codex parallel review and an SSH-signed conventional commit per phase. ∥ marks phases implemented in parallel.
 
-| Phase             | Task                                                                                                              | Estimated Duration | Owner        |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------ | ------------ |
-| Phase 1 (LFGA-23) | Go foundation: module scaffold, config, slog, chi server, auth middleware, pgx + drizzle-compatible migrator, OpenFGA gateway + write-error, healthz, bootstrap/degraded mode | 1 day              | Seonguk Moon |
+| Phase                | Task                                                                                                                                                                                                                   | Estimated Duration | Owner        |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ------------ |
+| Phase 1 (LFGA-23)    | Go foundation: module scaffold, config, slog, chi server, auth middleware, pgx + drizzle-compatible migrator, OpenFGA gateway + write-error, healthz, bootstrap/degraded mode                                          | 1 day              | Seonguk Moon |
 | Phase 1′ (LFGA-24) ∥ | Contracts + compiler port: `internal/contract` (model/ident/condition/authzen/policy/reason/audit/grant + validation), `internal/compiler` (ir-to-dsl, condition-to-cel), golden fixture corpus + TS/Go parity harness | 1 day              | Seonguk Moon |
-| Phase 2 (LFGA-25) | Core modules: model (validate/publish/versions/diff), policy CRUD, pdp evaluate + reason engine, grants            | 1 day              | Seonguk Moon |
-| Phase 2′ (LFGA-26) ∥ | Platform modules: service tokens, audit log, idp framework (signature, extraction, presets, mapping engine, webhook + CRUD) | 1 day              | Seonguk Moon |
-| Phase 3 (LFGA-27) | Cutover: demo/seed CLIs, Dockerfile, compose, CI rewrite + coverage gate + parity job, docs, TS api removal, E2E (compose up + demo + web against Go) | 1 day              | Seonguk Moon |
+| Phase 2 (LFGA-25)    | Core modules: model (validate/publish/versions/diff), policy CRUD, pdp evaluate + reason engine, grants                                                                                                                | 1 day              | Seonguk Moon |
+| Phase 2′ (LFGA-26) ∥ | Platform modules: service tokens, audit log, idp framework (signature, extraction, presets, mapping engine, webhook + CRUD)                                                                                            | 1 day              | Seonguk Moon |
+| Phase 3 (LFGA-27)    | Cutover: demo/seed CLIs, Dockerfile, compose, CI rewrite + coverage gate + parity job, docs, TS api removal, E2E (compose up + demo + web against Go)                                                                  | 1 day              | Seonguk Moon |
 
 Dependency rule: Phase 2/2′ require Phase 1 **and** 1′ merged. Phase 3 requires all prior phases. Within a wave, parallel implementations run in isolated worktrees and merge sequentially (rebase, full test run before each merge).
 

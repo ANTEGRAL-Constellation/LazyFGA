@@ -1,10 +1,10 @@
 # Go Contracts & Compiler Port - Spec Proposal
 
-| Item      | Detail       |
-| --------- | ------------ |
-| Author    | Seonguk Moon |
-| Created   | 2026-07-02   |
-| Status    | **Implemented** |
+| Item      | Detail                                 |
+| --------- | -------------------------------------- |
+| Author    | Seonguk Moon                           |
+| Created   | 2026-07-02                             |
+| Status    | **Implemented**                        |
 | Reviewers | Claude (review agent), Codex (gpt-5.5) |
 
 ---
@@ -141,25 +141,25 @@ func compiler.ConditionToCel(def *contract.ConditionDef) (decl string, cel strin
 
 No HTTP status codes (library layer). Error taxonomy:
 
-| Error                         | Meaning / consumer                                                        |
-| ----------------------------- | ------------------------------------------------------------------------- |
-| `[]Issue` (decode)            | shape violation; LFGA-25 maps to 422 `{"error":"invalid IR shape",issues}` |
-| `[]ValidationError`           | semantic IR violation; LFGA-25 maps to 422 `{validation: [...]}`           |
-| `[]ConditionError`            | promoted into ValidationError by ValidateModelIR (same as TS)               |
-| `GrantValidation{ok:false}`   | LFGA-25 maps code→400 with `{error, code}`                                  |
-| `CompileError(IR_INVALID)`    | defensive re-validation failed; LFGA-25 maps to 422                         |
-| `CompileError(JSON_TRANSFORM_FAILED)` | official transformer rejected emitted DSL; LFGA-25 maps to 422      |
+| Error                                 | Meaning / consumer                                                         |
+| ------------------------------------- | -------------------------------------------------------------------------- |
+| `[]Issue` (decode)                    | shape violation; LFGA-25 maps to 422 `{"error":"invalid IR shape",issues}` |
+| `[]ValidationError`                   | semantic IR violation; LFGA-25 maps to 422 `{validation: [...]}`           |
+| `[]ConditionError`                    | promoted into ValidationError by ValidateModelIR (same as TS)              |
+| `GrantValidation{ok:false}`           | LFGA-25 maps code→400 with `{error, code}`                                 |
+| `CompileError(IR_INVALID)`            | defensive re-validation failed; LFGA-25 maps to 422                        |
+| `CompileError(JSON_TRANSFORM_FAILED)` | official transformer rejected emitted DSL; LFGA-25 maps to 422             |
 
 ## 6. Implementation Plan
 
 ### 6-1. Milestones
 
-| Phase   | Task                                                                                              | Estimated Duration | Owner        |
-| ------- | -------------------------------------------------------------------------------------------------- | ------------------ | ------------ |
-| Phase 1 | `internal/contract`: types + custom (un)marshalers + strict decode + ident constants + tests        | 0.3 day            | Seonguk Moon |
-| Phase 2 | Validators: ValidateModelIR, ValidateConditionDef, grant validators/parsers/tuple keys + tests      | 0.3 day            | Seonguk Moon |
-| Phase 3 | `internal/compiler`: emitter + transformer integration + ConditionToCel + cel-go check + tests      | 0.2 day            | Seonguk Moon |
-| Phase 4 | Parity corpus authoring + TS parity test + Go parity test (both green)                              | 0.2 day            | Seonguk Moon |
+| Phase   | Task                                                                                           | Estimated Duration | Owner        |
+| ------- | ---------------------------------------------------------------------------------------------- | ------------------ | ------------ |
+| Phase 1 | `internal/contract`: types + custom (un)marshalers + strict decode + ident constants + tests   | 0.3 day            | Seonguk Moon |
+| Phase 2 | Validators: ValidateModelIR, ValidateConditionDef, grant validators/parsers/tuple keys + tests | 0.3 day            | Seonguk Moon |
+| Phase 3 | `internal/compiler`: emitter + transformer integration + ConditionToCel + cel-go check + tests | 0.2 day            | Seonguk Moon |
+| Phase 4 | Parity corpus authoring + TS parity test + Go parity test (both green)                         | 0.2 day            | Seonguk Moon |
 
 One SSH-signed conventional commit at the end, Claude+Codex parallel review before commit.
 

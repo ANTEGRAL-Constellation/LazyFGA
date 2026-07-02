@@ -1,10 +1,10 @@
 # Go Cutover: CLIs, Docker, CI, Docs - Spec Proposal
 
-| Item      | Detail       |
-| --------- | ------------ |
-| Author    | Seonguk Moon |
-| Created   | 2026-07-02   |
-| Status    | **Implemented** |
+| Item      | Detail                                 |
+| --------- | -------------------------------------- |
+| Author    | Seonguk Moon                           |
+| Created   | 2026-07-02                             |
+| Status    | **Implemented**                        |
 | Reviewers | Claude (review agent), Codex (gpt-5.5) |
 
 ---
@@ -122,23 +122,23 @@ seed-zitadel-rules             # port of scripts/seed-zitadel-rules.ts
 
 ### 5-2. Error Handling
 
-| Case                                   | Result                                                             |
-| -------------------------------------- | ------------------------------------------------------------------ |
-| demo preflight: api unreachable        | exit 1 with `api not ready` message (same as TS)                    |
-| demo publish/seed HTTP failure         | exit 1 with status + body (409 on policy/connection seeds tolerated) |
-| structural tuple write non-idempotent  | warn and continue (same as TS)                                      |
-| CI coverage below 95%                  | go job fails (hard gate)                                            |
-| parity corpus divergence               | parity job fails identifying the case name                          |
+| Case                                  | Result                                                               |
+| ------------------------------------- | -------------------------------------------------------------------- |
+| demo preflight: api unreachable       | exit 1 with `api not ready` message (same as TS)                     |
+| demo publish/seed HTTP failure        | exit 1 with status + body (409 on policy/connection seeds tolerated) |
+| structural tuple write non-idempotent | warn and continue (same as TS)                                       |
+| CI coverage below 95%                 | go job fails (hard gate)                                             |
+| parity corpus divergence              | parity job fails identifying the case name                           |
 
 ## 6. Implementation Plan
 
 ### 6-1. Milestones
 
-| Phase   | Task                                                                              | Estimated Duration | Owner        |
-| ------- | ----------------------------------------------------------------------------------- | ------------------ | ------------ |
-| Phase 1 | Go CLIs (demo run/reset, seeder, zitadelsign, healthcheck mode) + tests              | 0.3 day            | Seonguk Moon |
-| Phase 2 | Dockerfile + compose switch (healthcheck, required ADMIN_TOKEN) + coverage-gate script; local compose-up verification | 0.2 day            | Seonguk Moon |
-| Phase 3 | CI rewrite (go/node/parity/license jobs); green run                                  | 0.2 day            | Seonguk Moon |
+| Phase   | Task                                                                                                                                                            | Estimated Duration | Owner        |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ------------ |
+| Phase 1 | Go CLIs (demo run/reset, seeder, zitadelsign, healthcheck mode) + tests                                                                                         | 0.3 day            | Seonguk Moon |
+| Phase 2 | Dockerfile + compose switch (healthcheck, required ADMIN_TOKEN) + coverage-gate script; local compose-up verification                                           | 0.2 day            | Seonguk Moon |
+| Phase 3 | CI rewrite (go/node/parity/license jobs); green run                                                                                                             | 0.2 day            | Seonguk Moon |
 | Phase 4 | Dual-backend parity rehearsal (contract replay + volume adoption + demo on both) → swap commit (TS api removal + move + docs + CLAUDE.md) → full E2E acceptance | 0.4 day            | Seonguk Moon |
 
 SSH-signed conventional commits per phase where meaningful (CLIs; infra; CI; swap), Claude+Codex parallel review before the swap commit.

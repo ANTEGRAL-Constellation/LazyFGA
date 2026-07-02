@@ -1,10 +1,10 @@
 # Go Foundation: Runtime, DB, OpenFGA Gateway - Spec Proposal
 
-| Item      | Detail       |
-| --------- | ------------ |
-| Author    | Seonguk Moon |
-| Created   | 2026-07-02   |
-| Status    | **Implemented** |
+| Item      | Detail                                 |
+| --------- | -------------------------------------- |
+| Author    | Seonguk Moon                           |
+| Created   | 2026-07-02                             |
+| Status    | **Implemented**                        |
 | Reviewers | Claude (review agent), Codex (gpt-5.5) |
 
 ---
@@ -160,26 +160,26 @@ func httpx.RequireRole(auth Authenticator, roles ...Role) func(http.Handler) htt
 
 ### 5-2. Error Handling
 
-| Case                                                | Result                                   |
-| --------------------------------------------------- | ---------------------------------------- |
-| Missing/invalid bearer token                        | 401 `{"error":"unauthorized"}`           |
-| Valid token, insufficient role                      | 403 `{"error":"forbidden"}`              |
-| Token lookup infra failure (DB down)                | 500 (propagated, never masked as 401)    |
-| Healthz with dependency down / store not ready      | 503 `status:"degraded"`                  |
-| Bootstrap transient failure after 8 attempts        | keep serving; healthz stays 503          |
-| Bootstrap non-transient failure (bad config/perms)  | log fatal + exit(1)                      |
-| Panic in handler                                    | 500 via recover middleware, stack logged |
+| Case                                               | Result                                   |
+| -------------------------------------------------- | ---------------------------------------- |
+| Missing/invalid bearer token                       | 401 `{"error":"unauthorized"}`           |
+| Valid token, insufficient role                     | 403 `{"error":"forbidden"}`              |
+| Token lookup infra failure (DB down)               | 500 (propagated, never masked as 401)    |
+| Healthz with dependency down / store not ready     | 503 `status:"degraded"`                  |
+| Bootstrap transient failure after 8 attempts       | keep serving; healthz stays 503          |
+| Bootstrap non-transient failure (bad config/perms) | log fatal + exit(1)                      |
+| Panic in handler                                   | 500 via recover middleware, stack logged |
 
 ## 6. Implementation Plan
 
 ### 6-1. Milestones
 
-| Phase   | Task                                                                                           | Estimated Duration | Owner        |
-| ------- | ---------------------------------------------------------------------------------------------- | ------------------ | ------------ |
-| Phase 1 | Module scaffold, config, slog, chi server shell, healthz (static parts), JSON/error helpers     | 0.25 day           | Seonguk Moon |
-| Phase 2 | db: pgxpool + drizzle-compatible migrator (embedded SQL/journal) + integration tests            | 0.25 day           | Seonguk Moon |
-| Phase 3 | openfga: Gateway impl + writeerror + fake-server tests; instance_config persistence callbacks   | 0.25 day           | Seonguk Moon |
-| Phase 4 | auth middleware + service_token repo; app.Run bootstrap/degraded/shutdown wiring + tests        | 0.25 day           | Seonguk Moon |
+| Phase   | Task                                                                                          | Estimated Duration | Owner        |
+| ------- | --------------------------------------------------------------------------------------------- | ------------------ | ------------ |
+| Phase 1 | Module scaffold, config, slog, chi server shell, healthz (static parts), JSON/error helpers   | 0.25 day           | Seonguk Moon |
+| Phase 2 | db: pgxpool + drizzle-compatible migrator (embedded SQL/journal) + integration tests          | 0.25 day           | Seonguk Moon |
+| Phase 3 | openfga: Gateway impl + writeerror + fake-server tests; instance_config persistence callbacks | 0.25 day           | Seonguk Moon |
+| Phase 4 | auth middleware + service_token repo; app.Run bootstrap/degraded/shutdown wiring + tests      | 0.25 day           | Seonguk Moon |
 
 One SSH-signed conventional commit at the end (or per phase if review demands splitting), Claude+Codex parallel review before commit.
 

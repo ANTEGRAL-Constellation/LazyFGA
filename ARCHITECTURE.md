@@ -1,6 +1,6 @@
 # lazyFGA — Architecture & Project Structure
 
-> 스택: web = Vite+React+React Flow(TypeScript, pnpm), **api = Go(chi + pgx, 모듈러 모놀리스)**, DB = Postgres, OpenFGA = 별도 컨테이너. AuthZEN 호환 PDP. (M8/LFGA-22~27에서 백엔드를 Bun/Hono/Drizzle → Go로 이관; HTTP 계약·DB 스키마·포트(8787)·env 이름은 동일. Go 백엔드는 cutover swap 전까지 `apps/api-go`, swap 후 `apps/api`.)
+> 스택: web = Vite+React+React Flow(TypeScript, pnpm), **api = Go(chi + pgx, 모듈러 모놀리스)**, DB = Postgres, OpenFGA = 별도 컨테이너. AuthZEN 호환 PDP. (M8/LFGA-22~27에서 백엔드를 Bun/Hono/Drizzle → Go로 이관; HTTP 계약·DB 스키마·포트(8787)·env 이름은 동일. Go 백엔드는 cutover swap 전까지 `apps/api`, swap 후 `apps/api`.)
 
 ---
 
@@ -34,7 +34,7 @@ lazyfga/
 │  │     ├─ playground/         # "alice가 doc1 read?" inline 테스트
 │  │     └─ audit/              # 변경 로그 뷰
 │  │
-│  └─ api-go/ (→ api)           # Go: chi + pgx 모듈러 모놀리스; swap 시 apps/api로 이동
+│  └─ api/                      # Go: chi + pgx 모듈러 모놀리스 (LFGA-27에서 TS 대체)
 │     ├─ Dockerfile · scripts/coverage-gate.sh
 │     ├─ cmd/
 │     │  ├─ lazyfga-api/        # 서버 엔트리포인트(+ `healthcheck` 컨테이너 모드)

@@ -39,5 +39,5 @@ apps/web/dist/
 .gstack/
 
 # go coverage artifacts
-apps/api-go/coverage.out
+apps/api/coverage.out
 coverage.out

@@ -1,24 +1,15 @@
-# lazyFGA api 컨테이너: pnpm으로 워크스페이스 의존성 설치 후 Bun으로 실행.
-# (워크스페이스는 pnpm-workspace.yaml 기준, 런타임은 Bun on Hono)
-FROM node:24-slim AS deps
-RUN corepack enable
-WORKDIR /app
-COPY pnpm-workspace.yaml pnpm-lock.yaml .npmrc package.json ./
-COPY packages/shared/package.json ./packages/shared/
-COPY packages/compiler/package.json ./packages/compiler/
-COPY apps/api/package.json ./apps/api/
-COPY apps/web/package.json ./apps/web/
-RUN pnpm install --frozen-lockfile --filter "@lazyfga/api..."
+# lazyFGA api 컨테이너: multi-stage Go 빌드 → distroless static 바이너리.
+# 빌드 컨텍스트는 저장소 루트지만 apps/api만 복사한다(parity fixture·migration은 go:embed되어
+# packages/ 가 이미지에 필요 없다). 헬스체크는 셸 없는 distroless를 위해 바이너리 self-GET 모드로 한다
+# (compose: ["CMD","/lazyfga-api","healthcheck"]). 스왑 시 오케스트레이터가 경로를 apps/api로 바꾼다.
+FROM golang:1.25-alpine AS build
+WORKDIR /src
+COPY apps/api/go.mod apps/api/go.sum ./
+RUN go mod download
+COPY apps/api/ ./
+RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/lazyfga-api ./cmd/lazyfga-api
 
-FROM oven/bun:1.3-slim AS runtime
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/packages/shared/node_modules ./packages/shared/node_modules
-COPY --from=deps /app/packages/compiler/node_modules ./packages/compiler/node_modules
-COPY --from=deps /app/apps/api/node_modules ./apps/api/node_modules
-COPY package.json pnpm-workspace.yaml ./
-COPY packages ./packages
-COPY apps/api ./apps/api
-ENV NODE_ENV=production
+FROM gcr.io/distroless/static-debian12:nonroot
+COPY --from=build /out/lazyfga-api /lazyfga-api
 EXPOSE 8787
-CMD ["bun", "run", "apps/api/src/index.ts"]
+ENTRYPOINT ["/lazyfga-api"]

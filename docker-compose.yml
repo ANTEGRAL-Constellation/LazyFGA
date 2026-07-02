@@ -55,7 +55,7 @@ services:
   lazyfga-api:
     build:
       context: .
-      dockerfile: apps/api-go/Dockerfile
+      dockerfile: apps/api/Dockerfile
     environment:
       PORT: 8787
       DATABASE_URL: postgres://lazyfga:lazyfga@postgres:5432/lazyfga

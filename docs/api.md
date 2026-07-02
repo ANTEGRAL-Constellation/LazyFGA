@@ -7,8 +7,8 @@ Base URL defaults to `http://localhost:8787`. Auth is a bearer token:
 
 The IdP webhook is **not** token-authed; it is verified by the provider's signature.
 
-The backend is Go (`apps/api-go`, renamed to `apps/api` at the cutover swap). The HTTP contract is
-unchanged from the former TS backend. Run it with `go run ./cmd/lazyfga-api` from `apps/api-go`
+The backend is Go (`apps/api`, renamed to `apps/api` at the cutover swap). The HTTP contract is
+unchanged from the former TS backend. Run it with `go run ./cmd/lazyfga-api` from `apps/api`
 (same `PORT`/`DATABASE_URL`/`OPENFGA_API_URL`/`ADMIN_TOKEN`/`LAZYFGA_STORE_ID` env vars), or via
 `docker compose up --build` (which requires `ADMIN_TOKEN`).
 

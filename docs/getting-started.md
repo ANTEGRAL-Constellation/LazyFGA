@@ -9,7 +9,7 @@ A guided tour of lazyFGA end to end. See the root [README](../README.md) for ins
 pnpm install
 cp -n .env.example .env  # ADMIN_TOKEN을 실제 값으로 설정(파일 전체 보간 때문에 의존 서비스만 띄울 때도 필요)
 docker compose up -d postgres openfga
-cd apps/api-go
+cd apps/api
 DATABASE_URL=postgres://lazyfga:lazyfga@localhost:5432/lazyfga \
 OPENFGA_API_URL=http://localhost:8080 ADMIN_TOKEN=dev-admin-token \
 go run ./cmd/lazyfga-api
@@ -18,7 +18,7 @@ pnpm --filter @lazyfga/web dev
 ```
 
 `GET /healthz` should report `status: ok` once the store is bootstrapped. (The backend is Go; its
-directory is `apps/api-go` until the cutover swap renames it to `apps/api`. The HTTP API, port
+directory is `apps/api` until the cutover swap renames it to `apps/api`. The HTTP API, port
 8787, and env vars are unchanged from the former TS backend.)
 
 ## 2. Design a model (pillar 1)
@@ -66,7 +66,7 @@ and reuses explain per case.
 ## 7. The whole thing in one command
 
 ```bash
-cd apps/api-go
+cd apps/api
 DATABASE_URL=postgres://lazyfga:lazyfga@localhost:5432/lazyfga \
 OPENFGA_API_URL=http://localhost:8080 ADMIN_TOKEN=dev-admin-token \
 API_BASE=http://localhost:8787 go run ./cmd/demo run

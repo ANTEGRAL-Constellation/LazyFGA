@@ -40,6 +40,14 @@
 | **M7** 마감   | audit log                                          | `lazyfga-17-audit-log`             | 1                     |
 |               | playground (inline 테스트)                         | `lazyfga-18-playground`            | 9                     |
 |               | 데모 시나리오 + 문서 마감                          | `lazyfga-19-demo-and-docs`         | 전부                  |
+| **M8** 권한   | 구조적 grant/revoke/list                           | `lazyfga-20-permission-management` | 7,9,10                |
+|               | IdP webhook 설정형 프레임워크                      | `lazyfga-21-idp-webhook-framework` | 15,16                 |
+| **M9** Go     | Go 마이그레이션 마스터 플랜                        | `lazyfga-22-go-migration-master-plan` | 전부              |
+|               | Go foundation (runtime·db·gateway)                 | `lazyfga-23-go-foundation`         | 22                    |
+|               | contracts + compiler 포트 (parity corpus)          | `lazyfga-24-go-contracts-compiler` | 22 (∥23)              |
+|               | core 모듈 (model·policy·pdp·grants)                | `lazyfga-25-go-core-modules`       | 23,24                 |
+|               | platform 모듈 (tokens·audit·idp)                   | `lazyfga-26-go-platform-modules`   | 23,24 (∥25)           |
+|               | 컷오버 (CLI·Docker·CI·docs·TS 제거)                | `lazyfga-27-go-cutover-ci`         | 23~26                 |
 
 ## 구현 현황 (2026-06-29)
 

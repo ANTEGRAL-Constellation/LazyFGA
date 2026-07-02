@@ -49,11 +49,22 @@
 |               | platform 모듈 (tokens·audit·idp)                   | `lazyfga-26-go-platform-modules`   | 23,24 (∥25)           |
 |               | 컷오버 (CLI·Docker·CI·docs·TS 제거)                | `lazyfga-27-go-cutover-ci`         | 23~26                 |
 
-## 구현 현황 (2026-06-29)
+## 구현 현황 (2026-07-03)
 
-**M0~M7 전부 구현 완료** — lazyfga-0~19 모든 proposal Status=Implemented. 각 단위는 사전검수 →
-TDD → 교차리뷰(Claude) → 수정 → E2E → conventional commit 절차로 랜딩. 데모는
-`apps/api/scripts/demo/run.ts`로 한 번에 시연(서명 webhook → membership → 상속 → ALLOW+reason).
+**M0~M9 전부 구현 완료** — lazyfga-0~27 모든 proposal Status=Implemented. 각 단위는 사전검수 →
+TDD → 교차리뷰(Claude/Codex 병렬) → 수정 → E2E → conventional commit 절차로 랜딩.
+
+**M9 Go 마이그레이션 완료 (LFGA-22~27).** 백엔드를 100% Go(`apps/api`, chi + pgx +
+openfga/go-sdk + cel-go)로 재작성하고 TS 백엔드를 제거했다. TS↔Go drift는 `packages/shared`의
+parity corpus가 방지하고, 승인 편차는 LFGA-22 §4.4(11개)에 문서화했다. 컷오버 전 dual-backend
+parity rehearsal(75-step contract replay 0 diff + TS 볼륨 채택 + demo 양측 동일)로 검증했다.
+테스트 커버리지 하드 게이트 ≥95%(실측 96.9%, `-count=1 -race -coverpkg=./...`). 데모는
+`go run ./cmd/demo run`으로 한 번에 시연(서명 webhook → membership → 상속 → ALLOW+reason).
+
+**배포 가능성 E2E 검증(LFGA-27 acceptance).** `docker compose up --build` → 스택 healthy,
+`/healthz` 200 `ok`(db·openfga·store ready). 데모 ALLOW+reason. Web UI E2E(Chrome DevTools MCP,
+Go 백엔드 대상): canvas → playground ALLOW → explain reason 체인 → grant/list → audit view, 그리고
+publish-validation-error(§4.4-1: 422 `issues[]`)까지 전부 통과.
 
 ## 출품 우선순위 (원안)
 

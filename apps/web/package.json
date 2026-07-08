@@ -13,7 +13,7 @@
   "dependencies": {
     "@lazyfga/compiler": "workspace:*",
     "@lazyfga/shared": "workspace:*",
-    "@xyflow/react": "^12.3.6",
+    "@xyflow/react": "^12.11.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "zustand": "^5.0.2"

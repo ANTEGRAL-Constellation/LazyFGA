@@ -301,10 +301,15 @@ export function setAssignmentCondition(
   )
     return ir;
   const next = clone(ir);
-  const ref = findResource(next, typeName)!.roles.find((rl) => rl.name === role)!.assignableBy[
-    subjectIndex
-  ]!;
-  if (condition === null) delete ref.condition;
-  else ref.condition = condition;
+  const roleTarget = findResource(next, typeName)!.roles.find((rl) => rl.name === role)!;
+  // 인덱싱으로 얻은 객체에 바로 쓰지 않고 fresh 객체를 만들어 교체한다:
+  // 프로토타입 오염 sink 패턴 자체를 제거한다.
+  roleTarget.assignableBy = roleTarget.assignableBy.map((ref, i) => {
+    if (i !== subjectIndex) return ref;
+    const nextRef = { ...ref };
+    if (condition === null) delete nextRef.condition;
+    else nextRef.condition = condition;
+    return nextRef;
+  });
   return next;
 }

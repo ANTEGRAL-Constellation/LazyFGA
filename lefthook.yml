@@ -1,0 +1,39 @@
+# Git hooks managed by lefthook (`pnpm install` wires them up via the `prepare` script).
+# The goal is that CI never fails on lint/format again: the same checks run locally on
+# staged files before the commit is created.
+#
+#   - Formatting (Prettier / gofmt): auto-fixed and re-staged, so it can never be "wrong".
+#   - Linting (ESLint / golangci-lint): checked only; a failure blocks the commit so the
+#     developer fixes the real issue instead of it being silently rewritten.
+#
+# Heavier CI steps (typecheck / build / test / coverage gate) are intentionally NOT here —
+# they belong in CI, not in every commit. Bypass in a pinch with `git commit --no-verify`.
+
+pre-commit:
+  parallel: false
+  # Don't run while resolving a merge/rebase — those aren't authored edits.
+  skip:
+    - merge
+    - rebase
+  commands:
+    1_prettier:
+      glob: "*.{ts,tsx,json,md}"
+      run: pnpm exec prettier --write {staged_files}
+      stage_fixed: true
+
+    2_eslint:
+      glob: "*.{ts,tsx}"
+      run: pnpm exec eslint --no-warn-ignored {staged_files}
+
+    3_gofmt:
+      root: apps/api/
+      glob: "*.go"
+      run: gofmt -w {staged_files}
+      stage_fixed: true
+
+    4_golangci-lint:
+      root: apps/api/
+      glob: "*.go"
+      # Lint the whole module (matches CI's `working-directory: apps/api` step); the glob
+      # gates this so it only runs when Go files are actually staged.
+      run: golangci-lint run

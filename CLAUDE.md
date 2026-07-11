@@ -17,6 +17,7 @@ lazyfga/
 ├─ CONCEPT.md · ARCHITECTURE.md · ROADMAP.md · README.md   # 컨셉 / 구조 / 로드맵 / 진입
 ├─ package.json · pnpm-workspace.yaml · turbo.json         # node 워크스페이스(web + packages)
 ├─ tsconfig.base.json · eslint.config.js · .prettierrc.json
+├─ lefthook.yml                                            # git pre-commit 훅: staged 파일에 prettier/eslint(TS) + gofmt/golangci-lint(Go); pnpm install 시 자동 등록(postinstall, CI는 self-skip)
 ├─ docker-compose.yml · .env.example · .dockerignore       # 4서비스: postgres·openfga·lazyfga-api·web(SPA/nginx); ADMIN_TOKEN 필수(:?), WEB_PORT 기본 5173
 ├─ proposals/                 # LFGA-N 구현 명세
 ├─ docs/                      # getting-started.md · api.md (LFGA-19)

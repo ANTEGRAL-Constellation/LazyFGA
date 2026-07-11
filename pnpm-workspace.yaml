@@ -3,3 +3,6 @@ packages:
   - "packages/*"
 allowBuilds:
   esbuild: true
+  # lefthook's postinstall runs `lefthook install` to wire up .git/hooks on `pnpm install`
+  # (it self-skips in CI). Approving it here means the whole team gets hooks automatically.
+  lefthook: true

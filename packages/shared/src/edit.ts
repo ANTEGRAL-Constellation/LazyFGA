@@ -291,7 +291,15 @@ export function setAssignmentCondition(
   condition: string | null,
 ): ModelIR {
   const target = findResource(ir, typeName)?.roles.find((rl) => rl.name === role);
-  if (!target || subjectIndex < 0 || subjectIndex >= target.assignableBy.length) return ir;
+  // 정수 인덱스만 허용: 문자열(__proto__/constructor 등)이 인덱스로 들어오면
+  // assignableBy[idx]가 프로토타입 객체를 반환해 오염될 수 있으므로 사전 차단한다.
+  if (
+    !target ||
+    !Number.isInteger(subjectIndex) ||
+    subjectIndex < 0 ||
+    subjectIndex >= target.assignableBy.length
+  )
+    return ir;
   const next = clone(ir);
   const ref = findResource(next, typeName)!.roles.find((rl) => rl.name === role)!.assignableBy[
     subjectIndex

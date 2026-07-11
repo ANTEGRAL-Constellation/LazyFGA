@@ -93,6 +93,18 @@ describe("condition edit ops (pure)", () => {
     expect(detached.resources[1]!.roles[0]!.assignableBy[0]!.condition).toBeUndefined();
     expect(setAssignmentCondition(ir, "document", "editor", 9, "biz")).toBe(ir);
   });
+
+  test("setAssignmentCondition rejects non-integer index (no prototype pollution)", () => {
+    const ir = clone();
+    // number 타입을 우회한 악성 인덱스가 assignableBy[idx]로 프로토타입에 닿지 못하게 한다.
+    for (const bad of ["__proto__", "constructor", "prototype", 1.5, NaN]) {
+      expect(setAssignmentCondition(ir, "document", "editor", bad as unknown as number, "biz")).toBe(
+        ir,
+      );
+    }
+    expect("condition" in ({} as Record<string, unknown>)).toBe(false);
+    expect("condition" in ([] as unknown[])).toBe(false);
+  });
 });
 
 describe("policyContextParams", () => {
